@@ -1,0 +1,71 @@
+{
+  "name": "Emoji Physics Simulator - Default Test Suite",
+  "description": "Comprehensive test suite for emoji physics simulator functionality",
+  "version": "1.0.0",
+  "tests": [
+    {
+      "name": "Page Load Test",
+      "description": "Verify that the application loads correctly",
+      "type": "e2e",
+      "testFile": "tests/e2e/page-load.spec.js",
+      "priority": "high",
+      "skip": false
+    },
+    {
+      "name": "Emoji Selection Test",
+      "description": "Verify that users can select different emojis",
+      "type": "e2e",
+      "testFile": "tests/e2e/emoji-selection.spec.js",
+      "priority": "high",
+      "skip": false
+    },
+    {
+      "name": "Physics Interaction Test",
+      "description": "Verify that emojis can be thrown and interact with physics",
+      "type": "e2e",
+      "testFile": "tests/e2e/physics-interaction.spec.js",
+      "priority": "high",
+      "skip": false
+    },
+    {
+      "name": "Gravity Adjustment Test",
+      "description": "Verify that gravity slider works correctly",
+      "type": "e2e",
+      "testFile": "tests/e2e/gravity-adjustment.spec.js",
+      "priority": "medium",
+      "skip": false
+    },
+    {
+      "name": "Bounciness Adjustment Test",
+      "description": "Verify that bounciness slider works correctly",
+      "type": "e2e",
+      "testFile": "tests/e2e/bounciness-adjustment.spec.js",
+      "priority": "medium",
+      "skip": false
+    },
+    {
+      "name": "Size Adjustment Test",
+      "description": "Verify that size slider works correctly",
+      "type": "e2e",
+      "testFile": "tests/e2e/size-adjustment.spec.js",
+      "priority": "medium",
+      "skip": false
+    },
+    {
+      "name": "Clear Canvas Test",
+      "description": "Verify that clear button removes all emojis",
+      "type": "e2e",
+      "testFile": "tests/e2e/clear-canvas.spec.js",
+      "priority": "low",
+      "skip": false
+    },
+    {
+      "name": "FPS Counter Test",
+      "description": "Verify that FPS counter displays and updates",
+      "type": "e2e",
+      "testFile": "tests/e2e/fps-counter.spec.js",
+      "priority": "low",
+      "skip": false
+    }
+  ]
+}

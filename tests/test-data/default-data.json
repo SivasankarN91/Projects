@@ -1,0 +1,70 @@
+{
+  "description": "Default test data for emoji physics simulator tests",
+  "baseUrl": "http://localhost:8080",
+  "timeout": 30000,
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "emojis": {
+    "smiley": "😀",
+    "target": "🎯",
+    "soccer": "⚽",
+    "basketball": "🏀",
+    "tennis": "🎾",
+    "baseball": "⚾",
+    "football": "🏈",
+    "volleyball": "🏐",
+    "rocket": "🚀",
+    "star": "⭐",
+    "pizza": "🍕",
+    "burger": "🍔"
+  },
+  "physics": {
+    "defaultGravity": 0.5,
+    "minGravity": 0,
+    "maxGravity": 2,
+    "defaultBounciness": 0.7,
+    "minBounciness": 0,
+    "maxBounciness": 1,
+    "defaultSize": 50,
+    "minSize": 20,
+    "maxSize": 100
+  },
+  "canvas": {
+    "width": 1000,
+    "height": 600
+  },
+  "testUsers": {
+    "user1": {
+      "name": "Test User 1",
+      "preferences": {
+        "favoriteEmoji": "🎯",
+        "defaultGravity": 0.8,
+        "defaultBounciness": 0.6
+      }
+    },
+    "user2": {
+      "name": "Test User 2",
+      "preferences": {
+        "favoriteEmoji": "⚽",
+        "defaultGravity": 0.5,
+        "defaultBounciness": 0.9
+      }
+    }
+  },
+  "testScenarios": {
+    "quickTest": {
+      "iterations": 5,
+      "delayBetweenActions": 100
+    },
+    "stressTest": {
+      "iterations": 100,
+      "delayBetweenActions": 10
+    },
+    "normalTest": {
+      "iterations": 20,
+      "delayBetweenActions": 50
+    }
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "name": "Emoji Physics Simulator - User Scenarios",
+  "description": "BDD-style scenarios for common user workflows",
+  "version": "1.0.0",
+  "scenarios": [
+    {
+      "name": "User throws a soccer ball emoji",
+      "description": "Basic scenario where user selects and throws a soccer ball",
+      "tags": ["smoke", "basic"],
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "the user opens the emoji physics simulator",
+          "data": {
+            "url": "{{baseUrl}}"
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user selects the soccer ball emoji",
+          "data": {
+            "emoji": "⚽"
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the user drags on the canvas to throw the emoji",
+          "data": {
+            "startX": 200,
+            "startY": 200,
+            "endX": 400,
+            "endY": 100
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "the emoji should appear and move with physics",
+          "data": {
+            "assert": {
+              "emojiVisible": true
+            }
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the emoji count should increase",
+          "data": {
+            "assert": {
+              "minCount": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User adjusts gravity and observes effect",
+      "description": "Scenario testing gravity slider functionality",
+      "tags": ["physics", "controls"],
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "the user has the emoji physics simulator open",
+          "data": {
+            "url": "{{baseUrl}}"
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the user has thrown an emoji on the canvas",
+          "data": {
+            "emoji": "🎯"
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user increases the gravity slider to maximum",
+          "data": {
+            "gravityValue": 2.0
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "emojis should fall faster",
+          "data": {
+            "assert": {
+              "gravityIncreased": true
+            }
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user decreases the gravity slider to minimum",
+          "data": {
+            "gravityValue": 0
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "emojis should float with no gravity",
+          "data": {
+            "assert": {
+              "gravityDecreased": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User creates multiple emojis and clears canvas",
+      "description": "Scenario testing multi-emoji interaction and clear functionality",
+      "tags": ["interaction", "cleanup"],
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "the user opens the emoji physics simulator",
+          "data": {
+            "url": "{{baseUrl}}"
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user throws 5 different emojis",
+          "data": {
+            "emojis": ["😀", "⚽", "🎯", "🚀", "⭐"],
+            "count": 5
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "all 5 emojis should be visible on the canvas",
+          "data": {
+            "assert": {
+              "expected": 5,
+              "actual": 5
+            }
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user clicks the clear button",
+          "data": {
+            "action": "click_clear"
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "all emojis should be removed from the canvas",
+          "data": {
+            "assert": {
+              "expected": 0,
+              "actual": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User adjusts emoji size before throwing",
+      "description": "Scenario testing size adjustment functionality",
+      "tags": ["controls", "customization"],
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "the user opens the emoji physics simulator",
+          "data": {
+            "url": "{{baseUrl}}"
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user adjusts the size slider to maximum",
+          "data": {
+            "size": 100
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the user throws an emoji",
+          "data": {
+            "emoji": "🏀"
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "the emoji should appear at maximum size",
+          "data": {
+            "assert": {
+              "sizeAdjusted": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User tests bounciness with multiple values",
+      "description": "Scenario testing bounciness slider across different values",
+      "tags": ["physics", "controls"],
+      "steps": [
+        {
+          "keyword": "Given",
+          "text": "the user opens the emoji physics simulator",
+          "data": {
+            "url": "{{baseUrl}}"
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user sets bounciness to minimum",
+          "data": {
+            "bounciness": 0
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the user throws an emoji",
+          "data": {
+            "emoji": "⚾"
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "the emoji should not bounce",
+          "data": {
+            "assert": {
+              "bounceReduced": true
+            }
+          }
+        },
+        {
+          "keyword": "When",
+          "text": "the user sets bounciness to maximum",
+          "data": {
+            "bounciness": 1
+          }
+        },
+        {
+          "keyword": "And",
+          "text": "the user throws another emoji",
+          "data": {
+            "emoji": "🎾"
+          }
+        },
+        {
+          "keyword": "Then",
+          "text": "the emoji should bounce with high restitution",
+          "data": {
+            "assert": {
+              "bounceIncreased": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
