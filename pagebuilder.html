@@ -210,6 +210,21 @@
   .tpl-card .desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
+  /* ---------- Guide ---------- */
+  .guide-modal { max-width: 660px; max-height: 88vh; overflow-y: auto; }
+  .guide-modal h3 { font-size: 1.15rem; }
+  .guide-sub { font-size: 0.85rem; color: var(--text-secondary); margin: -8px 0 10px; }
+  .guide-step { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .guide-step:last-of-type { border-bottom: none; }
+  .guide-step .g-em { font-size: 1.35rem; flex: none; width: 36px; text-align: center; }
+  .guide-step .g-title { font-weight: 700; font-size: 0.92rem; margin-bottom: 3px; }
+  .guide-step .g-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.55; }
+  .guide-step .g-text b { color: var(--text-primary); }
+  .guide-note {
+    font-size: 0.8rem; color: var(--text-muted); margin-top: 14px; line-height: 1.5;
+    border-top: 1px solid var(--border); padding-top: 12px;
+  }
+
   .toast {
     position: fixed; bottom: 20px; left: 50%;
     transform: translateX(-50%) translateY(90px);
@@ -249,6 +264,7 @@
   <button class="ibtn" id="importJsonBtn" title="Import JSON backup">⬆</button>
   <input type="file" id="importFile" accept="application/json" hidden>
   <button class="ibtn" id="themeToggle" title="Toggle builder theme">🌗</button>
+  <button class="ibtn" id="guideBtn" title="How to use the builder">?</button>
   <span class="sep"></span>
   <button class="ibtn" id="exportHtmlBtn" title="Export this page as a standalone HTML file">Export page</button>
   <button class="ibtn primary" id="exportSiteBtn" title="Export every page as a ZIP of linked HTML files">Export site</button>
@@ -297,6 +313,69 @@
     </div>
     <div class="modal-actions">
       <button class="ibtn" id="tplCancel" style="border:1px solid var(--border)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="guideModal">
+  <div class="modal guide-modal">
+    <h3>👋 Welcome to Page Builder</h3>
+    <p class="guide-sub">Build a real, multi-page landing site and export it as ready-to-host HTML — no coding, no signup. Here's everything in 10 quick steps:</p>
+
+    <div class="guide-step"><span class="g-em">📄</span><div>
+      <div class="g-title">You're starting on a full example page</div>
+      <div class="g-text">Everything you see — headlines, prices, quotes — is placeholder content meant to be replaced with your own.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">✏️</span><div>
+      <div class="g-title">Click any text and just type</div>
+      <div class="g-text">Headlines, buttons, prices, FAQ answers — <b>click directly on the words</b> and edit them in place. It saves automatically as you type.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🧩</span><div>
+      <div class="g-title">Add sections from the left panel</div>
+      <div class="g-text">Click a section to add it to the bottom, or <b>drag it</b> to exactly where you want it. Hover any section on the page for its controls: move ▲ ▼, duplicate ⧉, delete ✕.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">⚙️</span><div>
+      <div class="g-title">Click a section to open its options</div>
+      <div class="g-text">The right panel then shows that section's settings — background style, and ＋ / − buttons to add or remove features, pricing tiers, FAQs, quotes, and links.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🔗</span><div>
+      <div class="g-title">Make buttons and nav tabs actually work</div>
+      <div class="g-text">Click any button or nav tab, then use <b>“Selected link”</b> in the right panel to choose what it opens: another page of your site, a section on this page, or an external URL — like a <b>payment link</b> (Stripe, Razorpay) on a Pay button.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🗂️</span><div>
+      <div class="g-title">Add more pages</div>
+      <div class="g-text">Use <b>＋</b> next to the page dropdown (top bar) to add e.g. a Pricing page, then link a nav tab to it. <b>Ctrl+click</b> a linked tab to jump into that page and edit it.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🖼️</span><div>
+      <div class="g-title">Use your own images and logos</div>
+      <div class="g-text">Select the hero (or add an <b>Image</b> section, or click a logo in the logo strip), then hit <b>Upload</b> in the right panel. Images are stored inside your page — no hosting needed.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">✉️</span><div>
+      <div class="g-title">Get messages on WhatsApp</div>
+      <div class="g-text">Add the <b>Contact form</b> section, select it, and enter your WhatsApp number (with country code) in the right panel. When visitors hit Send, their message opens as a WhatsApp chat to you. Email mode works too.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🎨</span><div>
+      <div class="g-title">Brand it</div>
+      <div class="g-text">In the right panel's <b>Page theme</b>: brand color, heading font, corner roundness, favicon, and the SEO description shown in search results. The 🖥️ 📱 buttons up top preview desktop, tablet and phone.</div>
+    </div></div>
+
+    <div class="guide-step"><span class="g-em">🚀</span><div>
+      <div class="g-title">Export and go live</div>
+      <div class="g-text"><b>Export site</b> downloads a ZIP of finished HTML pages with all links working — upload it to GitHub Pages, Netlify, or any static host and you're live. <b>Export page</b> grabs just the current page.</div>
+    </div></div>
+
+    <p class="guide-note">💾 Your work autosaves in this browser. Use ⬇ in the top bar for a backup file (⬆ restores it). Undo anytime with ↩ or Ctrl+Z. Editing works best on a desktop screen; the pages you export look great everywhere. Reopen this guide anytime with the <b>?</b> button.</p>
+
+    <div class="modal-actions">
+      <button class="ibtn primary" id="guideClose">Got it — let's build</button>
     </div>
   </div>
 </div>
@@ -537,7 +616,7 @@ function freshState() {
     version: 2,
     site: { title: 'My Landing Site', description: '', favicon: '✦',
       theme: { slot: 1, font: 'sans', radius: 12 }, pages: [home], activePage: home.id },
-    settings: { theme: 'auto' },
+    settings: { theme: 'auto', guideSeen: false },
   };
 }
 function loadState() {
@@ -1413,11 +1492,25 @@ function toast(msg) {
   toast._t = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
+/* ---- guide ---- */
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() {
+  $('#guideModal').classList.remove('open');
+  if (!state.settings.guideSeen) { state.settings.guideSeen = true; save(); }
+}
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', (e) => { if (e.target === $('#guideModal')) closeGuide(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('#guideModal').classList.contains('open')) closeGuide();
+});
+
 renderLibrary();
 applyTheme();
 updateHistoryButtons();
 renderAll();
 save();
+if (!state.settings.guideSeen) openGuide();
 </script>
 </body>
 </html>
