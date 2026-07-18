@@ -69,6 +69,11 @@
     padding: 6px 9px; min-width: 140px; max-width: 240px;
   }
   #pageTitle:hover, #pageTitle:focus { border-color: var(--baseline); background: var(--page); outline: none; }
+  #pageSel {
+    font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--baseline);
+    border-radius: 8px; padding: 5px 8px; max-width: 150px;
+  }
   .ibtn {
     appearance: none; border: none; background: none; cursor: pointer;
     font-size: 0.95rem; color: var(--text-secondary);
@@ -188,7 +193,7 @@
     padding: 22px; width: 100%; max-width: 520px; box-shadow: var(--shadow);
   }
   .modal h3 { font-size: 1.05rem; margin-bottom: 14px; }
-  .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tpl-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .tpl-card {
     border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px;
     cursor: pointer; text-align: center; background: var(--page);
@@ -220,8 +225,12 @@
 <div id="topbar">
   <span class="brand">🏗️ Page Builder</span>
   <span class="sep"></span>
-  <input id="pageTitle" title="Page title (used in the exported page)">
-  <button class="ibtn" id="newPageBtn" title="New page from template">🗂️ New</button>
+  <input id="pageTitle" title="Site title (used in exported page titles)">
+  <span class="sep"></span>
+  <select id="pageSel" title="Switch page"></select>
+  <button class="ibtn" id="newPageBtn" title="Add a page">＋</button>
+  <button class="ibtn" id="renamePageBtn" title="Rename this page">✏️</button>
+  <button class="ibtn" id="deletePageBtn" title="Delete this page">🗑️</button>
   <span class="sep"></span>
   <button class="ibtn" id="undoBtn" title="Undo (Ctrl+Z)">↩</button>
   <button class="ibtn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↪</button>
@@ -235,14 +244,15 @@
   <input type="file" id="importFile" accept="application/json" hidden>
   <button class="ibtn" id="themeToggle" title="Toggle builder theme">🌗</button>
   <span class="sep"></span>
-  <button class="ibtn primary" id="exportHtmlBtn" title="Export standalone HTML page">Export HTML</button>
+  <button class="ibtn" id="exportHtmlBtn" title="Export this page as a standalone HTML file">Export page</button>
+  <button class="ibtn primary" id="exportSiteBtn" title="Export every page as a ZIP of linked HTML files">Export site</button>
 </div>
 
 <div id="main">
   <aside id="library">
     <h3>Sections</h3>
     <div id="libList"></div>
-    <p class="lib-hint">Click to add at the end, or drag into the page. Click any text on the page to edit it in place.</p>
+    <p class="lib-hint">Click to add at the end, or drag into the page. Click any text on the page to edit it in place. Click a button or nav tab and set where it links in the right panel — Ctrl+click follows the link.</p>
   </aside>
 
   <div id="canvasScroll">
@@ -256,7 +266,7 @@
 
 <div class="modal-backdrop" id="tplModal">
   <div class="modal">
-    <h3>New page</h3>
+    <h3>Add a page</h3>
     <div class="tpl-grid">
       <div class="tpl-card" data-tpl="blank">
         <span class="em">📄</span>
@@ -265,8 +275,13 @@
       </div>
       <div class="tpl-card" data-tpl="saas">
         <span class="em">🚀</span>
-        <span class="name">SaaS product</span>
+        <span class="name">Product</span>
         <div class="desc">Full product page: features, stats, pricing, FAQ</div>
+      </div>
+      <div class="tpl-card" data-tpl="pricing">
+        <span class="em">💳</span>
+        <span class="name">Pricing</span>
+        <div class="desc">Pricing tiers with FAQ and a closing CTA</div>
       </div>
       <div class="tpl-card" data-tpl="event">
         <span class="em">🎟️</span>
@@ -395,10 +410,10 @@ function esc(s) {
 /* ---- section factories (default props) ---- */
 const SECTION_DEFS = {
   navbar: { label: 'Navbar', emoji: '🧭', make: () => ({
-    brand: '✦ Brand', links: [{ t: 'Features' }, { t: 'Pricing' }, { t: 'About' }], cta: 'Get started', bg: 'plain' }) },
+    brand: '✦ Brand', links: [{ t: 'Features', href: '#' }, { t: 'Pricing', href: '#' }, { t: 'About', href: '#' }], cta: 'Get started', ctaHref: '#', bg: 'plain' }) },
   hero: { label: 'Hero', emoji: '🌄', make: () => ({
     kicker: 'New', headline: 'A headline that sells the outcome', sub: 'One clear sentence about the value your product delivers and who it is for.',
-    ctaPrimary: 'Get started free', ctaSecondary: 'See how it works', art: '🚀', bg: 'plain', center: false }) },
+    ctaPrimary: 'Get started free', ctaPrimaryHref: '#', ctaSecondary: 'See how it works', ctaSecondaryHref: '#', art: '🚀', bg: 'plain', center: false }) },
   logos: { label: 'Logo strip', emoji: '🏛️', make: () => ({
     title: 'Trusted by teams at', items: [{ t: '◆ Acme' }, { t: '● Globex' }, { t: '▲ Initech' }, { t: '■ Umbrella' }, { t: '✦ Hooli' }], bg: 'plain' }) },
   features: { label: 'Features', emoji: '🧩', make: () => ({
@@ -424,9 +439,9 @@ const SECTION_DEFS = {
   pricing: { label: 'Pricing', emoji: '💳', make: () => ({
     headline: 'Simple pricing', sub: 'Start free, upgrade when you grow.', bg: 'tint',
     tiers: [
-      { name: 'Starter', price: '$0', period: 'free forever', feats: [{ t: '1 project' }, { t: 'Community support' }, { t: 'Basic analytics' }], cta: 'Start free', featured: false },
-      { name: 'Pro', price: '$29', period: 'per month', feats: [{ t: 'Unlimited projects' }, { t: 'Priority support' }, { t: 'Advanced analytics' }, { t: 'Custom domain' }], cta: 'Start 14-day trial', featured: true },
-      { name: 'Business', price: '$99', period: 'per month', feats: [{ t: 'Everything in Pro' }, { t: 'SSO & audit logs' }, { t: 'Dedicated manager' }], cta: 'Contact sales', featured: false },
+      { name: 'Starter', price: '$0', period: 'free forever', feats: [{ t: '1 project' }, { t: 'Community support' }, { t: 'Basic analytics' }], cta: 'Start free', ctaHref: '#', featured: false },
+      { name: 'Pro', price: '$29', period: 'per month', feats: [{ t: 'Unlimited projects' }, { t: 'Priority support' }, { t: 'Advanced analytics' }, { t: 'Custom domain' }], cta: 'Start 14-day trial', ctaHref: '#', featured: true },
+      { name: 'Business', price: '$99', period: 'per month', feats: [{ t: 'Everything in Pro' }, { t: 'SSO & audit logs' }, { t: 'Dedicated manager' }], cta: 'Contact sales', ctaHref: '#', featured: false },
     ] }) },
   faq: { label: 'FAQ', emoji: '❓', make: () => ({
     headline: 'Frequently asked questions', bg: 'plain',
@@ -437,10 +452,10 @@ const SECTION_DEFS = {
       { q: 'Do you offer discounts?', a: 'Annual billing saves two months, and we offer 50% off for nonprofits and education.' },
     ] }) },
   cta: { label: 'CTA banner', emoji: '📣', make: () => ({
-    headline: 'Ready to get started?', sub: 'Join thousands of teams already using it every day.', button: 'Create your free account', bg: 'dark' }) },
+    headline: 'Ready to get started?', sub: 'Join thousands of teams already using it every day.', button: 'Create your free account', buttonHref: '#', bg: 'dark' }) },
   footer: { label: 'Footer', emoji: '🦶', make: () => ({
     brand: '✦ Brand', note: '© 2026 Brand, Inc. All rights reserved.',
-    links: [{ t: 'Privacy' }, { t: 'Terms' }, { t: 'Contact' }], bg: 'plain' }) },
+    links: [{ t: 'Privacy', href: '#' }, { t: 'Terms', href: '#' }, { t: 'Contact', href: '#' }], bg: 'plain' }) },
 };
 const SECTION_ORDER = ['navbar', 'hero', 'logos', 'features', 'stats', 'testimonials', 'pricing', 'faq', 'cta', 'footer'];
 
@@ -453,7 +468,7 @@ function tplEvent() {
   const secs = ['navbar', 'hero', 'stats', 'features', 'testimonials', 'faq', 'cta', 'footer'].map(makeSection);
   const [nav, hero, stats, features, testi, faq, cta] = secs;
   nav.props.brand = '🎟️ SummitConf'; nav.props.cta = 'Get tickets';
-  nav.props.links = [{ t: 'Speakers' }, { t: 'Schedule' }, { t: 'Venue' }];
+  nav.props.links = [{ t: 'Speakers', href: '#' }, { t: 'Schedule', href: '#' }, { t: 'Venue', href: '#' }];
   hero.props.kicker = 'Oct 14–16 · Bengaluru';
   hero.props.headline = 'The conference for people who ship';
   hero.props.sub = 'Three days of talks, workshops and hallway conversations with the builders you follow online.';
@@ -479,12 +494,20 @@ function tplEvent() {
   cta.props.button = 'Get tickets now';
   return secs;
 }
-const TEMPLATES = { blank: tplBlank, saas: tplSaas, event: tplEvent };
+function tplPricing() {
+  const secs = ['navbar', 'pricing', 'faq', 'cta', 'footer'].map(makeSection);
+  const [, pricing] = secs;
+  pricing.props.bg = 'plain';
+  return secs;
+}
+const TEMPLATES = { blank: tplBlank, saas: tplSaas, event: tplEvent, pricing: tplPricing };
+const TPL_PAGE_NAMES = { blank: 'New page', saas: 'Product', event: 'Event', pricing: 'Pricing' };
 
 function freshState() {
+  const home = { id: uid(), name: 'Home', sections: tplSaas() };
   return {
-    version: 1,
-    page: { title: 'My Landing Page', theme: { slot: 1, font: 'sans', radius: 12 }, sections: tplSaas() },
+    version: 2,
+    site: { title: 'My Landing Site', theme: { slot: 1, font: 'sans', radius: 12 }, pages: [home], activePage: home.id },
     settings: { theme: 'auto' },
   };
 }
@@ -492,16 +515,27 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
     if (!raw) return freshState();
-    const data = JSON.parse(raw);
-    if (!data || !data.page || !Array.isArray(data.page.sections)) return freshState();
+    let data = JSON.parse(raw);
+    // v1 (single page) → v2 (multi-page site)
+    if (data && data.page && Array.isArray(data.page.sections)) {
+      const home = { id: uid(), name: 'Home', sections: data.page.sections };
+      data = { version: 2,
+        site: { title: data.page.title || 'My Landing Site', theme: data.page.theme, pages: [home], activePage: home.id },
+        settings: data.settings };
+    }
+    if (!data || !data.site || !Array.isArray(data.site.pages) || !data.site.pages.length) return freshState();
     const base = freshState();
-    return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
-      page: { ...base.page, ...data.page, theme: { ...base.page.theme, ...(data.page.theme || {}) } } };
+    const merged = { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
+      site: { ...base.site, ...data.site, theme: { ...base.site.theme, ...(data.site.theme || {}) } } };
+    if (!merged.site.pages.find(p => p.id === merged.site.activePage)) merged.site.activePage = merged.site.pages[0].id;
+    return merged;
   } catch { return freshState(); }
 }
 let state = loadState();
 function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-function sections() { return state.page.sections; }
+function site() { return state.site; }
+function curPage() { return site().pages.find(p => p.id === site().activePage); }
+function sections() { return curPage().sections; }
 function findSection(id) { return sections().find(s => s.id === id); }
 
 /* =====================================================================
@@ -509,17 +543,19 @@ function findSection(id) { return sections().find(s => s.id === id); }
 ===================================================================== */
 const HISTORY_MAX = 50;
 let undoStack = [], redoStack = [];
-const snapshot = () => JSON.stringify(state.page);
+const snapshot = () => JSON.stringify(state.site);
+function restore(snap) {
+  state.site = JSON.parse(snap);
+  if (!site().pages.find(p => p.id === site().activePage)) site().activePage = site().pages[0].id;
+  if (selectedId && !findSection(selectedId)) selectedId = null;
+  selectedLink = null;
+  save(); renderAll();
+}
 function pushHistory() {
   undoStack.push(snapshot());
   if (undoStack.length > HISTORY_MAX) undoStack.shift();
   redoStack = [];
   updateHistoryButtons();
-}
-function restore(snap) {
-  state.page = JSON.parse(snap);
-  if (selectedId && !findSection(selectedId)) selectedId = null;
-  save(); renderAll();
 }
 function undo() { if (undoStack.length) { redoStack.push(snapshot()); restore(undoStack.pop()); updateHistoryButtons(); } }
 function redo() { if (redoStack.length) { undoStack.push(snapshot()); restore(redoStack.pop()); updateHistoryButtons(); } }
@@ -547,7 +583,33 @@ function T(ed, path, tag, cls, value, extra = '') {
   return `<${tag}${cl}${ce}${extra}>${esc(value)}</${tag}>`;
 }
 
-function sectionHtml(sec, ed) {
+/* links & buttons: editable label + a link target (internal page / external URL) */
+function computeSlugs() {
+  const used = new Set();
+  const map = {};
+  site().pages.forEach((p, i) => {
+    let s = i === 0 ? 'index' : (slug(p.name) || 'page');
+    while (used.has(s)) s += '-2';
+    used.add(s);
+    map[p.id] = s;
+  });
+  return map;
+}
+function resolveHref(href, slugs) {
+  if (!href || href === '#') return '#';
+  if (href.startsWith('page:')) {
+    const s = slugs && slugs[href.slice(5)];
+    return s ? s + '.html' : '#';
+  }
+  return href;
+}
+function L(ed, labelPath, hrefPath, cls, value, sec, slugs) {
+  const cl = cls ? ` class="${cls}"` : '';
+  if (ed) return `<a${cl} contenteditable="true" data-bind="${labelPath}" data-href-path="${hrefPath}" href="#">${esc(value)}</a>`;
+  return `<a${cl} href="${esc(resolveHref(getPath(sec, hrefPath), slugs))}">${esc(value)}</a>`;
+}
+
+function sectionHtml(sec, ed, slugs) {
   const p = sec.props;
   const bg = `lp-bg-${p.bg || 'plain'}`;
   const W = (inner, cls = '') => `<div class="lp-sec ${bg} ${cls}"><div class="lp-wrap">${inner}</div></div>`;
@@ -555,8 +617,8 @@ function sectionHtml(sec, ed) {
     case 'navbar':
       return `<div class="${bg}"><div class="lp-wrap"><nav class="lp-nav">
         ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
-        <span class="lp-nav-links">${p.links.map((l, i) => T(ed, `props.links.${i}.t`, 'a', '', l.t, ' href="#"')).join('')}</span>
-        ${T(ed, 'props.cta', 'a', 'lp-btn', p.cta, ' href="#"')}
+        <span class="lp-nav-links">${p.links.map((l, i) => L(ed, `props.links.${i}.t`, `props.links.${i}.href`, '', l.t, sec, slugs)).join('')}</span>
+        ${L(ed, 'props.cta', 'props.ctaHref', 'lp-btn', p.cta, sec, slugs)}
       </nav></div></div>`;
     case 'hero': {
       const inner = `<div class="lp-hero${p.center ? ' lp-center' : ''}"><div>
@@ -564,8 +626,8 @@ function sectionHtml(sec, ed) {
           ${T(ed, 'props.headline', 'h1', 'lp-h1', p.headline)}
           <div style="margin-top:18px">${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>
           <div class="lp-btn-row">
-            ${T(ed, 'props.ctaPrimary', 'a', 'lp-btn', p.ctaPrimary, ' href="#"')}
-            ${T(ed, 'props.ctaSecondary', 'a', 'lp-btn lp-ghost', p.ctaSecondary, ' href="#"')}
+            ${L(ed, 'props.ctaPrimary', 'props.ctaPrimaryHref', 'lp-btn', p.ctaPrimary, sec, slugs)}
+            ${L(ed, 'props.ctaSecondary', 'props.ctaSecondaryHref', 'lp-btn lp-ghost', p.ctaSecondary, sec, slugs)}
           </div>
         </div>
         <div class="lp-hero-art">${T(ed, 'props.art', 'span', '', p.art)}</div></div>`;
@@ -600,7 +662,7 @@ function sectionHtml(sec, ed) {
           <div>${T(ed, `props.tiers.${i}.price`, 'span', 'lp-tier-price', t.price)}</div>
           ${T(ed, `props.tiers.${i}.period`, 'span', 'lp-tier-period', t.period)}
           <ul>${t.feats.map((f, j) => T(ed, `props.tiers.${i}.feats.${j}.t`, 'li', '', f.t)).join('')}</ul>
-          ${T(ed, `props.tiers.${i}.cta`, 'a', 'lp-btn' + (t.featured ? '' : ' lp-ghost'), t.cta, ' href="#"')}
+          ${L(ed, `props.tiers.${i}.cta`, `props.tiers.${i}.ctaHref`, 'lp-btn' + (t.featured ? '' : ' lp-ghost'), t.cta, sec, slugs)}
         </div>`).join('')}</div>`);
     case 'faq':
       return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}</div>
@@ -612,12 +674,12 @@ function sectionHtml(sec, ed) {
       return W(`<div class="lp-center">
         ${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}
         ${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}
-        <div class="lp-btn-row">${T(ed, 'props.button', 'a', 'lp-btn', p.button, ' href="#"')}</div></div>`);
+        <div class="lp-btn-row">${L(ed, 'props.button', 'props.buttonHref', 'lp-btn', p.button, sec, slugs)}</div></div>`);
     case 'footer':
       return `<div class="${bg}"><div class="lp-wrap"><div class="lp-footer">
         ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
         ${T(ed, 'props.note', 'span', 'lp-footer-note', p.note)}
-        <span class="lp-footer-links">${p.links.map((l, i) => T(ed, `props.links.${i}.t`, 'a', '', l.t, ' href="#"')).join('')}</span>
+        <span class="lp-footer-links">${p.links.map((l, i) => L(ed, `props.links.${i}.t`, `props.links.${i}.href`, '', l.t, sec, slugs)).join('')}</span>
       </div></div></div>`;
     default: return '';
   }
@@ -636,7 +698,7 @@ const FONT_STACKS = {
 const EXPORT_SLOT_HEX = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb6834', '#4a3aa7', '#e34948'];
 
 function themeVars() {
-  const t = state.page.theme;
+  const t = state.site.theme;
   const f = FONT_STACKS[t.font] || FONT_STACKS.sans;
   return `--lp-primary:${EXPORT_SLOT_HEX[(t.slot - 1) % SLOTS]};--lp-radius:${t.radius}px;--lp-font-head:${f.head};--lp-font-body:${f.body}`;
 }
@@ -645,6 +707,7 @@ function themeVars() {
    Canvas rendering
 ===================================================================== */
 let selectedId = null;
+let selectedLink = null; // {secId, hrefPath} — set by clicking a link/button on the canvas
 
 function renderCanvas() {
   const root = $('#lpRoot');
@@ -668,7 +731,8 @@ function renderCanvas() {
 function renderAll() {
   renderCanvas();
   renderInspector();
-  $('#pageTitle').value = state.page.title;
+  renderPageSel();
+  $('#pageTitle').value = state.site.title;
 }
 
 /* ---- canvas events: select, tools, inline editing ---- */
@@ -695,10 +759,28 @@ lpRoot.addEventListener('click', (e) => {
       sections().splice(idx, 1);
       if (selectedId === id) selectedId = null;
     } else { undoStack.pop(); updateHistoryButtons(); }
+    selectedLink = null;
     save(); renderAll();
     return;
   }
-  if (selectedId !== id) { selectedId = id; renderCanvas(); renderInspector(); }
+  // link/button clicked → expose its target in the inspector; Ctrl+click follows it
+  const linkEl = e.target.closest('[data-href-path]');
+  if (linkEl) {
+    const sec = findSection(id);
+    const href = sec ? getPath(sec, linkEl.dataset.hrefPath) : null;
+    if ((e.ctrlKey || e.metaKey) && href && href.startsWith('page:') && site().pages.find(p => p.id === href.slice(5))) {
+      setActivePage(href.slice(5));
+      return;
+    }
+    selectedLink = { secId: id, hrefPath: linkEl.dataset.hrefPath };
+  } else {
+    selectedLink = null;
+  }
+  selectedId = id;
+  // never rebuild the canvas here — that would destroy the contenteditable the
+  // user just clicked into; the selection outline is only a class toggle
+  document.querySelectorAll('.sec-wrap').forEach(w => w.classList.toggle('selected', w.dataset.sec === selectedId));
+  renderInspector();
 });
 
 /* inline text editing writes straight back to state */
@@ -807,7 +889,7 @@ const ITEM_ARRAYS = {
 const BG_CHOICES = [['plain', 'Plain'], ['tint', 'Tinted'], ['accent', 'Accent'], ['dark', 'Dark']];
 
 function renderInspector() {
-  const t = state.page.theme;
+  const t = state.site.theme;
   const sec = selectedId ? findSection(selectedId) : null;
   let html = `
     <div class="insp-group">
@@ -821,6 +903,25 @@ function renderInspector() {
       <div class="insp-row"><label>Corners</label>
         <input type="range" id="radiusRange" min="0" max="24" step="2" value="${t.radius}"></div>
     </div>`;
+
+  const linkSec = selectedLink ? findSection(selectedLink.secId) : null;
+  if (linkSec) {
+    const cur = getPath(linkSec, selectedLink.hrefPath) || '#';
+    const isPage = cur.startsWith('page:');
+    const isExt = !isPage && cur !== '#';
+    const targetPage = isPage ? site().pages.find(p => p.id === cur.slice(5)) : null;
+    html += `<div class="insp-group"><h3>🔗 Selected link</h3>
+      <div class="insp-row"><label>Opens</label>
+        <select id="linkTarget">
+          <option value="#"${cur === '#' ? ' selected' : ''}>Nothing yet</option>
+          ${site().pages.map(pg => `<option value="page:${pg.id}"${cur === 'page:' + pg.id ? ' selected' : ''}>📄 ${esc(pg.name)}</option>`).join('')}
+          <option value="external"${isExt ? ' selected' : ''}>External URL…</option>
+        </select></div>
+      ${isExt ? `<input type="text" id="linkUrl" class="wide" placeholder="https://…" value="${esc(cur)}">` : ''}
+      ${targetPage ? `<button class="insp-btn" id="gotoPageBtn">Edit “${esc(targetPage.name)}” page →</button>` : ''}
+      ${isPage && !targetPage ? `<p class="insp-empty">The linked page was deleted — pick a new target.</p>` : ''}
+    </div>`;
+  }
 
   if (sec) {
     const def = SECTION_DEFS[sec.type];
@@ -856,12 +957,36 @@ function bindInspector(sec) {
     const b = e.target.closest('[data-slot]');
     if (!b) return;
     pushHistory();
-    state.page.theme.slot = Number(b.dataset.slot);
+    state.site.theme.slot = Number(b.dataset.slot);
     save(); renderAll();
   });
-  $('#fontSel').addEventListener('change', (e) => { pushHistory(); state.page.theme.font = e.target.value; save(); renderAll(); });
-  $('#radiusRange').addEventListener('input', (e) => { state.page.theme.radius = Number(e.target.value); save(); renderCanvas(); });
+  $('#fontSel').addEventListener('change', (e) => { pushHistory(); state.site.theme.font = e.target.value; save(); renderAll(); });
+  $('#radiusRange').addEventListener('input', (e) => { state.site.theme.radius = Number(e.target.value); save(); renderCanvas(); });
   $('#radiusRange').addEventListener('change', () => { pushHistory(); save(); });
+
+  const linkSec = selectedLink ? findSection(selectedLink.secId) : null;
+  const linkTarget = $('#linkTarget');
+  if (linkSec && linkTarget) {
+    linkTarget.addEventListener('change', (e) => {
+      pushHistory();
+      const v = e.target.value;
+      setPath(linkSec, selectedLink.hrefPath, v === 'external' ? 'https://' : v);
+      save(); renderInspector();
+      const url = $('#linkUrl');
+      if (url) { url.focus(); url.select(); }
+    });
+    const linkUrl = $('#linkUrl');
+    if (linkUrl) linkUrl.addEventListener('change', (e) => {
+      pushHistory();
+      setPath(linkSec, selectedLink.hrefPath, e.target.value.trim() || '#');
+      save();
+    });
+    const gotoBtn = $('#gotoPageBtn');
+    if (gotoBtn) gotoBtn.addEventListener('click', () => {
+      const href = getPath(linkSec, selectedLink.hrefPath);
+      setActivePage(href.slice(5));
+    });
+  }
   if (!sec) return;
   $('#bgSel').addEventListener('change', (e) => { pushHistory(); sec.props.bg = e.target.value; save(); renderAll(); });
   const centerSel = $('#centerSel');
@@ -888,11 +1013,41 @@ function bindInspector(sec) {
 ===================================================================== */
 $('#pageTitle').addEventListener('change', (e) => {
   pushHistory();
-  state.page.title = e.target.value.trim() || 'Landing Page';
+  state.site.title = e.target.value.trim() || 'Landing Site';
   save();
 });
 $('#undoBtn').addEventListener('click', undo);
 $('#redoBtn').addEventListener('click', redo);
+
+/* ---- pages ---- */
+function renderPageSel() {
+  $('#pageSel').innerHTML = site().pages.map(p =>
+    `<option value="${p.id}"${p.id === site().activePage ? ' selected' : ''}>📄 ${esc(p.name)}</option>`).join('');
+}
+function setActivePage(id) {
+  if (!site().pages.find(p => p.id === id)) return;
+  site().activePage = id;
+  selectedId = null; selectedLink = null;
+  save(); renderAll();
+  $('#canvasScroll').scrollTop = 0;
+}
+$('#pageSel').addEventListener('change', (e) => setActivePage(e.target.value));
+$('#renamePageBtn').addEventListener('click', () => {
+  const name = prompt('Rename page:', curPage().name);
+  if (name === null || !name.trim()) return;
+  pushHistory();
+  curPage().name = name.trim();
+  save(); renderAll();
+});
+$('#deletePageBtn').addEventListener('click', () => {
+  if (site().pages.length <= 1) { toast('Keep at least one page'); return; }
+  if (!confirm(`Delete page “${curPage().name}”? Links pointing to it will go dead.`)) return;
+  pushHistory();
+  site().pages = site().pages.filter(p => p.id !== site().activePage);
+  site().activePage = site().pages[0].id;
+  selectedId = null; selectedLink = null;
+  save(); renderAll();
+});
 
 document.querySelectorAll('[data-vp]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('[data-vp]').forEach(x => x.classList.toggle('active', x === b));
@@ -903,14 +1058,17 @@ $('#newPageBtn').addEventListener('click', () => $('#tplModal').classList.add('o
 $('#tplCancel').addEventListener('click', () => $('#tplModal').classList.remove('open'));
 $('#tplModal').addEventListener('click', (e) => { if (e.target === $('#tplModal')) $('#tplModal').classList.remove('open'); });
 document.querySelectorAll('.tpl-card').forEach(card => card.addEventListener('click', () => {
-  if (sections().length && !confirm('Replace the current page with this template? (Undo can bring it back.)')) return;
   pushHistory();
-  state.page.sections = TEMPLATES[card.dataset.tpl]();
-  state.page.title = card.dataset.tpl === 'saas' ? 'My Product' : card.dataset.tpl === 'event' ? 'SummitConf 2026' : 'My Landing Page';
-  selectedId = null;
+  let name = TPL_PAGE_NAMES[card.dataset.tpl];
+  let n = 2;
+  while (site().pages.some(p => p.name === name)) name = `${TPL_PAGE_NAMES[card.dataset.tpl]} ${n++}`;
+  const pg = { id: uid(), name, sections: TEMPLATES[card.dataset.tpl]() };
+  site().pages.push(pg);
+  site().activePage = pg.id;
+  selectedId = null; selectedLink = null;
   save(); renderAll();
   $('#tplModal').classList.remove('open');
-  toast('Template applied');
+  toast(`Page “${name}” added — link a nav tab or button to it via 🔗`);
 }));
 
 window.addEventListener('keydown', (e) => {
@@ -930,7 +1088,7 @@ function downloadFile(name, content, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 $('#exportJsonBtn').addEventListener('click', () => {
-  downloadFile('landing-page-backup.json', JSON.stringify(state, null, 2), 'application/json');
+  downloadFile('landing-site-backup.json', JSON.stringify(state, null, 2), 'application/json');
   toast('Backup downloaded');
 });
 $('#importJsonBtn').addEventListener('click', () => $('#importFile').click());
@@ -940,11 +1098,13 @@ $('#importFile').addEventListener('change', async (e) => {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    if (!data || !data.page || !Array.isArray(data.page.sections)) throw new Error('bad shape');
-    if (!confirm('Importing replaces the current page. Continue?')) return;
+    const v2ok = data && data.site && Array.isArray(data.site.pages) && data.site.pages.length;
+    const v1ok = data && data.page && Array.isArray(data.page.sections);
+    if (!v2ok && !v1ok) throw new Error('bad shape');
+    if (!confirm('Importing replaces the current site. Continue?')) return;
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
     state = loadState();
-    selectedId = null;
+    selectedId = null; selectedLink = null;
     undoStack = []; redoStack = []; updateHistoryButtons();
     applyTheme(); renderAll();
     toast('Backup imported');
@@ -954,16 +1114,17 @@ $('#importFile').addEventListener('change', async (e) => {
 /* =====================================================================
    HTML export — a complete standalone page
 ===================================================================== */
-function slug(s) { return s.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '') || 'landing-page'; }
+function slug(s) { return String(s).toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, ''); }
 
-function buildExportHtml() {
-  const body = sections().map(sec => sectionHtml(sec, false)).join('\n');
+function buildPageHtml(pg, slugs) {
+  const body = pg.sections.map(sec => sectionHtml(sec, false, slugs)).join('\n');
+  const title = pg.id === site().pages[0].id ? site().title : `${pg.name} — ${site().title}`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${esc(state.page.title)}</title>
+<title>${esc(title)}</title>
 <style>${LP_CSS}</style>
 </head>
 <body class="lp" style="${themeVars()}">
@@ -974,8 +1135,60 @@ ${body}
 
 $('#exportHtmlBtn').addEventListener('click', () => {
   if (!sections().length) { toast('Add some sections first'); return; }
-  downloadFile(slug(state.page.title) + '.html', buildExportHtml(), 'text/html');
-  toast('HTML page exported — ready to host anywhere');
+  const slugs = computeSlugs();
+  downloadFile(slugs[curPage().id] + '.html', buildPageHtml(curPage(), slugs), 'text/html');
+  toast('Page exported — internal links point at the site-export filenames');
+});
+
+/* ---- whole-site export: a ZIP (store method, no compression) of all pages ---- */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files) { // files: [{name, content:string}]
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  const u16 = (v) => new Uint8Array([v & 255, (v >> 8) & 255]);
+  const u32 = (v) => new Uint8Array([v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >>> 24) & 255]);
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const data = enc.encode(f.content);
+    const crc = crc32(data);
+    const common = [u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0)];
+    parts.push(u32(0x04034b50), ...common, name, data);
+    central.push(u32(0x02014b50), u16(20), ...common, u16(0), u16(0), u16(0), u32(0), u32(offset), name);
+    offset += 30 + name.length + data.length;
+  }
+  let centralSize = 0;
+  for (const c of central) centralSize += c.length;
+  parts.push(...central,
+    u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(centralSize), u32(offset), u16(0));
+  return new Blob(parts, { type: 'application/zip' });
+}
+
+$('#exportSiteBtn').addEventListener('click', () => {
+  const slugs = computeSlugs();
+  const files = site().pages
+    .filter(pg => pg.sections.length)
+    .map(pg => ({ name: slugs[pg.id] + '.html', content: buildPageHtml(pg, slugs) }));
+  if (!files.length) { toast('Add some sections first'); return; }
+  const blob = zipStore(files);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = (slug(site().title) || 'landing-site') + '.zip'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+  toast(`Site exported — ${files.length} page${files.length === 1 ? '' : 's'}, links wired up`);
 });
 
 /* =====================================================================

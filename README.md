@@ -34,17 +34,18 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 
 ## 🏗️ Landing Page Builder — [`pagebuilder.html`](pagebuilder.html)
 
-A drag-and-drop landing page builder for marketers — assemble a page visually, then export it as a clean, standalone HTML file ready to host anywhere.
+A drag-and-drop **multi-page** landing site builder for marketers — assemble pages visually, wire nav tabs and buttons to other pages or external URLs, then export the whole site as clean, standalone HTML ready to host anywhere.
 
 **Features**
 
 - **Section library** — navbar, hero, logo strip, features grid, stats band, testimonials, pricing tiers, FAQ, CTA banner, and footer; click to add or drag into place with a drop indicator
-- **True WYSIWYG editing** — click any text on the page and type; the live canvas and the exported file share the same markup and CSS, so what you see is exactly what ships
+- **True WYSIWYG editing** — click any text on the page and type; the live canvas and the exported files share the same markup and CSS, so what you see is exactly what ships
+- **Multiple pages** — add pages from templates (Blank, Product, Pricing, Event/launch), switch, rename, and delete them from the top bar
+- **Real links** — click any nav tab or button and choose what it opens: another page in the site or an external URL; "Edit page →" (or Ctrl+click) jumps straight into the linked page to edit it
 - **Per-section controls** — background style (plain/tinted/accent/dark), add/remove features, stats, quotes, FAQ entries, pricing tiers, links; featured-tier picker; hero centering
-- **Page theme** — brand color (8 presets), sans or serif headings, corner-radius control
-- **Starter templates** — Blank, SaaS product, and Event/launch pages with real copywriting structure
+- **Site theme** — brand color (8 presets), sans or serif headings, corner-radius control, shared across all pages
 - **Responsive preview** — desktop / tablet / phone viewport toggle; exported pages are mobile-responsive with zero JavaScript
-- **Export** — one click downloads a complete self-contained `.html` landing page; JSON backup import/export; undo/redo; autosave to `localStorage`
+- **Export** — "Export site" downloads a ZIP of all pages as linked HTML files (`index.html`, `pricing.html`, …) with a dependency-free ZIP writer; "Export page" grabs just the current page; JSON backup import/export; undo/redo; autosave to `localStorage`
 
 ## 🎪 Emoji Physics Simulator — [`index.html`](index.html)
 
