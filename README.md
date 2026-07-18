@@ -1,6 +1,15 @@
-# Test Projects
+# Projects
 
-Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Clone the repo (or download a file) and open it in any modern browser.
+Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
+
+**🌐 Live demos**
+
+| App | Link |
+|---|---|
+| 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
+| 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
+| 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
+| 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/ |
 
 ## 💰 Finance Tracker — [`finance-tracker.html`](finance-tracker.html)
 
@@ -56,14 +65,14 @@ An interactive emoji physics playground. Click to spawn emojis and watch them bo
 
 ## Running
 
-No install needed:
+Everything runs live on GitHub Pages (links above) — nothing to install. To run locally instead:
 
 ```bash
-git clone https://github.com/sivasankarn91/test.git
-cd test
-# then just open either file in a browser, e.g.
-open finance-tracker.html   # macOS
-xdg-open finance-tracker.html  # Linux
+git clone https://github.com/SivasankarN91/Projects.git
+cd Projects
+# then just open any app in a browser, e.g.
+open pagebuilder.html   # macOS
+xdg-open pagebuilder.html  # Linux
 ```
 
-Or serve the folder with any static server (`python3 -m http.server`) — both apps also work when hosted on GitHub Pages.
+Or serve the folder with any static server (`python3 -m http.server`).
