@@ -132,6 +132,17 @@
     right: 12px; bottom: 12px;
     display: flex; align-items: center; gap: 2px; padding: 4px;
   }
+
+  /* Selection action bar */
+  #selBar {
+    left: 50%; bottom: 14px; transform: translateX(-50%);
+    display: none; align-items: center; gap: 2px; padding: 4px 6px; z-index: 15;
+  }
+  #selBar .sel-count {
+    font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
+    padding: 0 8px; white-space: nowrap;
+  }
+  #selBar .ibtn.danger { color: var(--danger); }
   #zoomHud .zoom-label {
     font-size: 0.78rem; font-weight: 600; color: var(--text-secondary);
     min-width: 44px; text-align: center; font-variant-numeric: tabular-nums;
@@ -189,6 +200,7 @@
   @media (max-width: 640px) {
     #palette { left: 60px; }
     #topbar { gap: 5px; }
+    #selBar { bottom: 64px; } /* clear the zoom HUD on narrow screens */
   }
 </style>
 </head>
@@ -227,6 +239,13 @@
 
 <div class="floating" id="palette"></div>
 
+<div class="floating" id="selBar">
+  <span class="sel-count" id="selCount"></span>
+  <button class="ibtn" id="selEdit" title="Edit text">✏️</button>
+  <button class="ibtn" id="selDup" title="Duplicate">⧉</button>
+  <button class="ibtn danger" id="selDel" title="Delete selection">🗑️</button>
+</div>
+
 <div class="floating" id="zoomHud">
   <button class="ibtn" id="zoomOutBtn" title="Zoom out">−</button>
   <span class="zoom-label" id="zoomLabel">100%</span>
@@ -237,8 +256,9 @@
 <div id="hint">
   <span class="big">🗺️</span>
   This board is empty.<br>
-  Double-click anywhere to drop a sticky note,<br>
-  or pick a tool on the left. Hold <kbd>Space</kbd> to pan, scroll to zoom.
+  Double-click (or double-tap) anywhere to drop a sticky note,<br>
+  or pick a tool on the left. Select things to edit, duplicate, or delete them<br>
+  from the bar that appears at the bottom.
 </div>
 
 <textarea id="editor" spellcheck="false"></textarea>
@@ -261,7 +281,8 @@
       <tr><td>Undo / Redo</td><td>Ctrl+Z / Ctrl+Shift+Z</td></tr>
       <tr><td>Select all</td><td>Ctrl+A</td></tr>
       <tr><td>Nudge selection</td><td>Arrow keys</td></tr>
-      <tr><td>Delete selection</td><td>Delete</td></tr>
+      <tr><td>Delete selection</td><td>Delete, or 🗑️ in the bar below</td></tr>
+      <tr><td>Connect (tap-tap)</td><td>C, tap a shape, tap another</td></tr>
       <tr><td>Deselect / cancel</td><td>Esc</td></tr>
     </table>
     <div style="text-align:right; margin-top:14px">
@@ -658,8 +679,19 @@ function drawStroke(c, s, selected) {
 }
 
 let pendingEdge = null;  // {fromNode, toX, toY} while dragging a connector
+let armedFrom = null;    // connector tap-tap mode: source node armed by a tap
+let connectorHover = null; // node currently highlighted as a connector target
 let marquee = null;      // {x0,y0,x1,y1} world coords
 let drawingStroke = null;
+
+function drawNodeOutline(n, dashed) {
+  const z = view().zoom;
+  ctx.strokeStyle = cssVar('--accent');
+  ctx.lineWidth = 2.5 / z;
+  if (dashed) ctx.setLineDash([6 / z, 4 / z]);
+  ctx.strokeRect(n.x - 6 / z, n.y - 6 / z, n.w + 12 / z, n.h + 12 / z);
+  ctx.setLineDash([]);
+}
 
 function render() {
   const v = view();
@@ -695,9 +727,26 @@ function render() {
     ctx.strokeRect(x, y, w, h);
   }
 
+  if (armedFrom && (tool !== 'connector' || !b.nodes.includes(armedFrom))) armedFrom = null;
+  if (armedFrom) drawNodeOutline(armedFrom, true);
+  if (connectorHover && b.nodes.includes(connectorHover)) drawNodeOutline(connectorHover, false);
+
   $('#zoomLabel').textContent = Math.round(v.zoom * 100) + '%';
   $('#hint').style.display =
     (!b.nodes.length && !b.strokes.length && !b.edges.length) ? 'block' : 'none';
+  updateSelBar();
+}
+
+function updateSelBar() {
+  const bar = $('#selBar');
+  const count = selection.count();
+  if (!count || gesture || editing) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  $('#selCount').textContent = `${count} selected`;
+  const oneNode = selection.nodes.size === 1 && !selection.strokes.size && !selection.edges.size;
+  $('#selEdit').style.display = oneNode ? '' : 'none';
+  const dupable = selection.nodes.size || selection.strokes.size;
+  $('#selDup').style.display = dupable ? '' : 'none';
 }
 
 /* =====================================================================
@@ -711,6 +760,8 @@ function setTool(t) {
   tool = t;
   document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
   canvas.className = 'tool-' + t;
+  if (t !== 'connector') { armedFrom = null; connectorHover = null; }
+  render();
 }
 document.querySelectorAll('.tool-btn').forEach(b =>
   b.addEventListener('click', () => setTool(b.dataset.tool)));
@@ -744,7 +795,15 @@ canvas.addEventListener('pointerdown', (e) => {
   }
   if (tool === 'connector') {
     const n = nodeAt(wx, wy);
+    if (n && armedFrom && n.id !== armedFrom.id) {
+      // tap-tap mode: second tap completes the connection
+      addEdge(armedFrom, n);
+      armedFrom = null; connectorHover = null;
+      render();
+      return;
+    }
     if (n) { pendingEdge = { fromNode: n, toX: wx, toY: wy }; gesture = { kind: 'connector' }; render(); }
+    else if (armedFrom) { armedFrom = null; render(); } // tap empty space cancels
     return;
   }
   if (tool === 'sticky' || tool === 'rect' || tool === 'ellipse') {
@@ -755,13 +814,16 @@ canvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (tool === 'text') {
+    // prevent the browser's default focus shift to the canvas, which would
+    // instantly blur the editor and commit (then delete) the empty node
+    e.preventDefault();
     pushHistory();
     const node = { id: uid(), type: 'text', x: wx, y: wy, w: 220, h: LINE_H + 4, text: '', slot: currentSlot };
     board().nodes.push(node);
     selection.clear(); selection.nodes.add(node.id);
     save(); render();
     setTool('select');
-    startEdit(node);
+    startEdit(node, true);
     gesture = null;
     return;
   }
@@ -831,10 +893,13 @@ canvas.addEventListener('pointermove', (e) => {
       drawingStroke.points.push({ x: wx, y: wy });
       render();
       break;
-    case 'connector':
+    case 'connector': {
       pendingEdge.toX = wx; pendingEdge.toY = wy;
+      const over = nodeAt(wx, wy);
+      connectorHover = over && over.id !== pendingEdge.fromNode.id ? over : null;
       render();
       break;
+    }
     case 'createRect': {
       const n = gesture.node;
       n.x = Math.min(gesture.startX, wx); n.y = Math.min(gesture.startY, wy);
@@ -896,13 +961,15 @@ canvas.addEventListener('pointerup', (e) => {
       break;
     case 'connector': {
       const target = nodeAt(wx, wy);
-      if (target && target.id !== pendingEdge.fromNode.id &&
-          !board().edges.some(ed => ed.from === pendingEdge.fromNode.id && ed.to === target.id)) {
-        pushHistory();
-        board().edges.push({ id: uid(), from: pendingEdge.fromNode.id, to: target.id, label: '' });
-        save();
+      if (target && target.id !== pendingEdge.fromNode.id) {
+        addEdge(pendingEdge.fromNode, target); // drag mode
+        armedFrom = null;
+      } else if (target && target.id === pendingEdge.fromNode.id) {
+        // released on the starting node without dragging away → arm tap-tap mode
+        armedFrom = target;
+        toast('Now tap another shape to connect it');
       }
-      pendingEdge = null;
+      pendingEdge = null; connectorHover = null;
       render();
       break;
     }
@@ -915,7 +982,7 @@ canvas.addEventListener('pointerup', (e) => {
       save(); render();
       const wasSticky = n.type === 'sticky';
       setTool('select');
-      if (wasSticky) startEdit(n);
+      if (wasSticky) startEdit(n, true);
       break;
     }
     case 'resize':
@@ -941,6 +1008,7 @@ canvas.addEventListener('pointerup', (e) => {
     }
   }
   gesture = null;
+  updateSelBar();
 });
 
 canvas.addEventListener('pointercancel', (e) => {
@@ -989,7 +1057,7 @@ canvas.addEventListener('dblclick', (e) => {
   board().nodes.push(node);
   selection.clear(); selection.nodes.add(node.id);
   save(); render();
-  startEdit(node);
+  startEdit(node, true);
 });
 
 /* =====================================================================
@@ -998,9 +1066,9 @@ canvas.addEventListener('dblclick', (e) => {
 const editorEl = $('#editor');
 let editing = null;
 
-function startEdit(node) {
+function startEdit(node, fresh) {
   editing = node;
-  pushHistory();
+  if (!fresh) pushHistory(); // fresh nodes already pushed history at creation
   const z = view().zoom;
   const pad = node.type === 'text' ? 0 : 10;
   editorEl.style.display = 'block';
@@ -1008,10 +1076,12 @@ function startEdit(node) {
   editorEl.style.top = (w2sY(node.y) + (node.type === 'text' ? 0 : 8) * z) + 'px';
   editorEl.style.width = ((node.w - pad * 2) * z) + 'px';
   editorEl.style.height = (Math.max(node.h - 16, LINE_H) * z) + 'px';
-  editorEl.style.fontSize = (14 * z) + 'px';
+  // min 16px so iOS doesn't auto-zoom the page when the editor gets focus
+  editorEl.style.fontSize = Math.max(16, 14 * z) + 'px';
   editorEl.value = node.text || '';
   editorEl.focus();
   editorEl.select();
+  updateSelBar();
 }
 function commitEdit() {
   if (!editing) return;
@@ -1086,6 +1156,54 @@ function deleteSelection() {
   selection.clear();
   save(); render();
 }
+
+function addEdge(from, to) {
+  if (board().edges.some(ed => ed.from === from.id && ed.to === to.id)) { toast('Those are already connected'); return; }
+  pushHistory();
+  board().edges.push({ id: uid(), from: from.id, to: to.id, label: '' });
+  save();
+  toast('Connected');
+}
+
+function duplicateSelection() {
+  if (!selection.nodes.size && !selection.strokes.size) return;
+  pushHistory();
+  const b = board();
+  const off = 18;
+  const idMap = {};
+  const newNodes = [], newStrokes = [];
+  b.nodes.forEach(n => {
+    if (!selection.nodes.has(n.id)) return;
+    const c = JSON.parse(JSON.stringify(n));
+    idMap[n.id] = c.id = uid();
+    c.x += off; c.y += off;
+    newNodes.push(c);
+  });
+  b.strokes.forEach(s => {
+    if (!selection.strokes.has(s.id)) return;
+    const c = JSON.parse(JSON.stringify(s));
+    c.id = uid();
+    c.points.forEach(p => { p.x += off; p.y += off; });
+    newStrokes.push(c);
+  });
+  const newEdges = b.edges
+    .filter(e => idMap[e.from] && idMap[e.to])
+    .map(e => ({ id: uid(), from: idMap[e.from], to: idMap[e.to], label: e.label }));
+  b.nodes.push(...newNodes);
+  b.strokes.push(...newStrokes);
+  b.edges.push(...newEdges);
+  selection.clear();
+  newNodes.forEach(n => selection.nodes.add(n.id));
+  newStrokes.forEach(s => selection.strokes.add(s.id));
+  save(); render();
+}
+
+$('#selDel').addEventListener('click', deleteSelection);
+$('#selDup').addEventListener('click', duplicateSelection);
+$('#selEdit').addEventListener('click', () => {
+  const n = board().nodes.find(nn => selection.nodes.has(nn.id));
+  if (n) startEdit(n); // inside the tap gesture, so mobile keyboards open
+});
 
 /* =====================================================================
    Palette
