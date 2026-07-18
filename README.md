@@ -38,10 +38,13 @@ A drag-and-drop **multi-page** landing site builder for marketers — assemble p
 
 **Features**
 
-- **Section library** — navbar, hero, logo strip, features grid, stats band, testimonials, pricing tiers, FAQ, CTA banner, and footer; click to add or drag into place with a drop indicator
+- **Section library** — navbar, hero, logo strip, image, features grid, stats band, testimonials, pricing tiers, FAQ, contact form, CTA banner, and footer; click to add or drag into place with a drop indicator
+- **Images & logos** — upload photos, screenshots, or client logos; they're auto-downscaled and embedded as data-URIs so exported sites stay fully self-contained
+- **Contact form** — a no-backend form whose Send button opens a prefilled WhatsApp chat to your number (or an email draft) with the visitor's name and message
+- **SEO** — site description, Open Graph / Twitter-card tags, and an emoji favicon baked into every exported page
 - **True WYSIWYG editing** — click any text on the page and type; the live canvas and the exported files share the same markup and CSS, so what you see is exactly what ships
 - **Multiple pages** — add pages from templates (Blank, Product, Pricing, Event/launch), switch, rename, and delete them from the top bar
-- **Real links** — click any nav tab or button and choose what it opens: another page in the site or an external URL; "Edit page →" (or Ctrl+click) jumps straight into the linked page to edit it
+- **Real links** — click any nav tab or button and choose what it opens: another page in the site, a section on the current page (smooth-scroll anchor), or an external URL such as a payment link; "Edit page →" (or Ctrl+click) jumps straight into the linked page to edit it
 - **Per-section controls** — background style (plain/tinted/accent/dark), add/remove features, stats, quotes, FAQ entries, pricing tiers, links; featured-tier picker; hero centering
 - **Site theme** — brand color (8 presets), sans or serif headings, corner-radius control, shared across all pages
 - **Responsive preview** — desktop / tablet / phone viewport toggle; exported pages are mobile-responsive with zero JavaScript
