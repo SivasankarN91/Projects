@@ -168,6 +168,12 @@
   }
   .insp-group input[type="text"].wide { width: 100%; }
   .insp-row input[type="range"] { width: 110px; accent-color: var(--accent); }
+  .insp-group textarea {
+    width: 100%; font: inherit; font-size: 0.8rem; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--baseline); border-radius: 7px;
+    padding: 6px 8px; margin-top: 5px; min-height: 64px; resize: vertical;
+  }
+  .insp-sub { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
   .swatch-row { display: flex; gap: 5px; flex-wrap: wrap; }
   .swatch-btn {
     width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
@@ -379,6 +385,23 @@ const LP_CSS = `
 .lp-faq details { border:1px solid rgba(127,127,160,0.2); border-radius:var(--lp-radius); padding:16px 20px; }
 .lp-faq summary { font-weight:700; cursor:pointer; font-size:0.98rem; }
 .lp-faq details p { margin-top:10px; font-size:0.93rem; color:#5a5a68; }
+/* images */
+html { scroll-behavior:smooth; }
+.lp-hero-img { max-width:100%; height:auto; border-radius:calc(var(--lp-radius) + 6px); display:block; margin:0 auto; }
+.lp-imgsec img { max-width:100%; height:auto; border-radius:calc(var(--lp-radius) + 6px); display:block; margin:0 auto; }
+.lp-imgsec.lp-medium img { max-width:720px; }
+.lp-img-caption { text-align:center; font-size:0.88rem; opacity:0.65; margin-top:12px; }
+.lp-img-placeholder { border:2px dashed rgba(127,127,160,0.4); border-radius:var(--lp-radius); padding:70px 20px; text-align:center; opacity:0.6; font-size:0.95rem; }
+.lp-logo-img { height:34px; width:auto; vertical-align:middle; }
+/* contact form */
+.lp-form { max-width:520px; margin:30px auto 0; display:grid; gap:12px; }
+.lp-form input, .lp-form textarea { font:inherit; font-size:1rem; padding:12px 14px; border:1.5px solid rgba(127,127,160,0.35); border-radius:var(--lp-radius); background:#ffffff; color:#1c1c26; width:100%; }
+.lp-form textarea { min-height:110px; resize:vertical; }
+.lp-form .lp-btn { width:100%; text-align:center; }
+button.lp-btn { font:inherit; font-weight:700; }
+.lp-bg-dark .lp-form input, .lp-bg-dark .lp-form textarea,
+.lp-bg-accent .lp-form input, .lp-bg-accent .lp-form textarea { background:rgba(255,255,255,0.1); color:#ffffff; border-color:rgba(255,255,255,0.3); }
+.lp-form-note { text-align:center; font-size:0.82rem; opacity:0.6; margin-top:10px; }
 /* footer */
 .lp-footer { display:flex; align-items:center; gap:20px; flex-wrap:wrap; padding:30px 0; font-size:0.88rem; }
 .lp-footer .lp-nav-brand { font-size:1rem; }
@@ -416,6 +439,8 @@ const SECTION_DEFS = {
     ctaPrimary: 'Get started free', ctaPrimaryHref: '#', ctaSecondary: 'See how it works', ctaSecondaryHref: '#', art: '🚀', bg: 'plain', center: false }) },
   logos: { label: 'Logo strip', emoji: '🏛️', make: () => ({
     title: 'Trusted by teams at', items: [{ t: '◆ Acme' }, { t: '● Globex' }, { t: '▲ Initech' }, { t: '■ Umbrella' }, { t: '✦ Hooli' }], bg: 'plain' }) },
+  image: { label: 'Image', emoji: '🖼️', make: () => ({
+    img: '', caption: 'A caption for this image', width: 'full', bg: 'plain' }) },
   features: { label: 'Features', emoji: '🧩', make: () => ({
     headline: 'Everything you need', sub: 'Three short reasons to believe.', bg: 'tint',
     items: [
@@ -451,19 +476,22 @@ const SECTION_DEFS = {
       { q: 'Is there a free plan?', a: 'The Starter plan is free forever and includes everything you need to try it properly.' },
       { q: 'Do you offer discounts?', a: 'Annual billing saves two months, and we offer 50% off for nonprofits and education.' },
     ] }) },
+  contact: { label: 'Contact form', emoji: '✉️', make: () => ({
+    headline: 'Get in touch', sub: 'Send us a message — we usually reply within a few hours.',
+    button: 'Send on WhatsApp', mode: 'whatsapp', phone: '', email: '', bg: 'tint' }) },
   cta: { label: 'CTA banner', emoji: '📣', make: () => ({
     headline: 'Ready to get started?', sub: 'Join thousands of teams already using it every day.', button: 'Create your free account', buttonHref: '#', bg: 'dark' }) },
   footer: { label: 'Footer', emoji: '🦶', make: () => ({
     brand: '✦ Brand', note: '© 2026 Brand, Inc. All rights reserved.',
     links: [{ t: 'Privacy', href: '#' }, { t: 'Terms', href: '#' }, { t: 'Contact', href: '#' }], bg: 'plain' }) },
 };
-const SECTION_ORDER = ['navbar', 'hero', 'logos', 'features', 'stats', 'testimonials', 'pricing', 'faq', 'cta', 'footer'];
+const SECTION_ORDER = ['navbar', 'hero', 'logos', 'image', 'features', 'stats', 'testimonials', 'pricing', 'faq', 'contact', 'cta', 'footer'];
 
 function makeSection(type) { return { id: uid(), type, props: SECTION_DEFS[type].make() }; }
 
 /* ---- templates ---- */
 function tplBlank() { return ['navbar', 'hero', 'cta', 'footer'].map(makeSection); }
-function tplSaas() { return SECTION_ORDER.map(makeSection); }
+function tplSaas() { return SECTION_ORDER.filter(t => t !== 'image').map(makeSection); }
 function tplEvent() {
   const secs = ['navbar', 'hero', 'stats', 'features', 'testimonials', 'faq', 'cta', 'footer'].map(makeSection);
   const [nav, hero, stats, features, testi, faq, cta] = secs;
@@ -507,7 +535,8 @@ function freshState() {
   const home = { id: uid(), name: 'Home', sections: tplSaas() };
   return {
     version: 2,
-    site: { title: 'My Landing Site', theme: { slot: 1, font: 'sans', radius: 12 }, pages: [home], activePage: home.id },
+    site: { title: 'My Landing Site', description: '', favicon: '✦',
+      theme: { slot: 1, font: 'sans', radius: 12 }, pages: [home], activePage: home.id },
     settings: { theme: 'auto' },
   };
 }
@@ -532,8 +561,41 @@ function loadState() {
   } catch { return freshState(); }
 }
 let state = loadState();
-function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch { toast('Browser storage is full — use smaller images or remove some, then export a JSON backup'); }
+}
 function site() { return state.site; }
+
+/* ---- image picking: file → downscaled data-URI (stays inside the exported HTML) ---- */
+const imgInput = document.createElement('input');
+imgInput.type = 'file';
+imgInput.accept = 'image/*';
+let imgPick = null; // {maxW, cb}
+imgInput.addEventListener('change', () => {
+  const file = imgInput.files[0];
+  imgInput.value = '';
+  if (!file || !imgPick) return;
+  const { maxW, cb } = imgPick;
+  imgPick = null;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const scale = Math.min(1, maxW / im.width);
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(im.width * scale));
+      c.height = Math.max(1, Math.round(im.height * scale));
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      // keep PNG for transparency (logos), JPEG for everything else
+      cb(file.type === 'image/png' ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.85));
+    };
+    im.onerror = () => toast('Could not read that image');
+    im.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+function pickImage(maxW, cb) { imgPick = { maxW, cb }; imgInput.click(); }
 function curPage() { return site().pages.find(p => p.id === site().activePage); }
 function sections() { return curPage().sections; }
 function findSection(id) { return sections().find(s => s.id === id); }
@@ -548,7 +610,7 @@ function restore(snap) {
   state.site = JSON.parse(snap);
   if (!site().pages.find(p => p.id === site().activePage)) site().activePage = site().pages[0].id;
   if (selectedId && !findSection(selectedId)) selectedId = null;
-  selectedLink = null;
+  selectedLink = null; selectedItem = null;
   save(); renderAll();
 }
 function pushHistory() {
@@ -601,6 +663,7 @@ function resolveHref(href, slugs) {
     const s = slugs && slugs[href.slice(5)];
     return s ? s + '.html' : '#';
   }
+  if (href.startsWith('sec:')) return '#s-' + href.slice(4);
   return href;
 }
 function L(ed, labelPath, hrefPath, cls, value, sec, slugs) {
@@ -612,10 +675,10 @@ function L(ed, labelPath, hrefPath, cls, value, sec, slugs) {
 function sectionHtml(sec, ed, slugs) {
   const p = sec.props;
   const bg = `lp-bg-${p.bg || 'plain'}`;
-  const W = (inner, cls = '') => `<div class="lp-sec ${bg} ${cls}"><div class="lp-wrap">${inner}</div></div>`;
+  const W = (inner, cls = '') => `<div id="s-${sec.id}" class="lp-sec ${bg} ${cls}"><div class="lp-wrap">${inner}</div></div>`;
   switch (sec.type) {
     case 'navbar':
-      return `<div class="${bg}"><div class="lp-wrap"><nav class="lp-nav">
+      return `<div id="s-${sec.id}" class="${bg}"><div class="lp-wrap"><nav class="lp-nav">
         ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
         <span class="lp-nav-links">${p.links.map((l, i) => L(ed, `props.links.${i}.t`, `props.links.${i}.href`, '', l.t, sec, slugs)).join('')}</span>
         ${L(ed, 'props.cta', 'props.ctaHref', 'lp-btn', p.cta, sec, slugs)}
@@ -630,12 +693,24 @@ function sectionHtml(sec, ed, slugs) {
             ${L(ed, 'props.ctaSecondary', 'props.ctaSecondaryHref', 'lp-btn lp-ghost', p.ctaSecondary, sec, slugs)}
           </div>
         </div>
-        <div class="lp-hero-art">${T(ed, 'props.art', 'span', '', p.art)}</div></div>`;
+        <div class="lp-hero-art">${p.artImg
+          ? `<img class="lp-hero-img" src="${p.artImg}" alt="">`
+          : T(ed, 'props.art', 'span', '', p.art)}</div></div>`;
       return W(inner);
     }
     case 'logos':
       return W(`${T(ed, 'props.title', 'div', 'lp-logos-title', p.title)}
-        <div class="lp-logos-row">${p.items.map((l, i) => T(ed, `props.items.${i}.t`, 'span', '', l.t)).join('')}</div>`);
+        <div class="lp-logos-row">${p.items.map((l, i) => {
+          const hit = ed ? ` data-item-path="props.items.${i}"` : '';
+          if (l.img) return `<span${hit}><img class="lp-logo-img" src="${l.img}" alt="${esc(l.t)}"></span>`;
+          return `<span${hit}${ed ? ` contenteditable="true" data-bind="props.items.${i}.t"` : ''}>${esc(l.t)}</span>`;
+        }).join('')}</div>`);
+    case 'image':
+      return W(`<div class="lp-imgsec${p.width === 'medium' ? ' lp-medium' : ''}">
+        ${p.img ? `<img src="${p.img}" alt="${esc(p.caption || '')}">`
+          : (ed ? `<div class="lp-img-placeholder">🖼️ Select this section, then “Upload image” in the right panel</div>` : '')}
+        ${(ed || p.caption) ? T(ed, 'props.caption', 'div', 'lp-img-caption', p.caption) : ''}
+      </div>`);
     case 'features':
       return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>
         <div class="lp-grid3">${p.items.map((it, i) => `<div class="lp-card">
@@ -675,8 +750,26 @@ function sectionHtml(sec, ed, slugs) {
         ${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}
         ${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}
         <div class="lp-btn-row">${L(ed, 'props.button', 'props.buttonHref', 'lp-btn', p.button, sec, slugs)}</div></div>`);
+    case 'contact': {
+      const head = `<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>`;
+      const fields = `
+        <input type="text" placeholder="Your name" ${ed ? 'disabled' : 'name="n" required'}>
+        <textarea placeholder="Your message" ${ed ? 'disabled' : 'name="m" required'}></textarea>`;
+      if (ed) {
+        return W(`${head}<div class="lp-form">${fields}
+          <span class="lp-btn" contenteditable="true" data-bind="props.button">${esc(p.button)}</span></div>
+          <div class="lp-form-note">${p.mode === 'email'
+            ? (p.email ? `Sends via email to ${esc(p.email)}` : '⚠ Set the destination email in the right panel')
+            : (p.phone ? `Opens WhatsApp chat with +${esc(String(p.phone).replace(/\D/g, ''))}` : '⚠ Set the WhatsApp number in the right panel')}</div>`);
+      }
+      const handler = p.mode === 'email'
+        ? `location.href='mailto:${esc(p.email)}?subject='+encodeURIComponent('Website message from '+this.n.value)+'&body='+encodeURIComponent(this.m.value);return false`
+        : `window.open('https://wa.me/${String(p.phone || '').replace(/\D/g, '')}?text='+encodeURIComponent('Hi, I am '+this.n.value+' - '+this.m.value));return false`;
+      return W(`${head}<form class="lp-form" onsubmit="${esc(handler)}">${fields}
+        <button class="lp-btn" type="submit">${esc(p.button)}</button></form>`);
+    }
     case 'footer':
-      return `<div class="${bg}"><div class="lp-wrap"><div class="lp-footer">
+      return `<div id="s-${sec.id}" class="${bg}"><div class="lp-wrap"><div class="lp-footer">
         ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
         ${T(ed, 'props.note', 'span', 'lp-footer-note', p.note)}
         <span class="lp-footer-links">${p.links.map((l, i) => L(ed, `props.links.${i}.t`, `props.links.${i}.href`, '', l.t, sec, slugs)).join('')}</span>
@@ -708,6 +801,7 @@ function themeVars() {
 ===================================================================== */
 let selectedId = null;
 let selectedLink = null; // {secId, hrefPath} — set by clicking a link/button on the canvas
+let selectedItem = null; // {secId, path} — set by clicking a logo item
 
 function renderCanvas() {
   const root = $('#lpRoot');
@@ -759,12 +853,13 @@ lpRoot.addEventListener('click', (e) => {
       sections().splice(idx, 1);
       if (selectedId === id) selectedId = null;
     } else { undoStack.pop(); updateHistoryButtons(); }
-    selectedLink = null;
+    selectedLink = null; selectedItem = null;
     save(); renderAll();
     return;
   }
   // link/button clicked → expose its target in the inspector; Ctrl+click follows it
   const linkEl = e.target.closest('[data-href-path]');
+  const itemEl = e.target.closest('[data-item-path]');
   if (linkEl) {
     const sec = findSection(id);
     const href = sec ? getPath(sec, linkEl.dataset.hrefPath) : null;
@@ -772,10 +867,16 @@ lpRoot.addEventListener('click', (e) => {
       setActivePage(href.slice(5));
       return;
     }
+    if ((e.ctrlKey || e.metaKey) && href && href.startsWith('sec:')) {
+      const target = document.getElementById('s-' + href.slice(4));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     selectedLink = { secId: id, hrefPath: linkEl.dataset.hrefPath };
   } else {
-    selectedLink = null;
+    selectedLink = null; selectedItem = null;
   }
+  selectedItem = itemEl ? { secId: id, path: itemEl.dataset.itemPath } : null;
   selectedId = id;
   // never rebuild the canvas here — that would destroy the contenteditable the
   // user just clicked into; the selection outline is only a class toggle
@@ -902,19 +1003,38 @@ function renderInspector() {
         <select id="fontSel"><option value="sans"${t.font === 'sans' ? ' selected' : ''}>Sans-serif</option><option value="serif"${t.font === 'serif' ? ' selected' : ''}>Serif</option></select></div>
       <div class="insp-row"><label>Corners</label>
         <input type="range" id="radiusRange" min="0" max="24" step="2" value="${t.radius}"></div>
+      <div class="insp-row"><label>Favicon</label>
+        <input type="text" id="favEmoji" style="width:56px" maxlength="4" value="${esc(site().favicon || '✦')}"></div>
+      <span class="insp-sub">SEO description</span>
+      <textarea id="metaDesc" placeholder="One or two sentences for search results and link previews">${esc(site().description || '')}</textarea>
     </div>`;
+
+  const itemSec = selectedItem ? findSection(selectedItem.secId) : null;
+  const logoItem = itemSec && itemSec.type === 'logos' ? getPath(itemSec, selectedItem.path) : null;
+  if (logoItem) {
+    html += `<div class="insp-group"><h3>🏛️ Selected logo</h3>
+      <button class="insp-btn" id="logoUpload">${logoItem.img ? 'Replace image' : 'Upload logo image'}</button>
+      ${logoItem.img ? `<button class="insp-btn" id="logoClear">Back to text</button>` : ''}
+    </div>`;
+  }
 
   const linkSec = selectedLink ? findSection(selectedLink.secId) : null;
   if (linkSec) {
     const cur = getPath(linkSec, selectedLink.hrefPath) || '#';
     const isPage = cur.startsWith('page:');
-    const isExt = !isPage && cur !== '#';
+    const isSec = cur.startsWith('sec:');
+    const isExt = !isPage && !isSec && cur !== '#';
     const targetPage = isPage ? site().pages.find(p => p.id === cur.slice(5)) : null;
     html += `<div class="insp-group"><h3>🔗 Selected link</h3>
       <div class="insp-row"><label>Opens</label>
         <select id="linkTarget">
           <option value="#"${cur === '#' ? ' selected' : ''}>Nothing yet</option>
+          <optgroup label="Pages">
           ${site().pages.map(pg => `<option value="page:${pg.id}"${cur === 'page:' + pg.id ? ' selected' : ''}>📄 ${esc(pg.name)}</option>`).join('')}
+          </optgroup>
+          <optgroup label="Sections on this page">
+          ${sections().map(s => `<option value="sec:${s.id}"${cur === 'sec:' + s.id ? ' selected' : ''}>§ ${SECTION_DEFS[s.type].label}</option>`).join('')}
+          </optgroup>
           <option value="external"${isExt ? ' selected' : ''}>External URL…</option>
         </select></div>
       ${isExt ? `<input type="text" id="linkUrl" class="wide" placeholder="https://…" value="${esc(cur)}">` : ''}
@@ -930,7 +1050,24 @@ function renderInspector() {
         <select id="bgSel">${BG_CHOICES.map(([v, l]) => `<option value="${v}"${sec.props.bg === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
     if (sec.type === 'hero') {
       html += `<div class="insp-row"><label>Centered</label>
-        <select id="centerSel"><option value="no"${!sec.props.center ? ' selected' : ''}>No</option><option value="yes"${sec.props.center ? ' selected' : ''}>Yes</option></select></div>`;
+        <select id="centerSel"><option value="no"${!sec.props.center ? ' selected' : ''}>No</option><option value="yes"${sec.props.center ? ' selected' : ''}>Yes</option></select></div>
+      <div class="insp-row"><label>Visual</label><span>
+        <button class="insp-btn" id="heroImgUpload">${sec.props.artImg ? 'Replace image' : 'Upload image'}</button>
+        ${sec.props.artImg ? '<button class="insp-btn" id="heroImgClear">Use emoji</button>' : ''}</span></div>`;
+    }
+    if (sec.type === 'image') {
+      html += `<div class="insp-row"><label>Image</label>
+        <button class="insp-btn" id="secImgUpload">${sec.props.img ? 'Replace' : 'Upload image'}</button></div>
+      <div class="insp-row"><label>Width</label>
+        <select id="imgWidthSel"><option value="full"${sec.props.width !== 'medium' ? ' selected' : ''}>Full</option><option value="medium"${sec.props.width === 'medium' ? ' selected' : ''}>Medium</option></select></div>`;
+    }
+    if (sec.type === 'contact') {
+      const m = sec.props.mode || 'whatsapp';
+      html += `<div class="insp-row"><label>Send via</label>
+        <select id="contactMode"><option value="whatsapp"${m === 'whatsapp' ? ' selected' : ''}>WhatsApp</option><option value="email"${m === 'email' ? ' selected' : ''}>Email</option></select></div>
+      ${m === 'whatsapp'
+        ? `<input type="text" id="contactPhone" class="wide" placeholder="Number with country code, e.g. 919876543210" value="${esc(sec.props.phone || '')}">`
+        : `<input type="text" id="contactEmail" class="wide" placeholder="destination@email.com" value="${esc(sec.props.email || '')}">`}`;
     }
     const arr = ITEM_ARRAYS[sec.type];
     if (arr) {
@@ -963,6 +1100,21 @@ function bindInspector(sec) {
   $('#fontSel').addEventListener('change', (e) => { pushHistory(); state.site.theme.font = e.target.value; save(); renderAll(); });
   $('#radiusRange').addEventListener('input', (e) => { state.site.theme.radius = Number(e.target.value); save(); renderCanvas(); });
   $('#radiusRange').addEventListener('change', () => { pushHistory(); save(); });
+  $('#favEmoji').addEventListener('change', (e) => { pushHistory(); site().favicon = e.target.value.trim() || '✦'; save(); });
+  $('#metaDesc').addEventListener('change', (e) => { pushHistory(); site().description = e.target.value.trim(); save(); });
+
+  const itemSec2 = selectedItem ? findSection(selectedItem.secId) : null;
+  const logoBtn = $('#logoUpload');
+  if (itemSec2 && logoBtn) {
+    const item = getPath(itemSec2, selectedItem.path);
+    logoBtn.addEventListener('click', () => pickImage(240, uri => {
+      pushHistory(); item.img = uri; save(); renderAll();
+    }));
+    const clearBtn = $('#logoClear');
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      pushHistory(); item.img = ''; save(); renderAll();
+    });
+  }
 
   const linkSec = selectedLink ? findSection(selectedLink.secId) : null;
   const linkTarget = $('#linkTarget');
@@ -991,6 +1143,40 @@ function bindInspector(sec) {
   $('#bgSel').addEventListener('change', (e) => { pushHistory(); sec.props.bg = e.target.value; save(); renderAll(); });
   const centerSel = $('#centerSel');
   if (centerSel) centerSel.addEventListener('change', (e) => { pushHistory(); sec.props.center = e.target.value === 'yes'; save(); renderAll(); });
+  const heroImgUpload = $('#heroImgUpload');
+  if (heroImgUpload) heroImgUpload.addEventListener('click', () => pickImage(1000, uri => {
+    pushHistory(); sec.props.artImg = uri; save(); renderAll();
+  }));
+  const heroImgClear = $('#heroImgClear');
+  if (heroImgClear) heroImgClear.addEventListener('click', () => {
+    pushHistory(); sec.props.artImg = ''; save(); renderAll();
+  });
+  const secImgUpload = $('#secImgUpload');
+  if (secImgUpload) secImgUpload.addEventListener('click', () => pickImage(1400, uri => {
+    pushHistory(); sec.props.img = uri; save(); renderAll();
+  }));
+  const imgWidthSel = $('#imgWidthSel');
+  if (imgWidthSel) imgWidthSel.addEventListener('change', (e) => {
+    pushHistory(); sec.props.width = e.target.value; save(); renderAll();
+  });
+  const contactMode = $('#contactMode');
+  if (contactMode) contactMode.addEventListener('change', (e) => {
+    pushHistory();
+    const v = e.target.value;
+    sec.props.mode = v;
+    // keep the default button label in sync unless the user customized it
+    if (v === 'email' && sec.props.button === 'Send on WhatsApp') sec.props.button = 'Send email';
+    if (v === 'whatsapp' && sec.props.button === 'Send email') sec.props.button = 'Send on WhatsApp';
+    save(); renderAll();
+  });
+  const contactPhone = $('#contactPhone');
+  if (contactPhone) contactPhone.addEventListener('change', (e) => {
+    pushHistory(); sec.props.phone = e.target.value.trim(); save(); renderCanvas();
+  });
+  const contactEmail = $('#contactEmail');
+  if (contactEmail) contactEmail.addEventListener('change', (e) => {
+    pushHistory(); sec.props.email = e.target.value.trim(); save(); renderCanvas();
+  });
   const arr = ITEM_ARRAYS[sec.type];
   const addBtn = $('#itemAdd'), rmBtn = $('#itemRemove');
   if (addBtn) addBtn.addEventListener('click', () => {
@@ -1027,7 +1213,7 @@ function renderPageSel() {
 function setActivePage(id) {
   if (!site().pages.find(p => p.id === id)) return;
   site().activePage = id;
-  selectedId = null; selectedLink = null;
+  selectedId = null; selectedLink = null; selectedItem = null;
   save(); renderAll();
   $('#canvasScroll').scrollTop = 0;
 }
@@ -1045,7 +1231,7 @@ $('#deletePageBtn').addEventListener('click', () => {
   pushHistory();
   site().pages = site().pages.filter(p => p.id !== site().activePage);
   site().activePage = site().pages[0].id;
-  selectedId = null; selectedLink = null;
+  selectedId = null; selectedLink = null; selectedItem = null;
   save(); renderAll();
 });
 
@@ -1065,7 +1251,7 @@ document.querySelectorAll('.tpl-card').forEach(card => card.addEventListener('cl
   const pg = { id: uid(), name, sections: TEMPLATES[card.dataset.tpl]() };
   site().pages.push(pg);
   site().activePage = pg.id;
-  selectedId = null; selectedLink = null;
+  selectedId = null; selectedLink = null; selectedItem = null;
   save(); renderAll();
   $('#tplModal').classList.remove('open');
   toast(`Page “${name}” added — link a nav tab or button to it via 🔗`);
@@ -1104,7 +1290,7 @@ $('#importFile').addEventListener('change', async (e) => {
     if (!confirm('Importing replaces the current site. Continue?')) return;
     localStorage.setItem(STORE_KEY, JSON.stringify(data));
     state = loadState();
-    selectedId = null; selectedLink = null;
+    selectedId = null; selectedLink = null; selectedItem = null;
     undoStack = []; redoStack = []; updateHistoryButtons();
     applyTheme(); renderAll();
     toast('Backup imported');
@@ -1119,12 +1305,23 @@ function slug(s) { return String(s).toLowerCase().replace(/[^\w]+/g, '-').replac
 function buildPageHtml(pg, slugs) {
   const body = pg.sections.map(sec => sectionHtml(sec, false, slugs)).join('\n');
   const title = pg.id === site().pages[0].id ? site().title : `${pg.name} — ${site().title}`;
+  const desc = site().description || '';
+  const fav = site().favicon || '✦';
+  const favHref = 'data:image/svg+xml,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${fav}</text></svg>`);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(title)}</title>
+${desc ? `<meta name="description" content="${esc(desc)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta name="twitter:description" content="${esc(desc)}">` : ''}
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="${favHref}">
 <style>${LP_CSS}</style>
 </head>
 <body class="lp" style="${themeVars()}">
