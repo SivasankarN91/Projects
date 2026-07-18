@@ -18,6 +18,20 @@ A personal finance tracker useful to anyone: record income and expenses, set mon
 
 No accounts, no servers, no tracking — your financial data never leaves your browser.
 
+## 🗺️ Whiteboard — [`whiteboard.html`](whiteboard.html)
+
+An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw in a single file.
+
+**Features**
+
+- **Infinite canvas** — pan (Space+drag / middle-mouse / touch), zoom to cursor (scroll or pinch, 10%–400%), fit-to-content, dot grid
+- **Tools** — sticky notes, rectangles, ellipses, standalone text, freehand pen, and connector arrows that stay attached to nodes as they move
+- **Editing** — double-click to edit text in place, drag to move, corner handles to resize, marquee multi-select, arrow-key nudge, 8-color palette
+- **Undo/redo** — full history (Ctrl+Z / Ctrl+Shift+Z)
+- **Multiple boards** — create, rename, and switch between boards, each with its own saved viewport
+- **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
+- **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
+
 ## 🎪 Emoji Physics Simulator — [`index.html`](index.html)
 
 An interactive emoji physics playground. Click to spawn emojis and watch them bounce around.
