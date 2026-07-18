@@ -32,6 +32,20 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 - **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
 - **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
 
+## 🏗️ Landing Page Builder — [`pagebuilder.html`](pagebuilder.html)
+
+A drag-and-drop landing page builder for marketers — assemble a page visually, then export it as a clean, standalone HTML file ready to host anywhere.
+
+**Features**
+
+- **Section library** — navbar, hero, logo strip, features grid, stats band, testimonials, pricing tiers, FAQ, CTA banner, and footer; click to add or drag into place with a drop indicator
+- **True WYSIWYG editing** — click any text on the page and type; the live canvas and the exported file share the same markup and CSS, so what you see is exactly what ships
+- **Per-section controls** — background style (plain/tinted/accent/dark), add/remove features, stats, quotes, FAQ entries, pricing tiers, links; featured-tier picker; hero centering
+- **Page theme** — brand color (8 presets), sans or serif headings, corner-radius control
+- **Starter templates** — Blank, SaaS product, and Event/launch pages with real copywriting structure
+- **Responsive preview** — desktop / tablet / phone viewport toggle; exported pages are mobile-responsive with zero JavaScript
+- **Export** — one click downloads a complete self-contained `.html` landing page; JSON backup import/export; undo/redo; autosave to `localStorage`
+
 ## 🎪 Emoji Physics Simulator — [`index.html`](index.html)
 
 An interactive emoji physics playground. Click to spawn emojis and watch them bounce around.

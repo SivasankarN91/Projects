@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Landing Page Builder</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11, 11, 11, 0.10);
+    --baseline: #c3c2b7;
+    --accent: #2a78d6;
+    --danger: #d03b3b;
+    --series-1: #2a78d6;
+    --series-2: #008300;
+    --series-3: #e87ba4;
+    --series-4: #eda100;
+    --series-5: #1baf7a;
+    --series-6: #eb6834;
+    --series-7: #4a3aa7;
+    --series-8: #e34948;
+    --shadow: 0 2px 10px rgba(11, 11, 11, 0.10);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --border: rgba(255, 255, 255, 0.12);
+    --baseline: #383835;
+    --accent: #3987e5;
+    --danger: #e66767;
+    --series-1: #3987e5;
+    --series-2: #008300;
+    --series-3: #d55181;
+    --series-4: #c98500;
+    --series-5: #199e70;
+    --series-6: #d95926;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* ---------- Builder chrome ---------- */
+  #topbar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    flex: none; flex-wrap: wrap; z-index: 20;
+  }
+  #topbar .brand { font-weight: 700; font-size: 0.95rem; display: flex; gap: 6px; align-items: center; }
+  #pageTitle {
+    font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--text-primary);
+    background: transparent; border: 1px solid transparent; border-radius: 8px;
+    padding: 6px 9px; min-width: 140px; max-width: 240px;
+  }
+  #pageTitle:hover, #pageTitle:focus { border-color: var(--baseline); background: var(--page); outline: none; }
+  .ibtn {
+    appearance: none; border: none; background: none; cursor: pointer;
+    font-size: 0.95rem; color: var(--text-secondary);
+    height: 32px; min-width: 32px; padding: 0 6px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    font-family: inherit;
+  }
+  .ibtn:hover { background: var(--page); color: var(--text-primary); }
+  .ibtn:disabled { opacity: 0.35; cursor: default; }
+  .ibtn.primary { background: var(--accent); color: #fff; font-weight: 600; font-size: 0.85rem; padding: 0 14px; }
+  .ibtn.primary:hover { filter: brightness(1.08); }
+  .ibtn.active { background: var(--accent); color: #fff; }
+  .sep { width: 1px; height: 22px; background: var(--border); }
+  .spacer { flex: 1; }
+
+  #main { flex: 1; display: flex; min-height: 0; }
+
+  /* ---------- Library (left) ---------- */
+  #library {
+    width: 200px; flex: none; overflow-y: auto;
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 12px;
+  }
+  #library h3, #inspector h3 {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); margin-bottom: 8px;
+  }
+  .lib-item {
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 10px; margin-bottom: 5px; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--page);
+    cursor: grab; font-size: 0.85rem; font-weight: 600; user-select: none;
+  }
+  .lib-item:hover { border-color: var(--accent); color: var(--accent); }
+  .lib-item .em { font-size: 1rem; }
+  .lib-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+
+  /* ---------- Canvas (center) ---------- */
+  #canvasScroll { flex: 1; overflow: auto; padding: 24px; }
+  #canvasFrame {
+    margin: 0 auto; transition: max-width 0.2s;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.18);
+    border-radius: 6px; overflow: hidden; background: #fff;
+  }
+  #canvasFrame.vp-desktop { max-width: 1100px; }
+  #canvasFrame.vp-tablet { max-width: 768px; }
+  #canvasFrame.vp-phone { max-width: 390px; }
+
+  .sec-wrap { position: relative; }
+  .sec-wrap.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .sec-wrap:hover { outline: 1px dashed var(--accent); outline-offset: -1px; }
+  .sec-wrap.selected:hover { outline: 2px solid var(--accent); }
+  .sec-tools {
+    position: absolute; top: 6px; right: 6px; z-index: 5;
+    display: none; gap: 2px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 2px;
+    box-shadow: var(--shadow);
+  }
+  .sec-wrap:hover .sec-tools, .sec-wrap.selected .sec-tools { display: flex; }
+  .sec-tools button {
+    appearance: none; border: none; background: none; cursor: pointer;
+    font-size: 0.8rem; width: 26px; height: 26px; border-radius: 6px;
+    color: var(--text-secondary);
+  }
+  .sec-tools button:hover { background: var(--page); color: var(--text-primary); }
+  #dropIndicator {
+    height: 3px; background: var(--accent); border-radius: 2px;
+    margin: -1.5px 8px; position: relative; z-index: 6; display: none;
+  }
+  #emptyCanvas {
+    text-align: center; padding: 90px 20px; color: #9a988f;
+    font-size: 0.95rem; line-height: 1.7; background: #fff;
+  }
+  #emptyCanvas .big { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+
+  [contenteditable]:hover { box-shadow: inset 0 0 0 1px rgba(120,120,255,0.35); border-radius: 3px; }
+  [contenteditable]:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); border-radius: 3px; }
+
+  /* ---------- Inspector (right) ---------- */
+  #inspector {
+    width: 232px; flex: none; overflow-y: auto;
+    background: var(--surface); border-left: 1px solid var(--border);
+    padding: 14px;
+  }
+  .insp-group { margin-bottom: 18px; }
+  .insp-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+  .insp-row label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+  .insp-row select, .insp-row input[type="text"], .insp-group input[type="text"] {
+    font: inherit; font-size: 0.8rem; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--baseline);
+    border-radius: 7px; padding: 5px 8px; width: 110px;
+  }
+  .insp-group input[type="text"].wide { width: 100%; }
+  .insp-row input[type="range"] { width: 110px; accent-color: var(--accent); }
+  .swatch-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .swatch-btn {
+    width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
+    border: 2px solid transparent; padding: 0; appearance: none;
+  }
+  .swatch-btn.active { border-color: var(--text-primary); }
+  .insp-btn {
+    appearance: none; cursor: pointer; font: inherit; font-size: 0.78rem; font-weight: 600;
+    border: 1px solid var(--border); background: var(--page); color: var(--text-primary);
+    border-radius: 7px; padding: 6px 10px; margin: 2px 3px 2px 0;
+  }
+  .insp-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .insp-empty { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; }
+
+  /* ---------- Modal / toast ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; width: 100%; max-width: 520px; box-shadow: var(--shadow);
+  }
+  .modal h3 { font-size: 1.05rem; margin-bottom: 14px; }
+  .tpl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .tpl-card {
+    border: 1px solid var(--border); border-radius: 10px; padding: 14px 10px;
+    cursor: pointer; text-align: center; background: var(--page);
+  }
+  .tpl-card:hover { border-color: var(--accent); }
+  .tpl-card .em { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+  .tpl-card .name { font-weight: 700; font-size: 0.85rem; }
+  .tpl-card .desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(90px);
+    background: var(--text-primary); color: var(--page);
+    padding: 9px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.25s; z-index: 300; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 900px) {
+    #library { width: 160px; }
+    #inspector { width: 200px; }
+  }
+</style>
+<style id="lpStyle"></style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="brand">🏗️ Page Builder</span>
+  <span class="sep"></span>
+  <input id="pageTitle" title="Page title (used in the exported page)">
+  <button class="ibtn" id="newPageBtn" title="New page from template">🗂️ New</button>
+  <span class="sep"></span>
+  <button class="ibtn" id="undoBtn" title="Undo (Ctrl+Z)">↩</button>
+  <button class="ibtn" id="redoBtn" title="Redo (Ctrl+Shift+Z)">↪</button>
+  <span class="spacer"></span>
+  <button class="ibtn active" data-vp="desktop" title="Desktop preview">🖥️</button>
+  <button class="ibtn" data-vp="tablet" title="Tablet preview">📱⃞</button>
+  <button class="ibtn" data-vp="phone" title="Phone preview">📱</button>
+  <span class="sep"></span>
+  <button class="ibtn" id="exportJsonBtn" title="Download JSON backup">⬇</button>
+  <button class="ibtn" id="importJsonBtn" title="Import JSON backup">⬆</button>
+  <input type="file" id="importFile" accept="application/json" hidden>
+  <button class="ibtn" id="themeToggle" title="Toggle builder theme">🌗</button>
+  <span class="sep"></span>
+  <button class="ibtn primary" id="exportHtmlBtn" title="Export standalone HTML page">Export HTML</button>
+</div>
+
+<div id="main">
+  <aside id="library">
+    <h3>Sections</h3>
+    <div id="libList"></div>
+    <p class="lib-hint">Click to add at the end, or drag into the page. Click any text on the page to edit it in place.</p>
+  </aside>
+
+  <div id="canvasScroll">
+    <div id="canvasFrame" class="vp-desktop">
+      <div id="lpRoot" class="lp"></div>
+    </div>
+  </div>
+
+  <aside id="inspector"></aside>
+</div>
+
+<div class="modal-backdrop" id="tplModal">
+  <div class="modal">
+    <h3>New page</h3>
+    <div class="tpl-grid">
+      <div class="tpl-card" data-tpl="blank">
+        <span class="em">📄</span>
+        <span class="name">Blank</span>
+        <div class="desc">Navbar, hero, CTA and footer to start from</div>
+      </div>
+      <div class="tpl-card" data-tpl="saas">
+        <span class="em">🚀</span>
+        <span class="name">SaaS product</span>
+        <div class="desc">Full product page: features, stats, pricing, FAQ</div>
+      </div>
+      <div class="tpl-card" data-tpl="event">
+        <span class="em">🎟️</span>
+        <span class="name">Event / launch</span>
+        <div class="desc">Conference or launch page with schedule highlights</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="ibtn" id="tplCancel" style="border:1px solid var(--border)">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* =====================================================================
+   Landing-page stylesheet — shared verbatim by the canvas preview and
+   the exported file, so the preview is exactly what ships.
+===================================================================== */
+const LP_CSS = `
+.lp { margin:0; background:#ffffff; color:#1c1c26; line-height:1.65;
+  font-family:var(--lp-font-body); font-size:16px; -webkit-font-smoothing:antialiased; }
+.lp * { box-sizing:border-box; margin:0; }
+.lp a { color:inherit; text-decoration:none; }
+.lp-wrap { max-width:1080px; margin:0 auto; padding:0 24px; }
+.lp-sec { padding:64px 0; }
+.lp-bg-plain { background:#ffffff; }
+.lp-bg-tint { background:color-mix(in srgb, var(--lp-primary) 7%, #ffffff); }
+.lp-bg-accent { background:var(--lp-primary); color:#ffffff; }
+.lp-bg-dark { background:#15151d; color:#ffffff; }
+.lp-kicker { display:inline-block; font-size:0.8rem; font-weight:700; letter-spacing:0.12em;
+  text-transform:uppercase; color:var(--lp-primary); margin-bottom:14px; }
+.lp-bg-accent .lp-kicker, .lp-bg-dark .lp-kicker { color:rgba(255,255,255,0.75); }
+.lp-h1 { font-family:var(--lp-font-head); font-size:clamp(2.1rem,5vw,3.4rem); line-height:1.12;
+  letter-spacing:-0.02em; font-weight:800; }
+.lp-h2 { font-family:var(--lp-font-head); font-size:clamp(1.5rem,3.2vw,2.2rem); line-height:1.2;
+  letter-spacing:-0.01em; font-weight:800; margin-bottom:10px; }
+.lp-sub { font-size:1.1rem; color:#5a5a68; max-width:640px; }
+.lp-bg-accent .lp-sub, .lp-bg-dark .lp-sub { color:rgba(255,255,255,0.82); }
+.lp-center { text-align:center; }
+.lp-center .lp-sub { margin-left:auto; margin-right:auto; }
+.lp-btn { display:inline-block; background:var(--lp-primary); color:#ffffff; font-weight:700;
+  padding:13px 26px; border-radius:var(--lp-radius); font-size:1rem; cursor:pointer; border:2px solid var(--lp-primary); }
+.lp-btn.lp-ghost { background:transparent; color:var(--lp-primary); }
+.lp-bg-accent .lp-btn { background:#ffffff; color:var(--lp-primary); border-color:#ffffff; }
+.lp-bg-accent .lp-btn.lp-ghost, .lp-bg-dark .lp-btn.lp-ghost { background:transparent; color:#ffffff; border-color:rgba(255,255,255,0.7); }
+.lp-btn-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:26px; }
+.lp-center .lp-btn-row { justify-content:center; }
+/* navbar */
+.lp-nav { display:flex; align-items:center; gap:26px; padding:18px 0; flex-wrap:wrap; }
+.lp-nav-brand { font-family:var(--lp-font-head); font-weight:800; font-size:1.2rem; }
+.lp-nav-links { display:flex; gap:22px; flex-wrap:wrap; margin-left:auto; font-weight:600; font-size:0.92rem; }
+.lp-nav .lp-btn { padding:9px 18px; font-size:0.9rem; }
+/* hero */
+.lp-hero { display:grid; grid-template-columns:1.15fr 0.85fr; gap:48px; align-items:center; }
+.lp-hero-art { font-size:clamp(5rem,14vw,9rem); text-align:center; line-height:1; }
+/* logos */
+.lp-logos-title { text-align:center; font-size:0.85rem; font-weight:600; letter-spacing:0.08em;
+  text-transform:uppercase; opacity:0.6; margin-bottom:22px; }
+.lp-logos-row { display:flex; gap:12px 44px; justify-content:center; flex-wrap:wrap;
+  font-weight:800; font-size:1.15rem; opacity:0.55; font-family:var(--lp-font-head); }
+/* grids */
+.lp-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:26px; margin-top:40px; }
+.lp-card { background:rgba(127,127,160,0.07); border:1px solid rgba(127,127,160,0.16);
+  border-radius:calc(var(--lp-radius) + 4px); padding:26px; }
+.lp-bg-dark .lp-card, .lp-bg-accent .lp-card { background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.15); }
+.lp-card-emoji { font-size:1.9rem; margin-bottom:12px; }
+.lp-card h4 { font-family:var(--lp-font-head); font-size:1.08rem; margin-bottom:7px; font-weight:700; }
+.lp-card p { font-size:0.94rem; color:#5a5a68; }
+.lp-bg-dark .lp-card p, .lp-bg-accent .lp-card p { color:rgba(255,255,255,0.78); }
+/* stats */
+.lp-stats { display:grid; grid-template-columns:repeat(var(--lp-statcols,3),1fr); gap:26px; text-align:center; }
+.lp-stat-value { font-family:var(--lp-font-head); font-size:clamp(1.9rem,4vw,2.8rem); font-weight:800; color:var(--lp-primary); }
+.lp-bg-accent .lp-stat-value, .lp-bg-dark .lp-stat-value { color:#ffffff; }
+.lp-stat-label { font-size:0.9rem; opacity:0.7; margin-top:4px; }
+/* testimonials */
+.lp-quote { font-size:1rem; font-style:italic; line-height:1.7; }
+.lp-quote-who { margin-top:16px; font-style:normal; font-weight:700; font-size:0.9rem; }
+.lp-quote-role { font-weight:400; opacity:0.65; display:block; font-size:0.82rem; }
+/* pricing */
+.lp-tier { position:relative; display:flex; flex-direction:column; }
+.lp-tier.lp-featured { border-color:var(--lp-primary); border-width:2px;
+  box-shadow:0 10px 34px color-mix(in srgb, var(--lp-primary) 22%, transparent); }
+.lp-tier-name { font-weight:800; font-family:var(--lp-font-head); font-size:1.02rem; }
+.lp-tier-price { font-family:var(--lp-font-head); font-size:2.3rem; font-weight:800; margin:8px 0 2px; }
+.lp-tier-period { font-size:0.85rem; opacity:0.6; }
+.lp-tier ul { list-style:none; padding:0; margin:18px 0 22px; display:grid; gap:9px; font-size:0.92rem; }
+.lp-tier li::before { content:"✓  "; color:var(--lp-primary); font-weight:800; }
+.lp-tier .lp-btn { margin-top:auto; text-align:center; }
+/* faq */
+.lp-faq { max-width:720px; margin:34px auto 0; display:grid; gap:10px; }
+.lp-faq details { border:1px solid rgba(127,127,160,0.2); border-radius:var(--lp-radius); padding:16px 20px; }
+.lp-faq summary { font-weight:700; cursor:pointer; font-size:0.98rem; }
+.lp-faq details p { margin-top:10px; font-size:0.93rem; color:#5a5a68; }
+/* footer */
+.lp-footer { display:flex; align-items:center; gap:20px; flex-wrap:wrap; padding:30px 0; font-size:0.88rem; }
+.lp-footer .lp-nav-brand { font-size:1rem; }
+.lp-footer-note { opacity:0.6; }
+.lp-footer-links { margin-left:auto; display:flex; gap:18px; flex-wrap:wrap; font-weight:600; }
+@media (max-width:820px) {
+  .lp-sec { padding:44px 0; }
+  .lp-hero { grid-template-columns:1fr; gap:20px; }
+  .lp-hero-art { order:-1; }
+  .lp-grid3 { grid-template-columns:1fr; }
+  .lp-stats { grid-template-columns:1fr 1fr; }
+  .lp-nav-links { gap:14px; }
+}
+`;
+document.getElementById('lpStyle').textContent = LP_CSS;
+
+/* =====================================================================
+   State
+===================================================================== */
+const STORE_KEY = 'pageBuilderData_v1';
+const SLOTS = 8;
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const $ = (s) => document.querySelector(s);
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+/* ---- section factories (default props) ---- */
+const SECTION_DEFS = {
+  navbar: { label: 'Navbar', emoji: '🧭', make: () => ({
+    brand: '✦ Brand', links: [{ t: 'Features' }, { t: 'Pricing' }, { t: 'About' }], cta: 'Get started', bg: 'plain' }) },
+  hero: { label: 'Hero', emoji: '🌄', make: () => ({
+    kicker: 'New', headline: 'A headline that sells the outcome', sub: 'One clear sentence about the value your product delivers and who it is for.',
+    ctaPrimary: 'Get started free', ctaSecondary: 'See how it works', art: '🚀', bg: 'plain', center: false }) },
+  logos: { label: 'Logo strip', emoji: '🏛️', make: () => ({
+    title: 'Trusted by teams at', items: [{ t: '◆ Acme' }, { t: '● Globex' }, { t: '▲ Initech' }, { t: '■ Umbrella' }, { t: '✦ Hooli' }], bg: 'plain' }) },
+  features: { label: 'Features', emoji: '🧩', make: () => ({
+    headline: 'Everything you need', sub: 'Three short reasons to believe.', bg: 'tint',
+    items: [
+      { emoji: '⚡', title: 'Fast', text: 'Explain the benefit in one crisp sentence, not the feature.' },
+      { emoji: '🔒', title: 'Secure', text: 'Explain the benefit in one crisp sentence, not the feature.' },
+      { emoji: '📈', title: 'Scalable', text: 'Explain the benefit in one crisp sentence, not the feature.' },
+    ] }) },
+  stats: { label: 'Stats band', emoji: '💯', make: () => ({
+    bg: 'accent', items: [
+      { value: '12k+', label: 'Happy customers' },
+      { value: '99.9%', label: 'Uptime' },
+      { value: '4.9★', label: 'Average rating' },
+    ] }) },
+  testimonials: { label: 'Testimonials', emoji: '💬', make: () => ({
+    headline: 'Loved by customers', bg: 'plain',
+    items: [
+      { quote: '“The best tool we have adopted this year — the team was productive within a day.”', name: 'Alex Rivera', role: 'Head of Growth, Acme' },
+      { quote: '“Setup took minutes and the results were immediate. Genuinely delightful to use.”', name: 'Sam Chen', role: 'Founder, Globex' },
+      { quote: '“I recommend it to every marketer I know. It simply works.”', name: 'Priya Nair', role: 'CMO, Initech' },
+    ] }) },
+  pricing: { label: 'Pricing', emoji: '💳', make: () => ({
+    headline: 'Simple pricing', sub: 'Start free, upgrade when you grow.', bg: 'tint',
+    tiers: [
+      { name: 'Starter', price: '$0', period: 'free forever', feats: [{ t: '1 project' }, { t: 'Community support' }, { t: 'Basic analytics' }], cta: 'Start free', featured: false },
+      { name: 'Pro', price: '$29', period: 'per month', feats: [{ t: 'Unlimited projects' }, { t: 'Priority support' }, { t: 'Advanced analytics' }, { t: 'Custom domain' }], cta: 'Start 14-day trial', featured: true },
+      { name: 'Business', price: '$99', period: 'per month', feats: [{ t: 'Everything in Pro' }, { t: 'SSO & audit logs' }, { t: 'Dedicated manager' }], cta: 'Contact sales', featured: false },
+    ] }) },
+  faq: { label: 'FAQ', emoji: '❓', make: () => ({
+    headline: 'Frequently asked questions', bg: 'plain',
+    items: [
+      { q: 'How long does setup take?', a: 'Most teams are up and running in under ten minutes — no engineering help needed.' },
+      { q: 'Can I cancel anytime?', a: 'Yes. Plans are month-to-month and you can cancel with one click, no questions asked.' },
+      { q: 'Is there a free plan?', a: 'The Starter plan is free forever and includes everything you need to try it properly.' },
+      { q: 'Do you offer discounts?', a: 'Annual billing saves two months, and we offer 50% off for nonprofits and education.' },
+    ] }) },
+  cta: { label: 'CTA banner', emoji: '📣', make: () => ({
+    headline: 'Ready to get started?', sub: 'Join thousands of teams already using it every day.', button: 'Create your free account', bg: 'dark' }) },
+  footer: { label: 'Footer', emoji: '🦶', make: () => ({
+    brand: '✦ Brand', note: '© 2026 Brand, Inc. All rights reserved.',
+    links: [{ t: 'Privacy' }, { t: 'Terms' }, { t: 'Contact' }], bg: 'plain' }) },
+};
+const SECTION_ORDER = ['navbar', 'hero', 'logos', 'features', 'stats', 'testimonials', 'pricing', 'faq', 'cta', 'footer'];
+
+function makeSection(type) { return { id: uid(), type, props: SECTION_DEFS[type].make() }; }
+
+/* ---- templates ---- */
+function tplBlank() { return ['navbar', 'hero', 'cta', 'footer'].map(makeSection); }
+function tplSaas() { return SECTION_ORDER.map(makeSection); }
+function tplEvent() {
+  const secs = ['navbar', 'hero', 'stats', 'features', 'testimonials', 'faq', 'cta', 'footer'].map(makeSection);
+  const [nav, hero, stats, features, testi, faq, cta] = secs;
+  nav.props.brand = '🎟️ SummitConf'; nav.props.cta = 'Get tickets';
+  nav.props.links = [{ t: 'Speakers' }, { t: 'Schedule' }, { t: 'Venue' }];
+  hero.props.kicker = 'Oct 14–16 · Bengaluru';
+  hero.props.headline = 'The conference for people who ship';
+  hero.props.sub = 'Three days of talks, workshops and hallway conversations with the builders you follow online.';
+  hero.props.ctaPrimary = 'Get early-bird tickets'; hero.props.ctaSecondary = 'View the schedule';
+  hero.props.art = '🎪';
+  stats.props.items = [{ value: '48', label: 'Speakers' }, { value: '3', label: 'Days' }, { value: '1,200+', label: 'Attendees' }];
+  features.props.headline = 'Why attend';
+  features.props.sub = 'More than talks — a weekend that compounds.';
+  features.props.items = [
+    { emoji: '🎤', title: 'World-class talks', text: 'Practical sessions from operators, not just keynotes.' },
+    { emoji: '🛠️', title: 'Hands-on workshops', text: 'Small-group deep dives you can apply on Monday.' },
+    { emoji: '🤝', title: 'Real networking', text: 'Curated dinners and hallway tracks that actually connect people.' },
+  ];
+  testi.props.headline = 'What last year’s attendees said';
+  faq.props.items = [
+    { q: 'Are tickets refundable?', a: 'Fully refundable until 30 days before the event, transferable anytime.' },
+    { q: 'Is there a livestream?', a: 'Keynotes are streamed free; workshops are in-person only.' },
+    { q: 'Do you offer student pricing?', a: 'Yes — 60% off with a valid student ID.' },
+    { q: 'Where is the venue?', a: 'Downtown convention center, 15 minutes from the airport, with hotel blocks nearby.' },
+  ];
+  cta.props.headline = 'Seats sell out every year';
+  cta.props.sub = 'Early-bird pricing ends soon — lock in your spot today.';
+  cta.props.button = 'Get tickets now';
+  return secs;
+}
+const TEMPLATES = { blank: tplBlank, saas: tplSaas, event: tplEvent };
+
+function freshState() {
+  return {
+    version: 1,
+    page: { title: 'My Landing Page', theme: { slot: 1, font: 'sans', radius: 12 }, sections: tplSaas() },
+    settings: { theme: 'auto' },
+  };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return freshState();
+    const data = JSON.parse(raw);
+    if (!data || !data.page || !Array.isArray(data.page.sections)) return freshState();
+    const base = freshState();
+    return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
+      page: { ...base.page, ...data.page, theme: { ...base.page.theme, ...(data.page.theme || {}) } } };
+  } catch { return freshState(); }
+}
+let state = loadState();
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+function sections() { return state.page.sections; }
+function findSection(id) { return sections().find(s => s.id === id); }
+
+/* =====================================================================
+   Undo / redo
+===================================================================== */
+const HISTORY_MAX = 50;
+let undoStack = [], redoStack = [];
+const snapshot = () => JSON.stringify(state.page);
+function pushHistory() {
+  undoStack.push(snapshot());
+  if (undoStack.length > HISTORY_MAX) undoStack.shift();
+  redoStack = [];
+  updateHistoryButtons();
+}
+function restore(snap) {
+  state.page = JSON.parse(snap);
+  if (selectedId && !findSection(selectedId)) selectedId = null;
+  save(); renderAll();
+}
+function undo() { if (undoStack.length) { redoStack.push(snapshot()); restore(undoStack.pop()); updateHistoryButtons(); } }
+function redo() { if (redoStack.length) { undoStack.push(snapshot()); restore(redoStack.pop()); updateHistoryButtons(); } }
+function updateHistoryButtons() {
+  $('#undoBtn').disabled = !undoStack.length;
+  $('#redoBtn').disabled = !redoStack.length;
+}
+
+/* =====================================================================
+   Path helpers for data-bind
+===================================================================== */
+function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj); }
+function setPath(obj, path, val) {
+  const ks = path.split('.'); const last = ks.pop();
+  const t = ks.reduce((o, k) => o[k], obj);
+  t[last] = val;
+}
+
+/* =====================================================================
+   Section HTML generators — shared by canvas (editable) and export
+===================================================================== */
+function T(ed, path, tag, cls, value, extra = '') {
+  const ce = ed ? ` contenteditable="true" data-bind="${path}"` : '';
+  const cl = cls ? ` class="${cls}"` : '';
+  return `<${tag}${cl}${ce}${extra}>${esc(value)}</${tag}>`;
+}
+
+function sectionHtml(sec, ed) {
+  const p = sec.props;
+  const bg = `lp-bg-${p.bg || 'plain'}`;
+  const W = (inner, cls = '') => `<div class="lp-sec ${bg} ${cls}"><div class="lp-wrap">${inner}</div></div>`;
+  switch (sec.type) {
+    case 'navbar':
+      return `<div class="${bg}"><div class="lp-wrap"><nav class="lp-nav">
+        ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
+        <span class="lp-nav-links">${p.links.map((l, i) => T(ed, `props.links.${i}.t`, 'a', '', l.t, ' href="#"')).join('')}</span>
+        ${T(ed, 'props.cta', 'a', 'lp-btn', p.cta, ' href="#"')}
+      </nav></div></div>`;
+    case 'hero': {
+      const inner = `<div class="lp-hero${p.center ? ' lp-center' : ''}"><div>
+          ${T(ed, 'props.kicker', 'span', 'lp-kicker', p.kicker)}
+          ${T(ed, 'props.headline', 'h1', 'lp-h1', p.headline)}
+          <div style="margin-top:18px">${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>
+          <div class="lp-btn-row">
+            ${T(ed, 'props.ctaPrimary', 'a', 'lp-btn', p.ctaPrimary, ' href="#"')}
+            ${T(ed, 'props.ctaSecondary', 'a', 'lp-btn lp-ghost', p.ctaSecondary, ' href="#"')}
+          </div>
+        </div>
+        <div class="lp-hero-art">${T(ed, 'props.art', 'span', '', p.art)}</div></div>`;
+      return W(inner);
+    }
+    case 'logos':
+      return W(`${T(ed, 'props.title', 'div', 'lp-logos-title', p.title)}
+        <div class="lp-logos-row">${p.items.map((l, i) => T(ed, `props.items.${i}.t`, 'span', '', l.t)).join('')}</div>`);
+    case 'features':
+      return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>
+        <div class="lp-grid3">${p.items.map((it, i) => `<div class="lp-card">
+          <div class="lp-card-emoji">${T(ed, `props.items.${i}.emoji`, 'span', '', it.emoji)}</div>
+          ${T(ed, `props.items.${i}.title`, 'h4', '', it.title)}
+          ${T(ed, `props.items.${i}.text`, 'p', '', it.text)}
+        </div>`).join('')}</div>`);
+    case 'stats':
+      return W(`<div class="lp-stats" style="--lp-statcols:${Math.min(4, p.items.length)}">${p.items.map((it, i) => `<div>
+          ${T(ed, `props.items.${i}.value`, 'div', 'lp-stat-value', it.value)}
+          ${T(ed, `props.items.${i}.label`, 'div', 'lp-stat-label', it.label)}
+        </div>`).join('')}</div>`);
+    case 'testimonials':
+      return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}</div>
+        <div class="lp-grid3">${p.items.map((it, i) => `<div class="lp-card">
+          ${T(ed, `props.items.${i}.quote`, 'p', 'lp-quote', it.quote)}
+          <div class="lp-quote-who">${T(ed, `props.items.${i}.name`, 'span', '', it.name)}
+            ${T(ed, `props.items.${i}.role`, 'span', 'lp-quote-role', it.role)}</div>
+        </div>`).join('')}</div>`);
+    case 'pricing':
+      return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}</div>
+        <div class="lp-grid3">${p.tiers.map((t, i) => `<div class="lp-card lp-tier${t.featured ? ' lp-featured' : ''}">
+          ${T(ed, `props.tiers.${i}.name`, 'div', 'lp-tier-name', t.name)}
+          <div>${T(ed, `props.tiers.${i}.price`, 'span', 'lp-tier-price', t.price)}</div>
+          ${T(ed, `props.tiers.${i}.period`, 'span', 'lp-tier-period', t.period)}
+          <ul>${t.feats.map((f, j) => T(ed, `props.tiers.${i}.feats.${j}.t`, 'li', '', f.t)).join('')}</ul>
+          ${T(ed, `props.tiers.${i}.cta`, 'a', 'lp-btn' + (t.featured ? '' : ' lp-ghost'), t.cta, ' href="#"')}
+        </div>`).join('')}</div>`);
+    case 'faq':
+      return W(`<div class="lp-center">${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}</div>
+        <div class="lp-faq">${p.items.map((it, i) => `<details${i === 0 ? ' open' : ''}>
+          ${T(ed, `props.items.${i}.q`, 'summary', '', it.q)}
+          ${T(ed, `props.items.${i}.a`, 'p', '', it.a)}
+        </details>`).join('')}</div>`);
+    case 'cta':
+      return W(`<div class="lp-center">
+        ${T(ed, 'props.headline', 'h2', 'lp-h2', p.headline)}
+        ${T(ed, 'props.sub', 'p', 'lp-sub', p.sub)}
+        <div class="lp-btn-row">${T(ed, 'props.button', 'a', 'lp-btn', p.button, ' href="#"')}</div></div>`);
+    case 'footer':
+      return `<div class="${bg}"><div class="lp-wrap"><div class="lp-footer">
+        ${T(ed, 'props.brand', 'span', 'lp-nav-brand', p.brand)}
+        ${T(ed, 'props.note', 'span', 'lp-footer-note', p.note)}
+        <span class="lp-footer-links">${p.links.map((l, i) => T(ed, `props.links.${i}.t`, 'a', '', l.t, ' href="#"')).join('')}</span>
+      </div></div></div>`;
+    default: return '';
+  }
+}
+
+/* =====================================================================
+   Theme application (canvas + export share the same variables)
+===================================================================== */
+// single-quoted family names only: these stacks are serialized into a
+// double-quoted style="" attribute in the exported HTML
+const FONT_STACKS = {
+  sans: { head: `system-ui, -apple-system, 'Segoe UI', sans-serif`, body: `system-ui, -apple-system, 'Segoe UI', sans-serif` },
+  serif: { head: `Georgia, 'Times New Roman', serif`, body: `system-ui, -apple-system, 'Segoe UI', sans-serif` },
+};
+// exported pages always use the light-mode palette hexes (they render on white)
+const EXPORT_SLOT_HEX = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb6834', '#4a3aa7', '#e34948'];
+
+function themeVars() {
+  const t = state.page.theme;
+  const f = FONT_STACKS[t.font] || FONT_STACKS.sans;
+  return `--lp-primary:${EXPORT_SLOT_HEX[(t.slot - 1) % SLOTS]};--lp-radius:${t.radius}px;--lp-font-head:${f.head};--lp-font-body:${f.body}`;
+}
+
+/* =====================================================================
+   Canvas rendering
+===================================================================== */
+let selectedId = null;
+
+function renderCanvas() {
+  const root = $('#lpRoot');
+  root.style.cssText = themeVars();
+  if (!sections().length) {
+    root.innerHTML = `<div id="emptyCanvas"><span class="big">🏗️</span>The page is empty.<br>Click a section in the left panel to add it, or hit “🗂️ New” for a template.</div>`;
+    return;
+  }
+  root.innerHTML = sections().map(sec => `
+    <div class="sec-wrap${sec.id === selectedId ? ' selected' : ''}" data-sec="${sec.id}" draggable="false">
+      <div class="sec-tools">
+        <button data-act="up" title="Move up">▲</button>
+        <button data-act="down" title="Move down">▼</button>
+        <button data-act="dup" title="Duplicate">⧉</button>
+        <button data-act="del" title="Delete">✕</button>
+      </div>
+      ${sectionHtml(sec, true)}
+    </div>`).join('');
+}
+
+function renderAll() {
+  renderCanvas();
+  renderInspector();
+  $('#pageTitle').value = state.page.title;
+}
+
+/* ---- canvas events: select, tools, inline editing ---- */
+const lpRoot = $('#lpRoot');
+
+lpRoot.addEventListener('click', (e) => {
+  const toolBtn = e.target.closest('.sec-tools button');
+  const wrap = e.target.closest('.sec-wrap');
+  if (e.target.closest('a')) e.preventDefault(); // don't navigate inside the builder
+  if (!wrap) return;
+  const id = wrap.dataset.sec;
+  if (toolBtn) {
+    const act = toolBtn.dataset.act;
+    const idx = sections().findIndex(s => s.id === id);
+    pushHistory();
+    if (act === 'up' && idx > 0) sections().splice(idx - 1, 0, sections().splice(idx, 1)[0]);
+    else if (act === 'down' && idx < sections().length - 1) sections().splice(idx + 1, 0, sections().splice(idx, 1)[0]);
+    else if (act === 'dup') {
+      const copy = JSON.parse(JSON.stringify(sections()[idx]));
+      copy.id = uid();
+      sections().splice(idx + 1, 0, copy);
+      selectedId = copy.id;
+    } else if (act === 'del') {
+      sections().splice(idx, 1);
+      if (selectedId === id) selectedId = null;
+    } else { undoStack.pop(); updateHistoryButtons(); }
+    save(); renderAll();
+    return;
+  }
+  if (selectedId !== id) { selectedId = id; renderCanvas(); renderInspector(); }
+});
+
+/* inline text editing writes straight back to state */
+let focusHistoryPushed = false;
+lpRoot.addEventListener('focusin', (e) => {
+  if (e.target.matches('[data-bind]')) focusHistoryPushed = false;
+});
+lpRoot.addEventListener('input', (e) => {
+  const el = e.target.closest('[data-bind]');
+  if (!el) return;
+  const wrap = el.closest('.sec-wrap');
+  const sec = findSection(wrap.dataset.sec);
+  if (!sec) return;
+  if (!focusHistoryPushed) { pushHistory(); focusHistoryPushed = true; }
+  setPath(sec, el.dataset.bind, el.textContent);
+  save();
+});
+lpRoot.addEventListener('keydown', (e) => {
+  // keep contenteditable single-block: Enter inserts a line break, not a <div>
+  if (e.target.matches('[data-bind]') && e.key === 'Enter') {
+    e.preventDefault();
+    document.execCommand('insertLineBreak');
+  }
+});
+
+/* =====================================================================
+   Library + drag & drop
+===================================================================== */
+function renderLibrary() {
+  $('#libList').innerHTML = SECTION_ORDER.map(t =>
+    `<div class="lib-item" draggable="true" data-type="${t}"><span class="em">${SECTION_DEFS[t].emoji}</span>${SECTION_DEFS[t].label}</div>`).join('');
+}
+
+$('#libList').addEventListener('click', (e) => {
+  const item = e.target.closest('.lib-item');
+  if (!item) return;
+  pushHistory();
+  const sec = makeSection(item.dataset.type);
+  sections().push(sec);
+  selectedId = sec.id;
+  save(); renderAll();
+  const el = document.querySelector(`[data-sec="${sec.id}"]`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+let dragPayload = null;
+let dropIndex = null;
+const indicator = document.createElement('div');
+indicator.id = 'dropIndicator';
+
+$('#libList').addEventListener('dragstart', (e) => {
+  const item = e.target.closest('.lib-item');
+  if (!item) return;
+  dragPayload = { kind: 'new', type: item.dataset.type };
+  e.dataTransfer.setData('text/plain', item.dataset.type);
+  e.dataTransfer.effectAllowed = 'copy';
+});
+
+const canvasScroll = $('#canvasScroll');
+canvasScroll.addEventListener('dragover', (e) => {
+  if (!dragPayload) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = dragPayload.kind === 'new' ? 'copy' : 'move';
+  const wraps = [...lpRoot.querySelectorAll('.sec-wrap')];
+  dropIndex = wraps.length;
+  for (let i = 0; i < wraps.length; i++) {
+    const r = wraps[i].getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) { dropIndex = i; break; }
+  }
+  indicator.style.display = 'block';
+  if (dropIndex >= wraps.length) lpRoot.appendChild(indicator);
+  else lpRoot.insertBefore(indicator, wraps[dropIndex]);
+});
+canvasScroll.addEventListener('dragleave', (e) => {
+  if (e.target === canvasScroll) { indicator.style.display = 'none'; }
+});
+canvasScroll.addEventListener('drop', (e) => {
+  if (!dragPayload) return;
+  e.preventDefault();
+  indicator.remove();
+  if (dropIndex === null) return;
+  pushHistory();
+  if (dragPayload.kind === 'new') {
+    const sec = makeSection(dragPayload.type);
+    sections().splice(dropIndex, 0, sec);
+    selectedId = sec.id;
+  }
+  dragPayload = null; dropIndex = null;
+  save(); renderAll();
+});
+document.addEventListener('dragend', () => { indicator.remove(); dragPayload = null; dropIndex = null; });
+
+/* =====================================================================
+   Inspector
+===================================================================== */
+const ITEM_ARRAYS = {
+  navbar: { path: 'links', label: 'nav link', make: () => ({ t: 'Link' }), min: 1, max: 6 },
+  logos: { path: 'items', label: 'logo', make: () => ({ t: '✦ Logo' }), min: 2, max: 8 },
+  features: { path: 'items', label: 'feature', make: () => ({ emoji: '✨', title: 'New feature', text: 'Describe the benefit in one sentence.' }), min: 1, max: 6 },
+  stats: { path: 'items', label: 'stat', make: () => ({ value: '42', label: 'New stat' }), min: 2, max: 4 },
+  testimonials: { path: 'items', label: 'quote', make: () => ({ quote: '“Add a short, specific quote here.”', name: 'Name', role: 'Role, Company' }), min: 1, max: 6 },
+  pricing: { path: 'tiers', label: 'tier', make: () => ({ name: 'New tier', price: '$49', period: 'per month', feats: [{ t: 'Feature one' }, { t: 'Feature two' }], cta: 'Choose plan', featured: false }), min: 1, max: 4 },
+  faq: { path: 'items', label: 'question', make: () => ({ q: 'New question?', a: 'And a helpful, honest answer.' }), min: 1, max: 8 },
+  footer: { path: 'links', label: 'footer link', make: () => ({ t: 'Link' }), min: 0, max: 6 },
+};
+const BG_CHOICES = [['plain', 'Plain'], ['tint', 'Tinted'], ['accent', 'Accent'], ['dark', 'Dark']];
+
+function renderInspector() {
+  const t = state.page.theme;
+  const sec = selectedId ? findSection(selectedId) : null;
+  let html = `
+    <div class="insp-group">
+      <h3>Page theme</h3>
+      <div class="insp-row"><label>Brand color</label></div>
+      <div class="swatch-row" id="slotRow">${Array.from({ length: SLOTS }, (_, i) =>
+        `<button class="swatch-btn${t.slot === i + 1 ? ' active' : ''}" data-slot="${i + 1}" style="background:${EXPORT_SLOT_HEX[i]}" title="Color ${i + 1}"></button>`).join('')}</div>
+      <div style="height:10px"></div>
+      <div class="insp-row"><label>Headings</label>
+        <select id="fontSel"><option value="sans"${t.font === 'sans' ? ' selected' : ''}>Sans-serif</option><option value="serif"${t.font === 'serif' ? ' selected' : ''}>Serif</option></select></div>
+      <div class="insp-row"><label>Corners</label>
+        <input type="range" id="radiusRange" min="0" max="24" step="2" value="${t.radius}"></div>
+    </div>`;
+
+  if (sec) {
+    const def = SECTION_DEFS[sec.type];
+    html += `<div class="insp-group"><h3>${def.emoji} ${def.label}</h3>
+      <div class="insp-row"><label>Background</label>
+        <select id="bgSel">${BG_CHOICES.map(([v, l]) => `<option value="${v}"${sec.props.bg === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>`;
+    if (sec.type === 'hero') {
+      html += `<div class="insp-row"><label>Centered</label>
+        <select id="centerSel"><option value="no"${!sec.props.center ? ' selected' : ''}>No</option><option value="yes"${sec.props.center ? ' selected' : ''}>Yes</option></select></div>`;
+    }
+    const arr = ITEM_ARRAYS[sec.type];
+    if (arr) {
+      const count = sec.props[arr.path].length;
+      html += `<div class="insp-row"><label>${arr.label[0].toUpperCase() + arr.label.slice(1)}s (${count})</label><span>
+        <button class="insp-btn" id="itemAdd"${count >= arr.max ? ' disabled' : ''}>＋</button>
+        <button class="insp-btn" id="itemRemove"${count <= arr.min ? ' disabled' : ''}>−</button></span></div>`;
+    }
+    if (sec.type === 'pricing') {
+      html += `<div class="insp-row"><label>Featured tier</label>
+        <select id="featuredSel">${sec.props.tiers.map((tier, i) => `<option value="${i}"${tier.featured ? ' selected' : ''}>${esc(tier.name)}</option>`).join('')}<option value="-1"${sec.props.tiers.every(x => !x.featured) ? ' selected' : ''}>None</option></select></div>`;
+    }
+    html += `</div>`;
+  } else {
+    html += `<div class="insp-group"><h3>Section</h3>
+      <p class="insp-empty">Click a section on the page to edit its background and items here. Click any text to edit it directly.</p></div>`;
+  }
+  $('#inspector').innerHTML = html;
+  bindInspector(sec);
+}
+
+function bindInspector(sec) {
+  $('#slotRow').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-slot]');
+    if (!b) return;
+    pushHistory();
+    state.page.theme.slot = Number(b.dataset.slot);
+    save(); renderAll();
+  });
+  $('#fontSel').addEventListener('change', (e) => { pushHistory(); state.page.theme.font = e.target.value; save(); renderAll(); });
+  $('#radiusRange').addEventListener('input', (e) => { state.page.theme.radius = Number(e.target.value); save(); renderCanvas(); });
+  $('#radiusRange').addEventListener('change', () => { pushHistory(); save(); });
+  if (!sec) return;
+  $('#bgSel').addEventListener('change', (e) => { pushHistory(); sec.props.bg = e.target.value; save(); renderAll(); });
+  const centerSel = $('#centerSel');
+  if (centerSel) centerSel.addEventListener('change', (e) => { pushHistory(); sec.props.center = e.target.value === 'yes'; save(); renderAll(); });
+  const arr = ITEM_ARRAYS[sec.type];
+  const addBtn = $('#itemAdd'), rmBtn = $('#itemRemove');
+  if (addBtn) addBtn.addEventListener('click', () => {
+    pushHistory(); sec.props[arr.path].push(arr.make()); save(); renderAll();
+  });
+  if (rmBtn) rmBtn.addEventListener('click', () => {
+    pushHistory(); sec.props[arr.path].pop(); save(); renderAll();
+  });
+  const featuredSel = $('#featuredSel');
+  if (featuredSel) featuredSel.addEventListener('change', (e) => {
+    pushHistory();
+    const idx = Number(e.target.value);
+    sec.props.tiers.forEach((tier, i) => tier.featured = i === idx);
+    save(); renderAll();
+  });
+}
+
+/* =====================================================================
+   Topbar: title, templates, viewport, undo, backup, theme
+===================================================================== */
+$('#pageTitle').addEventListener('change', (e) => {
+  pushHistory();
+  state.page.title = e.target.value.trim() || 'Landing Page';
+  save();
+});
+$('#undoBtn').addEventListener('click', undo);
+$('#redoBtn').addEventListener('click', redo);
+
+document.querySelectorAll('[data-vp]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-vp]').forEach(x => x.classList.toggle('active', x === b));
+  $('#canvasFrame').className = 'vp-' + b.dataset.vp;
+}));
+
+$('#newPageBtn').addEventListener('click', () => $('#tplModal').classList.add('open'));
+$('#tplCancel').addEventListener('click', () => $('#tplModal').classList.remove('open'));
+$('#tplModal').addEventListener('click', (e) => { if (e.target === $('#tplModal')) $('#tplModal').classList.remove('open'); });
+document.querySelectorAll('.tpl-card').forEach(card => card.addEventListener('click', () => {
+  if (sections().length && !confirm('Replace the current page with this template? (Undo can bring it back.)')) return;
+  pushHistory();
+  state.page.sections = TEMPLATES[card.dataset.tpl]();
+  state.page.title = card.dataset.tpl === 'saas' ? 'My Product' : card.dataset.tpl === 'event' ? 'SummitConf 2026' : 'My Landing Page';
+  selectedId = null;
+  save(); renderAll();
+  $('#tplModal').classList.remove('open');
+  toast('Template applied');
+}));
+
+window.addEventListener('keydown', (e) => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+  if (e.target.matches('[contenteditable], input, select, textarea') && !['z', 'y'].includes(e.key.toLowerCase())) return;
+  if (e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  if (e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
+});
+
+/* ---- backup / restore ---- */
+function downloadFile(name, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+$('#exportJsonBtn').addEventListener('click', () => {
+  downloadFile('landing-page-backup.json', JSON.stringify(state, null, 2), 'application/json');
+  toast('Backup downloaded');
+});
+$('#importJsonBtn').addEventListener('click', () => $('#importFile').click());
+$('#importFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    if (!data || !data.page || !Array.isArray(data.page.sections)) throw new Error('bad shape');
+    if (!confirm('Importing replaces the current page. Continue?')) return;
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    state = loadState();
+    selectedId = null;
+    undoStack = []; redoStack = []; updateHistoryButtons();
+    applyTheme(); renderAll();
+    toast('Backup imported');
+  } catch { toast('That file is not a valid backup'); }
+});
+
+/* =====================================================================
+   HTML export — a complete standalone page
+===================================================================== */
+function slug(s) { return s.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '') || 'landing-page'; }
+
+function buildExportHtml() {
+  const body = sections().map(sec => sectionHtml(sec, false)).join('\n');
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${esc(state.page.title)}</title>
+<style>${LP_CSS}</style>
+</head>
+<body class="lp" style="${themeVars()}">
+${body}
+</body>
+</html>`;
+}
+
+$('#exportHtmlBtn').addEventListener('click', () => {
+  if (!sections().length) { toast('Add some sections first'); return; }
+  downloadFile(slug(state.page.title) + '.html', buildExportHtml(), 'text/html');
+  toast('HTML page exported — ready to host anywhere');
+});
+
+/* =====================================================================
+   Builder theme & boot
+===================================================================== */
+function applyTheme() {
+  const pref = state.settings.theme;
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  if (state.settings.theme === 'auto') applyTheme();
+});
+$('#themeToggle').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  state.settings.theme = dark ? 'light' : 'dark';
+  save(); applyTheme();
+});
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+renderLibrary();
+applyTheme();
+updateHistoryButtons();
+renderAll();
+save();
+</script>
+</body>
+</html>
