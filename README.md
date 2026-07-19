@@ -6,6 +6,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 
 | App | Link |
 |---|---|
+| 🧾 Invoice Generator | https://sivasankarn91.github.io/Projects/invoice-generator.html |
 | 📊 Data Analyzer | https://sivasankarn91.github.io/Projects/data-analyzer.html |
 | 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
@@ -41,6 +42,18 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 - **Multiple boards** — create, rename, and switch between boards, each with its own saved viewport
 - **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
 - **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
+
+## 🧾 Invoice Generator — [`invoice-generator.html`](invoice-generator.html)
+
+Create professional invoices right in the browser — fill the invoice like a document, print or save as PDF, and track what's been paid.
+
+**Features**
+
+- **Edit the invoice directly** — the white sheet is the editor; business details and logo are remembered for every future invoice
+- **Live math** — line amounts, subtotal, percentage discount, configurable tax (GST/VAT/…), grand total, and the amount in words (Indian crore/lakh wording for ₹, western for $/€/£)
+- **Invoice management** — automatic numbering (INV-0001…), duplicate for repeat clients, and a sidebar list with Draft/Sent/Paid status badges
+- **Clean print output** — 🖨 Print / PDF produces a professional A4 document with all app controls, placeholders, and icons stripped
+- **Extras** — currency selector, logo upload (auto-downscaled), first-run guide, light/dark theme, everything autosaved in `localStorage`
 
 ## 📊 Data Analyzer — [`data-analyzer.html`](data-analyzer.html)
 
