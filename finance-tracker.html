@@ -747,7 +747,12 @@ $('#txTypeSeg').addEventListener('click', (e) => {
   if (btn) setModalType(btn.dataset.type);
 });
 
+const DEMO_MAX_TX = 40;
 $('#txSave').addEventListener('click', () => {
+  if (!editingTxId && state.transactions.length >= DEMO_MAX_TX) {
+    toast(`Demo limit: ${DEMO_MAX_TX} transactions. The full version is unlimited — enquire on the homepage.`);
+    return;
+  }
   const amount = parseFloat($('#txAmount').value);
   const date = $('#txDate').value;
   const categoryId = $('#txCategory').value;
@@ -1363,6 +1368,7 @@ function renderAll() {
 
 applyTheme();
 renderAll();
+save();
 </script>
 </body>
 </html>

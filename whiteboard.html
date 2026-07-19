@@ -1247,7 +1247,12 @@ $('#boardSelect').addEventListener('change', (e) => {
   selection.clear(); resetHistory();
   save(); render();
 });
+const DEMO_MAX_BOARDS = 2;
 $('#newBoardBtn').addEventListener('click', () => {
+  if (state.boards.length >= DEMO_MAX_BOARDS) {
+    toast(`Demo limit: ${DEMO_MAX_BOARDS} boards. The full version is unlimited — enquire on the homepage.`);
+    return;
+  }
   const name = prompt('Board name:', `Board ${state.boards.length + 1}`);
   if (name === null) return;
   const b = newBoard(name.trim() || `Board ${state.boards.length + 1}`);
@@ -1297,6 +1302,12 @@ $('#exportPngBtn').addEventListener('click', () => {
   for (const s of b.strokes) drawStroke(oc, s, false);
   for (const e of b.edges) drawEdge(oc, e, false);
   for (const n of b.nodes) drawNode(oc, n, false);
+  // demo watermark on exported images
+  oc.setTransform(scale, 0, 0, scale, 0, 0);
+  oc.font = '700 13px system-ui, sans-serif';
+  oc.fillStyle = 'rgba(128,128,140,0.55)';
+  oc.textAlign = 'right';
+  oc.fillText('DEMO · projects whiteboard', w - 10, h - 10);
   off.toBlob(blob => {
     downloadFile(`${board().name.replace(/[^\w-]+/g, '-')}.png`, blob, 'image/png');
     toast('PNG exported');

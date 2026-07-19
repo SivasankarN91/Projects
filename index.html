@@ -92,6 +92,12 @@
   .card .pitch { font-size: 0.92rem; color: var(--ink-soft); margin-bottom: 12px; }
   .card ul { list-style: none; margin: 0 0 18px; display: grid; gap: 7px; font-size: 0.88rem; }
   .card li::before { content: '✓  '; color: var(--primary); font-weight: 800; }
+  .card .demo-note {
+    font-size: 0.78rem; color: var(--ink-soft); margin-bottom: 16px;
+    background: var(--card-bg); border: 1px dashed var(--line);
+    border-radius: 9px; padding: 7px 10px; line-height: 1.5;
+  }
+  .card .demo-note b { color: var(--ink); }
   .card .cta { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* stats */
@@ -180,7 +186,7 @@
   <div class="wrap">
     <div class="center">
       <h2>The apps</h2>
-      <p class="sub">Every app is a single self-contained file — no installs, no accounts, no external services. Click a demo and it just runs.</p>
+      <p class="sub">Every app is a single self-contained file — no installs, no accounts, no external services. Click a demo and it just runs. Demos are free with the light limits noted on each card; the full version removes them.</p>
     </div>
     <div class="grid" id="productGrid"></div>
   </div>
@@ -202,7 +208,7 @@
       <p class="sub">From demo to your own app in three simple steps.</p>
     </div>
     <div class="steps">
-      <div class="step"><div class="n">1</div><h4>Try the live demo</h4><p>Every app above is fully functional right now — click "Try live demo" and use it for real. Your data stays in your browser.</p></div>
+      <div class="step"><div class="n">1</div><h4>Try the live demo</h4><p>Every app above works for real right now — click "Try live demo" and put it through its paces. Demos have light limits (noted on each card); your data stays in your browser.</p></div>
       <div class="step"><div class="n">2</div><h4>Send an enquiry</h4><p>Like one? Use the form below to tell me which app you want and how you'd like it customized — your branding, your features, your language.</p></div>
       <div class="step"><div class="n">3</div><h4>Get your own copy</h4><p>You receive your own tailored version to host anywhere — your website, your domain, or offline on your machines. It's yours outright.</p></div>
     </div>
@@ -267,22 +273,28 @@
 const PRODUCTS = [
   { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html',
     pitch: 'Professional invoices with live totals, GST and print-ready PDF output.',
-    points: ['Auto numbering & paid/sent tracking', 'Tax, discounts & amount-in-words', 'Clean print / save-as-PDF'] },
+    points: ['Auto numbering & paid/sent tracking', 'Tax, discounts & amount-in-words', 'Clean print / save-as-PDF'],
+    demo: '<b>Demo:</b> up to 3 invoices, printed output watermarked. <b>Full version:</b> unlimited & clean.' },
   { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html',
     pitch: 'Drop in any CSV and explore it — sort, filter, summarize and chart instantly.',
-    points: ['Auto-detects numbers, dates & text', 'Group-by summaries with charts', 'Export filtered data & charts'] },
+    points: ['Auto-detects numbers, dates & text', 'Group-by summaries with charts', 'Export filtered data & charts'],
+    demo: '<b>Demo:</b> imports the first 200 rows of a file. <b>Full version:</b> no row limit.' },
   { emoji: '🏗️', name: 'Landing Site Builder', file: 'pagebuilder.html',
     pitch: 'Build multi-page landing sites visually and export ready-to-host HTML.',
-    points: ['Drag-and-drop sections, live editing', 'WhatsApp contact form & payment links', 'Exports a complete site as a ZIP'] },
+    points: ['Drag-and-drop sections, live editing', 'WhatsApp contact form & payment links', 'Exports a complete site as a ZIP'],
+    demo: '<b>Demo:</b> up to 2 pages, exports carry a small demo credit. <b>Full version:</b> unlimited pages, no credit.' },
   { emoji: '🗺️', name: 'Whiteboard', file: 'whiteboard.html',
     pitch: 'An infinite canvas for ideas — sticky notes, shapes, arrows and sketches.',
-    points: ['Pan & zoom infinite canvas', 'Connect ideas with live arrows', 'Multiple boards, PNG export'] },
+    points: ['Pan & zoom infinite canvas', 'Connect ideas with live arrows', 'Multiple boards, PNG export'],
+    demo: '<b>Demo:</b> up to 2 boards, exported images watermarked. <b>Full version:</b> unlimited & clean.' },
   { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html',
     pitch: 'Track income, expenses, budgets and savings goals with clear charts.',
-    points: ['Monthly budgets with warnings', 'Spending charts & trends', 'CSV / JSON export & backup'] },
+    points: ['Monthly budgets with warnings', 'Spending charts & trends', 'CSV / JSON export & backup'],
+    demo: '<b>Demo:</b> up to 40 transactions. <b>Full version:</b> unlimited.' },
   { emoji: '🎪', name: 'Emoji Physics Simulator', file: 'emoji-simulator.html',
     pitch: 'A playful physics toy — spawn emojis and watch them bounce. Great fun for kids.',
-    points: ['Real bouncy physics', 'Endless emoji chaos', 'A guaranteed smile'] },
+    points: ['Real bouncy physics', 'Endless emoji chaos', 'A guaranteed smile'],
+    demo: '<b>Free forever</b> — no limits, just fun.' },
 ];
 const EMAIL = 'sethursiva@gmail.com';
 const $ = (s) => document.querySelector(s);
@@ -295,6 +307,7 @@ $('#productGrid').innerHTML = PRODUCTS.map((p, i) => `
     <h3>${esc(p.name)}</h3>
     <p class="pitch">${esc(p.pitch)}</p>
     <ul>${p.points.map(pt => `<li>${esc(pt)}</li>`).join('')}</ul>
+    <p class="demo-note">${p.demo}</p>
     <div class="cta">
       <a class="btn sm" href="${p.file}" target="_blank" rel="noopener">Try live demo →</a>
       <button class="btn sm ghost" data-enquire="${i}">Enquire</button>

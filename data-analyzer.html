@@ -528,18 +528,23 @@ function setDataset(name, headers, rows, restoredView) {
   save();
 }
 
+const DEMO_MAX_ROWS = 200;
 function loadText(text, name) {
   const rows = parseCSV(text);
   if (rows.length < 2) { toast('Could not find data rows in that file'); return; }
   const headers = rows[0].map((h, i) => h.trim() || `Column ${i + 1}`);
   const width = headers.length;
-  const body = rows.slice(1).map(r => {
+  let body = rows.slice(1).map(r => {
     const out = r.slice(0, width);
     while (out.length < width) out.push('');
     return out;
   });
+  const capped = body.length > DEMO_MAX_ROWS;
+  if (capped) body = body.slice(0, DEMO_MAX_ROWS);
   setDataset(name, headers, body);
-  toast(`Loaded ${body.length.toLocaleString()} rows × ${width} columns`);
+  toast(capped
+    ? `Demo limit: loaded the first ${DEMO_MAX_ROWS} rows. The full version has no limit — enquire on the homepage.`
+    : `Loaded ${body.length.toLocaleString()} rows × ${width} columns`);
 }
 
 function clearAll() {

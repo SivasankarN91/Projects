@@ -2,7 +2,7 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all six apps with live demos and an enquiry form.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all six apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
