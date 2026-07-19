@@ -1322,7 +1322,13 @@ document.querySelectorAll('[data-vp]').forEach(b => b.addEventListener('click', 
 $('#newPageBtn').addEventListener('click', () => $('#tplModal').classList.add('open'));
 $('#tplCancel').addEventListener('click', () => $('#tplModal').classList.remove('open'));
 $('#tplModal').addEventListener('click', (e) => { if (e.target === $('#tplModal')) $('#tplModal').classList.remove('open'); });
+const DEMO_MAX_PAGES = 2;
 document.querySelectorAll('.tpl-card').forEach(card => card.addEventListener('click', () => {
+  if (site().pages.length >= DEMO_MAX_PAGES) {
+    $('#tplModal').classList.remove('open');
+    toast(`Demo limit: ${DEMO_MAX_PAGES} pages per site. The full version is unlimited — enquire on the homepage.`);
+    return;
+  }
   pushHistory();
   let name = TPL_PAGE_NAMES[card.dataset.tpl];
   let n = 2;
@@ -1405,6 +1411,7 @@ ${desc ? `<meta name="description" content="${esc(desc)}">
 </head>
 <body class="lp" style="${themeVars()}">
 ${body}
+<div style="text-align:center;font:12px system-ui,sans-serif;opacity:0.5;padding:18px 0">Built with the Projects demo builder</div>
 </body>
 </html>`;
 }
