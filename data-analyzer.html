@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Analyzer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --danger: #d03b3b;
+    --series-1: #2a78d6;
+    --series-2: #008300;
+    --series-3: #e87ba4;
+    --series-4: #eda100;
+    --series-5: #1baf7a;
+    --series-6: #eb6834;
+    --series-7: #4a3aa7;
+    --series-8: #e34948;
+    --shadow: 0 1px 3px rgba(11, 11, 11, 0.06);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --danger: #e66767;
+    --series-1: #3987e5;
+    --series-2: #008300;
+    --series-3: #d55181;
+    --series-4: #c98500;
+    --series-5: #199e70;
+    --series-6: #d95926;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1240px; margin: 0 auto; padding: 0 16px 80px; }
+
+  header.topbar {
+    display: flex; align-items: center; gap: 10px; padding: 16px 0 12px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.15rem; }
+  .ds-info { font-size: 0.8rem; color: var(--text-muted); }
+  .spacer { flex: 1; }
+  .btn {
+    appearance: none; border: 1px solid var(--border); cursor: pointer;
+    font: inherit; font-size: 0.85rem; font-weight: 600;
+    background: var(--surface); color: var(--text-primary);
+    padding: 8px 13px; border-radius: 9px; box-shadow: var(--shadow);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--baseline); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.small { padding: 5px 9px; font-size: 0.78rem; }
+  .btn.icon { padding: 8px 10px; }
+  .btn.danger { color: var(--danger); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; box-shadow: var(--shadow); margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 0.92rem; font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .card h2 .sub { font-size: 0.76rem; font-weight: 500; color: var(--text-muted); }
+
+  /* Drop zone / empty state */
+  #dropZone {
+    border: 2px dashed var(--baseline); border-radius: 14px;
+    padding: 60px 20px; text-align: center; color: var(--text-muted);
+    margin: 30px 0; transition: border-color 0.15s, background 0.15s;
+    font-size: 0.95rem; line-height: 1.7;
+  }
+  #dropZone.dragover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  #dropZone .big { font-size: 2.6rem; display: block; margin-bottom: 8px; }
+  #dropZone .actions { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+  /* Column cards */
+  #colStrip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
+  .col-card {
+    flex: none; width: 172px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 0.75rem;
+  }
+  .col-card .c-name { font-weight: 700; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-card .c-type {
+    display: inline-block; font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; border-radius: 5px; padding: 1px 6px; margin: 4px 0 6px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent);
+  }
+  .col-card .c-stats { color: var(--text-secondary); line-height: 1.55; }
+  .col-card .c-stats b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  /* Analyze */
+  .analyze-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 900px) { .analyze-grid { grid-template-columns: 1fr; } }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .controls label { font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); }
+  select, input[type="text"], input[type="search"], input[type="number"], input[type="date"], textarea {
+    font: inherit; font-size: 0.83rem; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--baseline);
+    border-radius: 8px; padding: 6px 9px;
+  }
+  select:focus, input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { width: 100%; height: 300px; display: block; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; z-index: 20;
+    background: var(--text-primary); color: var(--page);
+    border-radius: 8px; padding: 6px 10px; font-size: 0.78rem;
+    opacity: 0; transition: opacity 0.08s; white-space: nowrap;
+    transform: translate(-50%, calc(-100% - 10px));
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .chart-tooltip.visible { opacity: 1; }
+  .chart-tooltip .tt-title { font-weight: 700; margin-bottom: 2px; }
+
+  /* Tables */
+  .tbl-scroll { overflow-x: auto; }
+  table.data {
+    border-collapse: collapse; width: 100%; font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+  }
+  table.data th, table.data td {
+    padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--grid);
+    white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis;
+  }
+  table.data th {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-muted); cursor: pointer; user-select: none; position: sticky; top: 0;
+    background: var(--surface);
+  }
+  table.data th:hover { color: var(--text-primary); }
+  table.data th .arrow { font-size: 0.65rem; }
+  table.data td.num { text-align: right; }
+  table.data th.num { text-align: right; }
+  table.data tr:hover td { background: color-mix(in srgb, var(--grid) 30%, transparent); }
+  tr.filter-row th { padding: 4px 6px; cursor: default; }
+  tr.filter-row input, tr.filter-row select { width: 100%; min-width: 70px; font-size: 0.74rem; padding: 4px 6px; }
+  .range-pair { display: flex; gap: 4px; }
+  .range-pair input { min-width: 52px; }
+
+  .tbl-footer {
+    display: flex; align-items: center; gap: 10px; padding-top: 10px;
+    font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap;
+  }
+
+  /* Modal / guide / toast */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px; width: 100%; max-width: 560px; box-shadow: var(--shadow);
+    max-height: 86vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 10px; }
+  .guide-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .guide-step:last-of-type { border-bottom: none; }
+  .guide-step .g-em { font-size: 1.3rem; flex: none; width: 34px; text-align: center; }
+  .guide-step .g-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+  .guide-step .g-text { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55; }
+  .guide-step .g-text b { color: var(--text-primary); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+  .modal textarea { width: 100%; min-height: 180px; font-family: ui-monospace, monospace; font-size: 0.78rem; }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(90px);
+    background: var(--text-primary); color: var(--page);
+    padding: 9px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.25s; z-index: 300; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="brand">📊 Data Analyzer</span>
+    <span class="ds-info" id="dsInfo"></span>
+    <span class="spacer"></span>
+    <button class="btn" id="openBtn">📂 Open file</button>
+    <input type="file" id="fileInput" accept=".csv,.tsv,.txt" hidden>
+    <button class="btn" id="pasteBtn">📋 Paste data</button>
+    <button class="btn" id="sampleBtn">🎲 Sample data</button>
+    <button class="btn danger small" id="clearBtn" style="display:none">✕ Clear</button>
+    <button class="btn icon" id="themeToggle" title="Toggle theme">🌗</button>
+    <button class="btn icon" id="guideBtn" title="How to use">?</button>
+  </header>
+
+  <div id="dropZone">
+    <span class="big">📈</span>
+    <b>Drop a CSV file here</b> to explore it instantly —<br>
+    types are detected automatically, then sort, filter, summarize and chart your data.<br>
+    Nothing is uploaded; everything stays in your browser.
+    <div class="actions">
+      <button class="btn primary" id="dzOpen">📂 Choose a file</button>
+      <button class="btn" id="dzPaste">📋 Paste data</button>
+      <button class="btn" id="dzSample">🎲 Try sample data</button>
+    </div>
+  </div>
+
+  <div id="workspace" style="display:none">
+    <div id="colStrip"></div>
+
+    <div class="card">
+      <h2>📊 Analyze <span class="sub" id="analyzeSub">grouped summaries of the filtered rows</span></h2>
+      <div class="controls">
+        <label>Group by</label>
+        <select id="groupBySel"></select>
+        <select id="bucketSel" style="display:none">
+          <option value="month">by month</option>
+          <option value="day">by day</option>
+          <option value="year">by year</option>
+        </select>
+        <label>Show</label>
+        <select id="aggSel">
+          <option value="count">Count of rows</option>
+          <option value="sum">Sum</option>
+          <option value="avg">Average</option>
+          <option value="min">Min</option>
+          <option value="max">Max</option>
+        </select>
+        <select id="valueSel" style="display:none"></select>
+        <label>Chart</label>
+        <select id="chartSel">
+          <option value="auto">Auto</option>
+          <option value="bar">Bars</option>
+          <option value="line">Line</option>
+          <option value="donut">Donut</option>
+        </select>
+        <span class="spacer"></span>
+        <button class="btn small" id="exportPivotBtn">⬇ Summary CSV</button>
+        <button class="btn small" id="exportChartBtn">🖼 Chart PNG</button>
+      </div>
+      <div class="analyze-grid">
+        <div class="chart-wrap">
+          <canvas id="chart"></canvas>
+          <div class="chart-tooltip" id="chartTip"></div>
+        </div>
+        <div class="tbl-scroll" style="max-height:300px; overflow-y:auto">
+          <table class="data" id="pivotTable"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🗂️ Rows
+        <span class="sub" id="rowInfo"></span>
+        <span class="spacer"></span>
+        <input type="search" id="globalSearch" placeholder="Search all columns…" style="min-width:200px">
+        <button class="btn small" id="resetFiltersBtn">Reset filters</button>
+        <button class="btn small" id="exportRowsBtn">⬇ Filtered CSV</button>
+      </h2>
+      <div class="tbl-scroll" style="max-height:520px; overflow-y:auto">
+        <table class="data" id="dataTable"></table>
+      </div>
+      <div class="tbl-footer">
+        <button class="btn small" id="prevPage">‹ Prev</button>
+        <span id="pageInfo"></span>
+        <button class="btn small" id="nextPage">Next ›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paste modal -->
+<div class="modal-backdrop" id="pasteModal">
+  <div class="modal">
+    <h3>Paste data</h3>
+    <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:10px">
+      Paste CSV or rows copied from a spreadsheet (tab-separated works too). First row should be the column names.</p>
+    <textarea id="pasteArea" placeholder="name,city,amount&#10;Asha,Chennai,1200&#10;Vikram,Pune,880"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="pasteCancel">Cancel</button>
+      <button class="btn primary" id="pasteLoad">Load</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guide -->
+<div class="modal-backdrop" id="guideModal">
+  <div class="modal">
+    <h3>👋 Welcome to Data Analyzer</h3>
+    <div class="guide-step"><span class="g-em">📂</span><div>
+      <div class="g-title">Load your data</div>
+      <div class="g-text">Drop any <b>CSV file</b> on the page, paste rows copied from Excel/Sheets, or hit <b>🎲 Sample data</b> to look around first. Your data never leaves the browser.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">🏷️</span><div>
+      <div class="g-title">Columns are understood automatically</div>
+      <div class="g-text">Numbers, dates and text are detected, and each column card up top shows its stats — totals, averages, ranges, most common values, and missing cells.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">🔍</span><div>
+      <div class="g-title">Sort, search and filter</div>
+      <div class="g-text"><b>Click a column heading</b> to sort. Use the boxes under the headings to filter — text search, number ranges, date ranges, or value pickers. The global search box scans every column.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">📊</span><div>
+      <div class="g-title">Summarize and chart</div>
+      <div class="g-text">In <b>Analyze</b>, pick what to group by (e.g. Region) and what to show (e.g. Sum of Revenue). You get a summary table and a chart together — and they respect your active filters.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">⬇️</span><div>
+      <div class="g-title">Export anything</div>
+      <div class="g-text">Download the <b>filtered rows</b> or the <b>summary</b> as CSV, or the chart as a PNG image.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">💾</span><div>
+      <div class="g-title">It remembers</div>
+      <div class="g-text">Smaller datasets and your filters are saved in this browser, so a reload picks up where you left off. Reopen this guide anytime with <b>?</b>.</div>
+    </div></div>
+    <div class="modal-actions">
+      <button class="btn primary" id="guideClose">Got it</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const STORE_KEY = 'dataAnalyzerData_v1';
+const PAGE_SIZE = 250;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* =====================================================================
+   State
+===================================================================== */
+let dataset = null; // {name, headers[], rows[][] (strings), types[], typed[][] (parsed values)}
+let view = { sort: null, filters: {}, search: '', page: 0, pivot: { groupBy: null, bucket: 'month', agg: 'count', valueCol: null, chart: 'auto' } };
+let settings = { theme: 'auto', guideSeen: false };
+let filteredIdx = []; // indexes into dataset.rows after filters/search
+let pivotData = [];   // [{label, value, count, ts?}]
+
+function save() {
+  try {
+    const payload = { version: 1, settings };
+    if (dataset) {
+      const json = JSON.stringify({ name: dataset.name, headers: dataset.headers, rows: dataset.rows });
+      if (json.length < 3500000) { payload.dataset = JSON.parse(json); payload.view = view; }
+    }
+    localStorage.setItem(STORE_KEY, JSON.stringify(payload));
+  } catch { toast('Dataset too large to remember between visits (still fully usable)'); }
+}
+function loadStored() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    settings = { theme: 'auto', guideSeen: false, ...(data.settings || {}) };
+    if (data.dataset && Array.isArray(data.dataset.rows)) {
+      setDataset(data.dataset.name, data.dataset.headers, data.dataset.rows, data.view || undefined);
+    }
+  } catch { /* corrupted store — start fresh */ }
+}
+
+/* =====================================================================
+   CSV parsing
+===================================================================== */
+function detectDelimiter(text) {
+  const lines = text.slice(0, 8000).split(/\r?\n/).filter(l => l.trim()).slice(0, 6);
+  let best = ',', bestMin = 0;
+  for (const d of [',', ';', '\t', '|']) {
+    const counts = lines.map(l => {
+      let n = 0, inQ = false;
+      for (const c of l) {
+        if (c === '"') inQ = !inQ;
+        else if (c === d && !inQ) n++;
+      }
+      return n;
+    });
+    const min = Math.min(...counts);
+    if (min > bestMin) { bestMin = min; best = d; }
+  }
+  return best;
+}
+
+function parseCSV(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const delim = detectDelimiter(text);
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQ = false;
+      } else field += c;
+    } else if (c === '"') {
+      inQ = true;
+    } else if (c === delim) {
+      row.push(field); field = '';
+    } else if (c === '\n') {
+      row.push(field); field = '';
+      if (row.some(f => f.trim() !== '')) rows.push(row);
+      row = [];
+    } else if (c !== '\r') {
+      field += c;
+    }
+  }
+  row.push(field);
+  if (row.some(f => f.trim() !== '')) rows.push(row);
+  return rows;
+}
+
+/* =====================================================================
+   Type inference
+===================================================================== */
+function parseNumVal(s) {
+  if (typeof s !== 'string') return null;
+  let t = s.trim();
+  if (!t) return null;
+  const pct = /%$/.test(t);
+  t = t.replace(/^[₹$€£]\s?/, '').replace(/,/g, '').replace(/%$/, '');
+  if (t === '' || t === '-' || isNaN(Number(t))) return null;
+  return pct ? Number(t) / 100 : Number(t);
+}
+const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+function parseDateVal(s) {
+  if (typeof s !== 'string') return null;
+  const t = s.trim();
+  if (!t || /^[+-]?[\d.,]+$/.test(t)) return null; // bare numbers are not dates
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  m = t.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (m) {
+    let d = +m[1], mo = +m[2];
+    if (mo > 12 && d <= 12) [d, mo] = [mo, d]; // clearly mm/dd
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) return Date.UTC(+m[3], mo - 1, d);
+    return null;
+  }
+  m = t.match(/^(\d{1,2})[ -]([A-Za-z]{3,9})[ -](\d{4})$/);
+  if (m && MONTHS[m[2].slice(0, 3).toLowerCase()] !== undefined) {
+    return Date.UTC(+m[3], MONTHS[m[2].slice(0, 3).toLowerCase()], +m[1]);
+  }
+  m = t.match(/^([A-Za-z]{3,9})[ -](\d{4})$/);
+  if (m && MONTHS[m[1].slice(0, 3).toLowerCase()] !== undefined) {
+    return Date.UTC(+m[2], MONTHS[m[1].slice(0, 3).toLowerCase()], 1);
+  }
+  return null;
+}
+function parseBoolVal(s) {
+  const t = String(s).trim().toLowerCase();
+  if (['true', 'yes', 'y', '1'].includes(t)) return true;
+  if (['false', 'no', 'n', '0'].includes(t)) return false;
+  return null;
+}
+
+function inferTypes(headers, rows) {
+  const types = [];
+  for (let c = 0; c < headers.length; c++) {
+    let nonEmpty = 0, num = 0, date = 0, bool = 0;
+    const limit = Math.min(rows.length, 1000);
+    for (let r = 0; r < limit; r++) {
+      const v = (rows[r][c] ?? '').trim();
+      if (!v) continue;
+      nonEmpty++;
+      if (parseNumVal(v) !== null) num++;
+      if (parseDateVal(v) !== null) date++;
+      if (parseBoolVal(v) !== null) bool++;
+    }
+    if (!nonEmpty) { types.push('text'); continue; }
+    if (date / nonEmpty >= 0.8) types.push('date');
+    else if (bool / nonEmpty >= 0.95 && nonEmpty > 2) types.push('bool');
+    else if (num / nonEmpty >= 0.8) types.push('number');
+    else types.push('text');
+  }
+  return types;
+}
+
+function buildTyped(rows, types) {
+  return rows.map(row => row.map((v, c) => {
+    const s = (v ?? '').trim();
+    if (!s) return null;
+    if (types[c] === 'number') return parseNumVal(s);
+    if (types[c] === 'date') return parseDateVal(s);
+    if (types[c] === 'bool') return parseBoolVal(s);
+    return s;
+  }));
+}
+
+/* =====================================================================
+   Dataset lifecycle
+===================================================================== */
+function setDataset(name, headers, rows, restoredView) {
+  const types = inferTypes(headers, rows);
+  dataset = { name, headers, rows, types, typed: buildTyped(rows, types) };
+  view = restoredView || {
+    sort: null, filters: {}, search: '', page: 0,
+    pivot: { groupBy: null, bucket: 'month', agg: 'count', valueCol: null, chart: 'auto' },
+  };
+  // default pivot: first text/date col + sum of first number col
+  if (view.pivot.groupBy === null || view.pivot.groupBy >= headers.length) {
+    view.pivot.groupBy = types.findIndex(t => t === 'text' || t === 'bool' || t === 'date');
+    if (view.pivot.groupBy === -1) view.pivot.groupBy = 0;
+    const numCol = types.findIndex(t => t === 'number');
+    if (numCol !== -1) { view.pivot.agg = 'sum'; view.pivot.valueCol = numCol; }
+  }
+  $('#dropZone').style.display = 'none';
+  $('#workspace').style.display = 'block';
+  $('#clearBtn').style.display = '';
+  renderAll();
+  save();
+}
+
+function loadText(text, name) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) { toast('Could not find data rows in that file'); return; }
+  const headers = rows[0].map((h, i) => h.trim() || `Column ${i + 1}`);
+  const width = headers.length;
+  const body = rows.slice(1).map(r => {
+    const out = r.slice(0, width);
+    while (out.length < width) out.push('');
+    return out;
+  });
+  setDataset(name, headers, body);
+  toast(`Loaded ${body.length.toLocaleString()} rows × ${width} columns`);
+}
+
+function clearAll() {
+  if (!confirm('Clear the loaded dataset and filters?')) return;
+  dataset = null;
+  localStorage.removeItem(STORE_KEY);
+  save();
+  $('#workspace').style.display = 'none';
+  $('#dropZone').style.display = '';
+  $('#clearBtn').style.display = 'none';
+  $('#dsInfo').textContent = '';
+}
+
+/* ---- inputs ---- */
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => loadText(reader.result, file.name.replace(/\.[^.]+$/, ''));
+  reader.readAsText(file);
+}
+$('#openBtn').addEventListener('click', () => $('#fileInput').click());
+$('#dzOpen').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', (e) => { if (e.target.files[0]) readFile(e.target.files[0]); e.target.value = ''; });
+document.addEventListener('dragover', (e) => { e.preventDefault(); $('#dropZone').classList.add('dragover'); });
+document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) $('#dropZone').classList.remove('dragover'); });
+document.addEventListener('drop', (e) => {
+  e.preventDefault();
+  $('#dropZone').classList.remove('dragover');
+  if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+});
+$('#pasteBtn').addEventListener('click', () => $('#pasteModal').classList.add('open'));
+$('#dzPaste').addEventListener('click', () => $('#pasteModal').classList.add('open'));
+$('#pasteCancel').addEventListener('click', () => $('#pasteModal').classList.remove('open'));
+$('#pasteModal').addEventListener('click', (e) => { if (e.target === $('#pasteModal')) $('#pasteModal').classList.remove('open'); });
+$('#pasteLoad').addEventListener('click', () => {
+  const text = $('#pasteArea').value.trim();
+  if (!text) { toast('Paste some data first'); return; }
+  $('#pasteModal').classList.remove('open');
+  loadText(text, 'Pasted data');
+});
+$('#clearBtn').addEventListener('click', clearAll);
+
+/* ---- sample data ---- */
+function sampleCSV() {
+  const regions = ['North', 'South', 'East', 'West'];
+  const products = [['Laptop', 'Electronics', 58000], ['Phone', 'Electronics', 24000], ['Desk', 'Furniture', 9500], ['Chair', 'Furniture', 4200], ['Monitor', 'Electronics', 13500], ['Lamp', 'Furniture', 1800]];
+  const lines = ['date,region,product,category,units,revenue'];
+  let seed = 42;
+  const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  for (let m = 0; m < 12; m++) {
+    for (const region of regions) {
+      const picks = 1 + Math.floor(rand() * 2);
+      for (let k = 0; k <= picks; k++) {
+        const [prod, cat, price] = products[Math.floor(rand() * products.length)];
+        const units = 1 + Math.floor(rand() * 9);
+        const day = 1 + Math.floor(rand() * 27);
+        lines.push(`2025-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')},${region},${prod},${cat},${units},${units * price}`);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+$('#sampleBtn').addEventListener('click', () => loadText(sampleCSV(), 'Sample sales'));
+$('#dzSample').addEventListener('click', () => loadText(sampleCSV(), 'Sample sales'));
+
+/* =====================================================================
+   Filtering & sorting
+===================================================================== */
+function lowCardinality(c) {
+  const uniq = new Set();
+  for (const row of dataset.rows) {
+    const v = (row[c] || '').trim();
+    if (v) uniq.add(v);
+    if (uniq.size > 20) return null;
+  }
+  return [...uniq].sort();
+}
+
+function applyFilters() {
+  const { filters, search } = view;
+  const q = search.toLowerCase();
+  filteredIdx = [];
+  const rows = dataset.rows, typed = dataset.typed;
+  outer:
+  for (let r = 0; r < rows.length; r++) {
+    if (q) {
+      let hit = false;
+      for (const cell of rows[r]) if (cell && cell.toLowerCase().includes(q)) { hit = true; break; }
+      if (!hit) continue;
+    }
+    for (const [cStr, f] of Object.entries(filters)) {
+      const c = +cStr;
+      const t = dataset.types[c];
+      const tv = typed[r][c];
+      if (t === 'number') {
+        if (f.min !== '' && f.min != null && (tv === null || tv < +f.min)) continue outer;
+        if (f.max !== '' && f.max != null && (tv === null || tv > +f.max)) continue outer;
+      } else if (t === 'date') {
+        if (f.from && (tv === null || tv < Date.parse(f.from))) continue outer;
+        if (f.to && (tv === null || tv > Date.parse(f.to) + 86399999)) continue outer;
+      } else if (f.pick) {
+        if ((rows[r][c] || '').trim() !== f.pick) continue outer;
+      } else if (f.q) {
+        if (!(rows[r][c] || '').toLowerCase().includes(f.q.toLowerCase())) continue outer;
+      }
+    }
+    filteredIdx.push(r);
+  }
+  if (view.sort) {
+    const { col, dir } = view.sort;
+    const typedCol = dataset.typed;
+    filteredIdx.sort((a, b) => {
+      const va = typedCol[a][col], vb = typedCol[b][col];
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb;
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  }
+}
+
+/* =====================================================================
+   Formatting
+===================================================================== */
+function fmtNum(n) {
+  if (n === null || n === undefined || isNaN(n)) return '–';
+  if (Number.isInteger(n) && Math.abs(n) < 1e15) return n.toLocaleString();
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+function fmtDate(ts) {
+  return new Date(ts).toISOString().slice(0, 10);
+}
+function fmtCell(r, c) {
+  const t = dataset.types[c], tv = dataset.typed[r][c];
+  if (tv === null) return '';
+  if (t === 'number') return fmtNum(tv);
+  if (t === 'date') return fmtDate(tv);
+  return esc(dataset.rows[r][c]);
+}
+
+/* =====================================================================
+   Rendering — column cards
+===================================================================== */
+const TYPE_ICONS = { number: '123', date: '📅 date', bool: '✓ bool', text: 'abc' };
+
+function renderColStrip() {
+  const strip = $('#colStrip');
+  strip.innerHTML = dataset.headers.map((h, c) => {
+    const t = dataset.types[c];
+    let missing = 0;
+    const vals = [];
+    for (let r = 0; r < dataset.rows.length; r++) {
+      const tv = dataset.typed[r][c];
+      if (tv === null) missing++; else vals.push(tv);
+    }
+    let stats = '';
+    if (t === 'number' && vals.length) {
+      const sorted = [...vals].sort((a, b) => a - b);
+      const sum = vals.reduce((s, v) => s + v, 0);
+      stats = `sum <b>${fmtNum(sum)}</b><br>avg <b>${fmtNum(sum / vals.length)}</b> · med <b>${fmtNum(sorted[Math.floor(sorted.length / 2)])}</b><br>min <b>${fmtNum(sorted[0])}</b> · max <b>${fmtNum(sorted[sorted.length - 1])}</b>`;
+    } else if (t === 'date' && vals.length) {
+      stats = `from <b>${fmtDate(Math.min(...vals))}</b><br>to <b>${fmtDate(Math.max(...vals))}</b>`;
+    } else if (vals.length) {
+      const counts = new Map();
+      for (const v of vals) counts.set(v, (counts.get(v) || 0) + 1);
+      const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2);
+      stats = `${counts.size} unique<br>` + top.map(([v, n]) => `<b>${esc(String(v)).slice(0, 14)}</b> ×${n}`).join('<br>');
+    }
+    return `<div class="col-card">
+      <div class="c-name" title="${esc(h)}">${esc(h)}</div>
+      <span class="c-type">${TYPE_ICONS[t]}</span>
+      <div class="c-stats">${stats}${missing ? `<br><span style="color:var(--text-muted)">${missing} missing</span>` : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+/* =====================================================================
+   Rendering — data table
+===================================================================== */
+function renderTable() {
+  const tbl = $('#dataTable');
+  const { headers, types } = dataset;
+  const sort = view.sort;
+  const headHtml = '<tr>' + headers.map((h, c) => {
+    const arrow = sort && sort.col === c ? (sort.dir === 'asc' ? ' <span class="arrow">▲</span>' : ' <span class="arrow">▼</span>') : '';
+    return `<th class="${types[c] === 'number' ? 'num' : ''}" data-sort="${c}">${esc(h)}${arrow}</th>`;
+  }).join('') + '</tr>';
+
+  const filterHtml = '<tr class="filter-row">' + headers.map((h, c) => {
+    const t = types[c];
+    const f = view.filters[c] || {};
+    if (t === 'number') {
+      return `<th><span class="range-pair">
+        <input type="number" placeholder="min" data-f="min" data-c="${c}" value="${f.min ?? ''}">
+        <input type="number" placeholder="max" data-f="max" data-c="${c}" value="${f.max ?? ''}"></span></th>`;
+    }
+    if (t === 'date') {
+      return `<th><span class="range-pair">
+        <input type="date" data-f="from" data-c="${c}" value="${f.from ?? ''}">
+        <input type="date" data-f="to" data-c="${c}" value="${f.to ?? ''}"></span></th>`;
+    }
+    const opts = lowCardinality(c);
+    if (opts) {
+      return `<th><select data-f="pick" data-c="${c}">
+        <option value="">All</option>
+        ${opts.map(o => `<option value="${esc(o)}"${f.pick === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}
+      </select></th>`;
+    }
+    return `<th><input type="text" placeholder="filter…" data-f="q" data-c="${c}" value="${esc(f.q ?? '')}"></th>`;
+  }).join('') + '</tr>';
+
+  const pages = Math.max(1, Math.ceil(filteredIdx.length / PAGE_SIZE));
+  view.page = Math.min(view.page, pages - 1);
+  const start = view.page * PAGE_SIZE;
+  const slice = filteredIdx.slice(start, start + PAGE_SIZE);
+  const bodyHtml = slice.map(r =>
+    '<tr>' + headers.map((h, c) =>
+      `<td class="${types[c] === 'number' ? 'num' : ''}">${fmtCell(r, c)}</td>`).join('') + '</tr>').join('');
+
+  tbl.innerHTML = headHtml + filterHtml + bodyHtml;
+  $('#rowInfo').textContent = `${filteredIdx.length.toLocaleString()} of ${dataset.rows.length.toLocaleString()} rows`;
+  $('#pageInfo').textContent = `Page ${view.page + 1} of ${pages}`;
+  $('#prevPage').disabled = view.page === 0;
+  $('#nextPage').disabled = view.page >= pages - 1;
+  $('#dsInfo').textContent = `${dataset.name} · ${dataset.rows.length.toLocaleString()} rows × ${dataset.headers.length} cols`;
+}
+
+$('#dataTable').addEventListener('click', (e) => {
+  const th = e.target.closest('th[data-sort]');
+  if (!th) return;
+  const col = +th.dataset.sort;
+  view.sort = view.sort && view.sort.col === col && view.sort.dir === 'asc'
+    ? { col, dir: 'desc' } : { col, dir: 'asc' };
+  refresh();
+});
+$('#dataTable').addEventListener('input', (e) => {
+  const el = e.target.closest('[data-f]');
+  if (!el) return;
+  const c = +el.dataset.c;
+  view.filters[c] = view.filters[c] || {};
+  view.filters[c][el.dataset.f] = el.value;
+  view.page = 0;
+  refresh({ keepFocus: el });
+});
+$('#globalSearch').addEventListener('input', (e) => { view.search = e.target.value.trim(); view.page = 0; refresh(); });
+$('#resetFiltersBtn').addEventListener('click', () => {
+  view.filters = {}; view.search = ''; view.sort = null; view.page = 0;
+  $('#globalSearch').value = '';
+  refresh();
+  toast('Filters cleared');
+});
+$('#prevPage').addEventListener('click', () => { view.page--; renderTable(); save(); });
+$('#nextPage').addEventListener('click', () => { view.page++; renderTable(); save(); });
+
+/* =====================================================================
+   Pivot + chart
+===================================================================== */
+function renderAnalyzeControls() {
+  const { headers, types } = dataset;
+  const p = view.pivot;
+  $('#groupBySel').innerHTML = headers.map((h, c) =>
+    `<option value="${c}"${p.groupBy === c ? ' selected' : ''}>${esc(h)}${types[c] === 'date' ? ' 📅' : types[c] === 'number' ? ' #' : ''}</option>`).join('');
+  $('#bucketSel').style.display = types[p.groupBy] === 'date' ? '' : 'none';
+  $('#bucketSel').value = p.bucket;
+  $('#aggSel').value = p.agg;
+  const numCols = headers.map((h, c) => c).filter(c => types[c] === 'number');
+  $('#valueSel').innerHTML = numCols.map(c =>
+    `<option value="${c}"${p.valueCol === c ? ' selected' : ''}>${esc(headers[c])}</option>`).join('');
+  $('#valueSel').style.display = p.agg === 'count' ? 'none' : '';
+  if (p.agg !== 'count' && (p.valueCol === null || types[p.valueCol] !== 'number')) {
+    p.valueCol = numCols[0] ?? null;
+    if (p.valueCol === null) { p.agg = 'count'; $('#aggSel').value = 'count'; $('#valueSel').style.display = 'none'; }
+  }
+  $('#chartSel').value = p.chart;
+}
+
+function bucketLabel(ts, bucket) {
+  const d = new Date(ts);
+  if (bucket === 'year') return String(d.getUTCFullYear());
+  if (bucket === 'month') return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  return fmtDate(ts);
+}
+
+function computePivot() {
+  const p = view.pivot;
+  const t = dataset.types[p.groupBy];
+  const groups = new Map(); // label -> {sum, count, min, max, ts}
+  for (const r of filteredIdx) {
+    const gv = dataset.typed[r][p.groupBy];
+    let label, ts = null;
+    if (gv === null) label = '(blank)';
+    else if (t === 'date') { label = bucketLabel(gv, p.bucket); ts = gv; }
+    else if (t === 'number') label = String(gv);
+    else label = String(gv);
+    let g = groups.get(label);
+    if (!g) { g = { sum: 0, count: 0, min: Infinity, max: -Infinity, ts }; groups.set(label, g); }
+    g.count++;
+    if (p.agg !== 'count' && p.valueCol !== null) {
+      const v = dataset.typed[r][p.valueCol];
+      if (v !== null) { g.sum += v; g.min = Math.min(g.min, v); g.max = Math.max(g.max, v); }
+    }
+  }
+  pivotData = [...groups.entries()].map(([label, g]) => ({
+    label,
+    ts: g.ts,
+    count: g.count,
+    value: p.agg === 'count' ? g.count
+      : p.agg === 'sum' ? g.sum
+      : p.agg === 'avg' ? (g.count ? g.sum / g.count : null)
+      : p.agg === 'min' ? (g.min === Infinity ? null : g.min)
+      : (g.max === -Infinity ? null : g.max),
+  }));
+  if (t === 'date') pivotData.sort((a, b) => a.label.localeCompare(b.label));
+  else pivotData.sort((a, b) => (b.value ?? -Infinity) - (a.value ?? -Infinity));
+}
+
+function pivotTitle() {
+  const p = view.pivot;
+  const what = p.agg === 'count' ? 'Count of rows' : `${p.agg[0].toUpperCase() + p.agg.slice(1)} of ${dataset.headers[p.valueCol]}`;
+  return `${what} by ${dataset.headers[p.groupBy]}`;
+}
+
+function renderPivotTable() {
+  const p = view.pivot;
+  const valHead = p.agg === 'count' ? 'Count' : `${p.agg} ${esc(dataset.headers[p.valueCol] ?? '')}`;
+  $('#pivotTable').innerHTML =
+    `<tr><th>${esc(dataset.headers[p.groupBy])}</th><th class="num">${esc(valHead)}</th><th class="num">Rows</th></tr>` +
+    pivotData.map(g => `<tr><td>${esc(g.label)}</td><td class="num">${fmtNum(g.value)}</td><td class="num">${fmtNum(g.count)}</td></tr>`).join('');
+  $('#analyzeSub').textContent = pivotTitle() + ' — filtered rows only';
+}
+
+/* ---- chart drawing ---- */
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+let chartHits = []; // hover hit boxes {x0,x1,y0,y1,label,value} or donut segments
+
+function chartKind() {
+  const p = view.pivot;
+  if (p.chart !== 'auto') return p.chart;
+  return dataset.types[p.groupBy] === 'date' ? 'line' : 'bar';
+}
+
+function renderChart() {
+  const canvas = $('#chart');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width) return;
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const w = rect.width, h = rect.height;
+  ctx.clearRect(0, 0, w, h);
+  chartHits = [];
+
+  let data = pivotData.filter(g => g.value !== null);
+  if (!data.length) {
+    ctx.fillStyle = cssVar('--text-muted');
+    ctx.font = '14px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data for this selection', w / 2, h / 2);
+    return;
+  }
+  const kind = chartKind();
+
+  if (kind === 'donut') {
+    // ≤ 7 slices + Other, palette rule
+    let entries = [...data];
+    if (entries.length > 8) {
+      const rest = entries.slice(7);
+      entries = entries.slice(0, 7);
+      entries.push({ label: 'Other', value: rest.reduce((s, e) => s + e.value, 0), count: rest.reduce((s, e) => s + e.count, 0) });
+    }
+    const total = entries.reduce((s, e) => s + Math.max(0, e.value), 0) || 1;
+    const cx = w * 0.32, cy = h / 2;
+    const rOuter = Math.min(w * 0.3, h / 2 - 12), rInner = rOuter * 0.62;
+    let angle = -Math.PI / 2;
+    entries.forEach((e2, i) => {
+      const sweep = (Math.max(0, e2.value) / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, angle + 0.008, Math.max(angle + 0.008, angle + sweep - 0.008));
+      ctx.arc(cx, cy, rInner, Math.max(angle + 0.008, angle + sweep - 0.008), angle + 0.008, true);
+      ctx.closePath();
+      ctx.fillStyle = cssVar(`--series-${(i % 8) + 1}`);
+      ctx.fill();
+      chartHits.push({ donut: true, cx, cy, rInner, rOuter, a0: angle, a1: angle + sweep, label: e2.label, value: e2.value });
+      angle += sweep;
+    });
+    // legend
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    let ly = Math.max(14, cy - entries.length * 10);
+    entries.forEach((e2, i) => {
+      ctx.fillStyle = cssVar(`--series-${(i % 8) + 1}`);
+      ctx.fillRect(w * 0.62, ly - 5, 10, 10);
+      ctx.fillStyle = cssVar('--text-secondary');
+      ctx.fillText(`${String(e2.label).slice(0, 18)}  ${fmtNum(e2.value)}`, w * 0.62 + 16, ly);
+      ly += 20;
+    });
+    return;
+  }
+
+  // bar / line share axis frame
+  if (kind === 'bar' && data.length > 14) data = data.slice(0, 14); // top categories
+  const padL = 8, padR = 8, padT = 12, padB = 46;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const max = Math.max(...data.map(d => d.value), 0);
+  const min = Math.min(...data.map(d => d.value), 0);
+  const range = (max - min) || 1;
+  const y = (v) => padT + plotH - ((v - min) / range) * plotH;
+
+  ctx.strokeStyle = cssVar('--grid');
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 3; i++) {
+    const gy = padT + plotH - (plotH * i / 3);
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(w - padR, gy); ctx.stroke();
+  }
+  ctx.strokeStyle = cssVar('--baseline');
+  const zeroY = y(Math.max(0, min));
+  ctx.beginPath(); ctx.moveTo(padL, zeroY + 0.5); ctx.lineTo(w - padR, zeroY + 0.5); ctx.stroke();
+
+  const color = cssVar('--series-1');
+  const n = data.length;
+
+  if (kind === 'line') {
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    data.forEach((d, i) => {
+      const x = padL + (plotW * (n === 1 ? 0.5 : i / (n - 1)));
+      i === 0 ? ctx.moveTo(x, y(d.value)) : ctx.lineTo(x, y(d.value));
+    });
+    ctx.stroke();
+    data.forEach((d, i) => {
+      const x = padL + (plotW * (n === 1 ? 0.5 : i / (n - 1)));
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y(d.value), 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = cssVar('--surface'); ctx.lineWidth = 2; ctx.stroke();
+      chartHits.push({ x0: x - plotW / n / 2, x1: x + plotW / n / 2, label: d.label, value: d.value, px: x, py: y(d.value) });
+    });
+  } else {
+    const slotW = plotW / n;
+    const barW = Math.min(46, slotW * 0.66);
+    data.forEach((d, i) => {
+      const x = padL + slotW * i + (slotW - barW) / 2;
+      const yTop = y(Math.max(0, d.value));
+      const bh = Math.max(2, Math.abs(y(d.value) - zeroY));
+      ctx.fillStyle = color;
+      const r = Math.min(4, bh);
+      ctx.beginPath();
+      ctx.moveTo(x, yTop + bh);
+      ctx.lineTo(x, yTop + r);
+      ctx.arcTo(x, yTop, x + r, yTop, r);
+      ctx.lineTo(x + barW - r, yTop);
+      ctx.arcTo(x + barW, yTop, x + barW, yTop + r, r);
+      ctx.lineTo(x + barW, yTop + bh);
+      ctx.closePath();
+      ctx.fill();
+      chartHits.push({ x0: padL + slotW * i, x1: padL + slotW * (i + 1), label: d.label, value: d.value });
+    });
+  }
+
+  // x labels (thinned)
+  ctx.fillStyle = cssVar('--text-muted');
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const step = Math.ceil(n / Math.floor(plotW / 70));
+  data.forEach((d, i) => {
+    if (i % step !== 0 && i !== n - 1) return;
+    const x = kind === 'line'
+      ? padL + (plotW * (n === 1 ? 0.5 : i / (n - 1)))
+      : padL + (plotW / n) * i + (plotW / n) / 2;
+    const label = String(d.label);
+    ctx.save();
+    ctx.translate(x, padT + plotH + 8);
+    if (label.length > 8 && kind === 'bar') { ctx.rotate(-0.5); ctx.textAlign = 'right'; }
+    ctx.fillText(label.slice(0, 14), 0, 0);
+    ctx.restore();
+  });
+}
+
+$('#chart').addEventListener('mousemove', (e) => {
+  const rect = $('#chart').getBoundingClientRect();
+  const x = e.clientX - rect.left, yPos = e.clientY - rect.top;
+  const tip = $('#chartTip');
+  let hit = null;
+  for (const hArea of chartHits) {
+    if (hArea.donut) {
+      const dist = Math.hypot(x - hArea.cx, yPos - hArea.cy);
+      if (dist >= hArea.rInner && dist <= hArea.rOuter) {
+        let ang = Math.atan2(yPos - hArea.cy, x - hArea.cx);
+        let rel = ang + Math.PI / 2;
+        if (rel < 0) rel += Math.PI * 2;
+        const a0 = hArea.a0 + Math.PI / 2, a1 = hArea.a1 + Math.PI / 2;
+        if (rel >= a0 && rel <= a1) { hit = hArea; break; }
+      }
+    } else if (x >= hArea.x0 && x < hArea.x1) { hit = hArea; break; }
+  }
+  if (!hit) { tip.classList.remove('visible'); return; }
+  tip.innerHTML = `<div class="tt-title">${esc(hit.label)}</div>${fmtNum(hit.value)}`;
+  tip.style.left = x + 'px';
+  tip.style.top = yPos + 'px';
+  tip.classList.add('visible');
+});
+$('#chart').addEventListener('mouseleave', () => $('#chartTip').classList.remove('visible'));
+
+/* ---- analyze control events ---- */
+$('#groupBySel').addEventListener('change', (e) => { view.pivot.groupBy = +e.target.value; refreshAnalyze(); });
+$('#bucketSel').addEventListener('change', (e) => { view.pivot.bucket = e.target.value; refreshAnalyze(); });
+$('#aggSel').addEventListener('change', (e) => { view.pivot.agg = e.target.value; refreshAnalyze(); });
+$('#valueSel').addEventListener('change', (e) => { view.pivot.valueCol = +e.target.value; refreshAnalyze(); });
+$('#chartSel').addEventListener('change', (e) => { view.pivot.chart = e.target.value; refreshAnalyze(); });
+
+/* =====================================================================
+   Exports
+===================================================================== */
+function downloadFile(name, content, mime) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+function csvCell(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+$('#exportRowsBtn').addEventListener('click', () => {
+  const lines = [dataset.headers.map(csvCell).join(',')];
+  for (const r of filteredIdx) lines.push(dataset.rows[r].map(csvCell).join(','));
+  downloadFile(`${dataset.name}-filtered.csv`, lines.join('\n'), 'text/csv');
+  toast(`Exported ${filteredIdx.length.toLocaleString()} rows`);
+});
+$('#exportPivotBtn').addEventListener('click', () => {
+  const p = view.pivot;
+  const valHead = p.agg === 'count' ? 'count' : `${p.agg}_${dataset.headers[p.valueCol]}`;
+  const lines = [[dataset.headers[p.groupBy], valHead, 'rows'].map(csvCell).join(',')];
+  for (const g of pivotData) lines.push([g.label, g.value, g.count].map(csvCell).join(','));
+  downloadFile('summary.csv', lines.join('\n'), 'text/csv');
+  toast('Summary exported');
+});
+$('#exportChartBtn').addEventListener('click', () => {
+  const src = $('#chart');
+  const off = document.createElement('canvas');
+  off.width = src.width; off.height = src.height + 60 * (window.devicePixelRatio || 1);
+  const c = off.getContext('2d');
+  c.fillStyle = cssVar('--surface');
+  c.fillRect(0, 0, off.width, off.height);
+  const dpr = window.devicePixelRatio || 1;
+  c.fillStyle = cssVar('--text-primary');
+  c.font = `700 ${15 * dpr}px system-ui, sans-serif`;
+  c.fillText(pivotTitle(), 16 * dpr, 28 * dpr);
+  c.drawImage(src, 0, 44 * dpr);
+  off.toBlob(blob => { downloadFile('chart.png', blob, 'image/png'); toast('Chart exported'); });
+});
+
+/* =====================================================================
+   Refresh pipeline
+===================================================================== */
+function refreshAnalyze() {
+  renderAnalyzeControls();
+  computePivot();
+  renderPivotTable();
+  renderChart();
+  save();
+}
+function refresh(opts = {}) {
+  applyFilters();
+  renderTable();
+  computePivot();
+  renderPivotTable();
+  renderChart();
+  save();
+  if (opts.keepFocus) {
+    // filter inputs are re-rendered; restore focus to the same filter box
+    const el = document.querySelector(`[data-f="${opts.keepFocus.dataset.f}"][data-c="${opts.keepFocus.dataset.c}"]`);
+    if (el) {
+      el.focus();
+      if (el.setSelectionRange && el.type === 'text') el.setSelectionRange(el.value.length, el.value.length);
+    }
+  }
+}
+function renderAll() {
+  renderColStrip();
+  renderAnalyzeControls();
+  applyFilters();
+  renderTable();
+  $('#globalSearch').value = view.search;
+  computePivot();
+  renderPivotTable();
+  renderChart();
+}
+window.addEventListener('resize', () => { if (dataset) renderChart(); });
+
+/* =====================================================================
+   Theme, guide, toast
+===================================================================== */
+function applyTheme() {
+  const pref = settings.theme;
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  if (dataset) renderChart();
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (settings.theme === 'auto') applyTheme(); });
+$('#themeToggle').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  settings.theme = dark ? 'light' : 'dark';
+  save(); applyTheme();
+});
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() {
+  $('#guideModal').classList.remove('open');
+  if (!settings.guideSeen) { settings.guideSeen = true; save(); }
+}
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', (e) => { if (e.target === $('#guideModal')) closeGuide(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('#guideModal').classList.contains('open')) closeGuide();
+    if ($('#pasteModal').classList.contains('open')) $('#pasteModal').classList.remove('open');
+  }
+});
+
+/* =====================================================================
+   Boot
+===================================================================== */
+loadStored();
+applyTheme();
+if (!settings.guideSeen) openGuide();
+</script>
+</body>
+</html>
