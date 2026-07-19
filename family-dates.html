@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dates & Gifts</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --danger: #d03b3b;
+    --good: #0ca30c;
+    --warn: #c98500;
+    --love: #d55181;
+    --shadow: 0 1px 3px rgba(11, 11, 11, 0.06);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --danger: #e66767;
+    --good: #0ca30c;
+    --warn: #c98500;
+    --love: #e87ba4;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    min-height: 100vh; -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 840px; margin: 0 auto; padding: 0 14px 90px; }
+
+  header.topbar { display: flex; align-items: center; gap: 8px; padding: 16px 0 12px; flex-wrap: wrap; }
+  .brand { font-weight: 700; font-size: 1.15rem; display: flex; gap: 8px; align-items: center; }
+  .spacer { flex: 1; }
+  .btn {
+    appearance: none; border: 1px solid var(--border); cursor: pointer;
+    font: inherit; font-size: 0.85rem; font-weight: 600;
+    background: var(--surface); color: var(--text-primary);
+    padding: 8px 13px; border-radius: 9px; box-shadow: var(--shadow);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--baseline); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.small { padding: 5px 9px; font-size: 0.78rem; }
+  .btn.icon { padding: 8px 10px; }
+  .btn.danger { color: var(--danger); }
+
+  /* tabs */
+  nav.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--grid); margin-bottom: 16px; }
+  .tab-btn {
+    appearance: none; background: none; border: none; cursor: pointer;
+    font: inherit; font-weight: 600; font-size: 0.9rem;
+    color: var(--text-muted); padding: 10px 14px;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* stat tiles */
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr 1fr; } .stat-grid .wide { grid-column: 1 / -1; } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat-value { font-size: 1.3rem; font-weight: 800; }
+  .stat-note { font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px; }
+
+  /* event rows */
+  .ev {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .ev.urgent { border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+  .ev-head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .ev-emoji {
+    width: 44px; height: 44px; border-radius: 12px; flex: none;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+    background: var(--page); border: 1px solid var(--grid);
+  }
+  .ev-main { flex: 1; min-width: 0; }
+  .ev-name { font-weight: 700; font-size: 0.95rem; }
+  .ev-sub { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .chip {
+    font-size: 0.7rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; flex: none;
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .chip.today { background: color-mix(in srgb, var(--love) 22%, transparent); color: var(--love); }
+  .chip.soon { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+  .chip.near { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .chip.far { background: color-mix(in srgb, var(--text-muted) 15%, transparent); color: var(--text-secondary); }
+  .chip.gift-none { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+  .chip.gift-ideas { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+  .chip.gift-ok { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+
+  .ev-body { display: none; border-top: 1px solid var(--grid); padding: 12px 14px; }
+  .ev.open .ev-body { display: block; }
+  .ev-actions { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .gift-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 0.86rem; }
+  .gift-row:last-of-type { border-bottom: none; }
+  .gift-status {
+    appearance: none; border: 1px solid var(--border); background: var(--page); cursor: pointer;
+    font-size: 0.68rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; flex: none;
+  }
+  .gift-status.idea { color: var(--warn); }
+  .gift-status.bought { color: var(--good); }
+  .gift-status.given { color: var(--text-muted); }
+  .gift-idea { flex: 1; min-width: 0; }
+  .gift-idea.given { text-decoration: line-through; opacity: 0.6; }
+  .gift-cost { font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+  .gift-del { appearance: none; border: none; background: none; cursor: pointer; color: var(--text-muted); padding: 2px 6px; border-radius: 5px; }
+  .gift-del:hover { color: var(--danger); }
+  .gift-add { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .gift-add input[type="text"] { flex: 1; min-width: 140px; }
+  .gift-add input[type="number"] { width: 96px; }
+  .budget-line { font-size: 0.78rem; color: var(--text-secondary); margin-top: 8px; }
+  .budget-line.over { color: var(--danger); font-weight: 700; }
+
+  input, select, textarea {
+    font: inherit; font-size: 0.9rem; color: var(--text-primary);
+    background: var(--page); border: 1px solid var(--baseline);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .empty { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 40px 16px; line-height: 1.7; }
+  .empty .big { font-size: 2.4rem; display: block; margin-bottom: 8px; }
+
+  /* year planner */
+  .year-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 640px) { .year-grid { grid-template-columns: repeat(2, 1fr); } }
+  .month-card { padding: 12px; }
+  .month-card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
+  .month-card.current { border-color: var(--accent); }
+  .month-card.current h3 { color: var(--accent); }
+  .month-ev { font-size: 0.8rem; padding: 3px 0; display: flex; gap: 6px; }
+  .month-ev .d { font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text-secondary); width: 22px; flex: none; text-align: right; }
+  .month-none { font-size: 0.76rem; color: var(--text-muted); font-style: italic; }
+
+  /* modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; width: 100%; max-width: 460px; box-shadow: var(--shadow);
+    max-height: 88vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 1.05rem; margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label.field { display: flex; flex-direction: column; gap: 5px; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+  .modal-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+  .modal-actions .right { display: flex; gap: 8px; margin-left: auto; }
+
+  .guide-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .guide-step:last-of-type { border-bottom: none; }
+  .guide-step .g-em { font-size: 1.3rem; flex: none; width: 34px; text-align: center; }
+  .guide-step .g-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }
+  .guide-step .g-text { font-size: 0.84rem; color: var(--text-secondary); line-height: 1.55; }
+  .guide-step .g-text b { color: var(--text-primary); }
+
+  .toast {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%) translateY(90px);
+    background: var(--text-primary); color: var(--page);
+    padding: 9px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.25s; z-index: 300; pointer-events: none;
+    max-width: 92vw; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="brand">💝 Dates &amp; Gifts</span>
+    <span class="spacer"></span>
+    <button class="btn primary" id="addEvBtn">＋ Add date</button>
+    <button class="btn" id="icsBtn" title="Export all dates to your phone calendar">📅 To calendar</button>
+    <button class="btn icon" id="sampleBtn" title="Load sample data">🎲</button>
+    <button class="btn icon" id="themeToggle" title="Toggle theme">🌗</button>
+    <button class="btn icon" id="guideBtn" title="How to use">?</button>
+  </header>
+
+  <div class="stat-grid">
+    <div class="card wide">
+      <div class="stat-label">Next up</div>
+      <div class="stat-value" id="statNext">–</div>
+      <div class="stat-note" id="statNextNote"></div>
+    </div>
+    <div class="card">
+      <div class="stat-label">This month</div>
+      <div class="stat-value" id="statMonth">0</div>
+      <div class="stat-note">occasions</div>
+    </div>
+    <div class="card">
+      <div class="stat-label">Gifts needed</div>
+      <div class="stat-value" id="statGifts">0</div>
+      <div class="stat-note">within 30 days</div>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-view="upcoming">Upcoming</button>
+    <button class="tab-btn" data-view="year">Year planner</button>
+  </nav>
+
+  <div id="view-upcoming"><div id="evList"></div></div>
+  <div id="view-year" style="display:none"><div class="year-grid" id="yearGrid"></div></div>
+</div>
+
+<!-- Event modal -->
+<div class="modal-backdrop" id="evModal">
+  <div class="modal">
+    <h3 id="evModalTitle">Add a date</h3>
+    <div class="form-grid">
+      <label class="field full">Who / what is it?
+        <input type="text" id="fName" placeholder="e.g. Priya, Mom, Our wedding" maxlength="60">
+      </label>
+      <label class="field">Relation
+        <select id="fRelation">
+          <option value="💍">💍 Spouse</option>
+          <option value="👩">👩 Mother</option>
+          <option value="👨">👨 Father</option>
+          <option value="👧">👧 Daughter</option>
+          <option value="👦">👦 Son</option>
+          <option value="🧓">🧓 Grandparent</option>
+          <option value="🧑">🧑 Friend</option>
+          <option value="🎊">🎊 Festival / other</option>
+        </select>
+      </label>
+      <label class="field">Occasion
+        <select id="fType">
+          <option value="birthday">🎂 Birthday</option>
+          <option value="anniversary">💞 Anniversary</option>
+          <option value="other">🎉 Other</option>
+        </select>
+      </label>
+      <label class="field">Day
+        <input type="number" id="fDay" min="1" max="31" placeholder="14">
+      </label>
+      <label class="field">Month
+        <select id="fMonth"></select>
+      </label>
+      <label class="field">Year it began <span style="font-weight:400">(optional)</span>
+        <input type="number" id="fYear" min="1900" max="2100" placeholder="e.g. 1992">
+      </label>
+      <label class="field">Gift budget <span style="font-weight:400">(optional)</span>
+        <input type="number" id="fBudget" min="0" placeholder="e.g. 5000">
+      </label>
+      <label class="field full">Notes
+        <input type="text" id="fNotes" placeholder="e.g. loves sarees, hates surprises" maxlength="120">
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="evDelete" style="display:none">🗑 Delete</button>
+      <span class="right">
+        <button class="btn" id="evCancel">Cancel</button>
+        <button class="btn primary" id="evSave">Save</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Guide -->
+<div class="modal-backdrop" id="guideModal">
+  <div class="modal">
+    <h3>👋 Never forget a special day again</h3>
+    <div class="guide-step"><span class="g-em">💝</span><div>
+      <div class="g-title">Add the dates that matter</div>
+      <div class="g-text">Birthdays, your anniversary, festivals — tap <b>＋ Add date</b>. Add the original year and it shows "turns 34" or "9th anniversary" automatically.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">⏰</span><div>
+      <div class="g-title">See what's coming</div>
+      <div class="g-text">Everything is sorted by how soon it is, with countdowns. Anything within a week glows — and if there's <b>no gift ready</b>, you'll know at a glance.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">🎁</span><div>
+      <div class="g-title">Plan gifts ahead</div>
+      <div class="g-text">Tap any date to open its <b>gift planner</b>: save ideas with prices whenever inspiration strikes, set a budget, and mark gifts bought → given.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">📅</span><div>
+      <div class="g-title">Get reminders on your phone</div>
+      <div class="g-text">Tap <b>📅 To calendar</b> to download all your dates as a calendar file. Open it on your phone (or import into Google Calendar) and you'll get reminders <b>7 days and 1 day before</b> every occasion, every year.</div>
+    </div></div>
+    <div class="guide-step"><span class="g-em">🗓️</span><div>
+      <div class="g-title">Plan the whole year</div>
+      <div class="g-text">The <b>Year planner</b> tab shows every month at a glance — spot expensive months early.</div>
+    </div></div>
+    <div class="modal-actions"><span class="right">
+      <button class="btn primary" id="guideClose">Got it</button>
+    </span></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const STORE_KEY = 'familyDatesData_v1';
+const DEMO_MAX_EVENTS = 8;
+const $ = (s) => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/* =====================================================================
+   State
+===================================================================== */
+function freshState() {
+  return { version: 1, events: [], settings: { theme: 'auto', guideSeen: false } };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return freshState();
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.events)) return freshState();
+    const base = freshState();
+    return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) } };
+  } catch { return freshState(); }
+}
+let state = loadState();
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch { toast('Browser storage is full'); }
+}
+
+/* =====================================================================
+   Date math
+===================================================================== */
+function todayMid() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function nextOccurrence(ev) {
+  const now = todayMid();
+  let occ = new Date(now.getFullYear(), ev.month - 1, ev.day);
+  if (occ < now) occ = new Date(now.getFullYear() + 1, ev.month - 1, ev.day);
+  return occ;
+}
+function daysTo(ev) {
+  return Math.round((nextOccurrence(ev) - todayMid()) / 86400000);
+}
+function yearsLine(ev) {
+  if (!ev.year) return '';
+  const n = nextOccurrence(ev).getFullYear() - ev.year;
+  if (n <= 0) return '';
+  if (ev.type === 'birthday') return `turns ${n}`;
+  if (ev.type === 'anniversary') return `${n}${ordinal(n)} anniversary`;
+  return `${n} years`;
+}
+function ordinal(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+function countdownChip(d) {
+  if (d === 0) return '<span class="chip today">🎉 TODAY</span>';
+  if (d === 1) return '<span class="chip soon">tomorrow</span>';
+  if (d <= 7) return `<span class="chip soon">in ${d} days</span>`;
+  if (d <= 30) return `<span class="chip near">in ${d} days</span>`;
+  return `<span class="chip far">in ${d} days</span>`;
+}
+function giftChip(ev) {
+  const gifts = ev.gifts || [];
+  if (gifts.some(g => g.status === 'bought' || g.status === 'given')) return '<span class="chip gift-ok">✅ gift ready</span>';
+  if (gifts.length) return `<span class="chip gift-ideas">💡 ${gifts.length} idea${gifts.length > 1 ? 's' : ''}</span>`;
+  return '<span class="chip gift-none">⚠ no gift yet</span>';
+}
+const TYPE_EMOJI = { birthday: '🎂', anniversary: '💞', other: '🎉' };
+
+/* =====================================================================
+   Rendering — stats + upcoming
+===================================================================== */
+let openId = null;
+
+function renderStats() {
+  const evs = state.events;
+  if (!evs.length) {
+    $('#statNext').textContent = '–';
+    $('#statNextNote').textContent = 'Add your first date';
+    $('#statMonth').textContent = '0';
+    $('#statGifts').textContent = '0';
+    return;
+  }
+  const sorted = [...evs].sort((a, b) => daysTo(a) - daysTo(b));
+  const next = sorted[0];
+  const d = daysTo(next);
+  $('#statNext').textContent = `${next.relation} ${next.name}`;
+  $('#statNextNote').textContent = (d === 0 ? '🎉 It\'s today!' : d === 1 ? 'Tomorrow!' : `In ${d} days`) +
+    ` · ${next.day} ${MONTH_NAMES[next.month - 1].slice(0, 3)}` + (yearsLine(next) ? ` · ${yearsLine(next)}` : '');
+  const thisMonth = new Date().getMonth() + 1;
+  $('#statMonth').textContent = evs.filter(e => e.month === thisMonth).length;
+  $('#statGifts').textContent = evs.filter(e =>
+    daysTo(e) <= 30 && !(e.gifts || []).some(g => g.status === 'bought' || g.status === 'given')).length;
+}
+
+function giftTotals(ev) {
+  const gifts = ev.gifts || [];
+  const planned = gifts.filter(g => g.status !== 'given').reduce((s, g) => s + (Number(g.cost) || 0), 0);
+  return planned;
+}
+
+function renderUpcoming() {
+  const list = $('#evList');
+  if (!state.events.length) {
+    list.innerHTML = `<div class="empty"><span class="big">💝</span>No dates yet.<br>
+      Tap <b>＋ Add date</b> for your first birthday or anniversary,<br>or 🎲 to see the app with sample data.</div>`;
+    return;
+  }
+  const sorted = [...state.events].sort((a, b) => daysTo(a) - daysTo(b));
+  list.innerHTML = sorted.map(ev => {
+    const d = daysTo(ev);
+    const urgent = d <= 14 && !(ev.gifts || []).some(g => g.status === 'bought' || g.status === 'given');
+    const yl = yearsLine(ev);
+    const planned = giftTotals(ev);
+    const overBudget = ev.budget && planned > ev.budget;
+    return `<div class="ev${urgent ? ' urgent' : ''}${ev.id === openId ? ' open' : ''}" data-id="${ev.id}">
+      <div class="ev-head">
+        <div class="ev-emoji">${ev.relation}</div>
+        <div class="ev-main">
+          <div class="ev-name">${TYPE_EMOJI[ev.type] || '🎉'} ${esc(ev.name)}</div>
+          <div class="ev-sub">
+            <span>${ev.day} ${MONTH_NAMES[ev.month - 1]}</span>
+            ${yl ? `<span>· ${yl}</span>` : ''}
+            ${ev.notes ? `<span>· ${esc(ev.notes)}</span>` : ''}
+          </div>
+        </div>
+        ${giftChip(ev)}
+        ${countdownChip(d)}
+      </div>
+      <div class="ev-body">
+        <div class="ev-actions">
+          <button class="btn small" data-act="edit">✏️ Edit</button>
+          <span class="spacer"></span>
+        </div>
+        <div class="stat-label">🎁 Gift planner</div>
+        ${(ev.gifts || []).map(g => `
+          <div class="gift-row" data-gift="${g.id}">
+            <button class="gift-status ${g.status}" data-act="cycle" title="Tap to change: idea → bought → given">${g.status.toUpperCase()}</button>
+            <span class="gift-idea${g.status === 'given' ? ' given' : ''}">${esc(g.idea)}</span>
+            ${g.cost ? `<span class="gift-cost">₹${Number(g.cost).toLocaleString('en-IN')}</span>` : ''}
+            <button class="gift-del" data-act="gdel" title="Remove idea">✕</button>
+          </div>`).join('') || '<div class="month-none" style="padding:6px 0">No ideas yet — add one below while you remember it!</div>'}
+        <div class="gift-add">
+          <input type="text" placeholder="Gift idea…" data-gift-idea maxlength="80">
+          <input type="number" placeholder="₹ cost" data-gift-cost min="0">
+          <button class="btn small" data-act="gadd">Add</button>
+        </div>
+        ${ev.budget ? `<div class="budget-line${overBudget ? ' over' : ''}">Planned ₹${planned.toLocaleString('en-IN')} of ₹${Number(ev.budget).toLocaleString('en-IN')} budget${overBudget ? ' — over budget!' : ''}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderYear() {
+  const grid = $('#yearGrid');
+  const cur = new Date().getMonth();
+  grid.innerHTML = MONTH_NAMES.map((mn, mi) => {
+    const evs = state.events.filter(e => e.month === mi + 1).sort((a, b) => a.day - b.day);
+    return `<div class="card month-card${mi === cur ? ' current' : ''}">
+      <h3>${mn}</h3>
+      ${evs.length ? evs.map(e => `<div class="month-ev"><span class="d">${e.day}</span><span>${e.relation} ${esc(e.name)}</span></div>`).join('')
+        : '<div class="month-none">—</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderAll() { renderStats(); renderUpcoming(); renderYear(); }
+
+/* =====================================================================
+   Event list interactions
+===================================================================== */
+$('#evList').addEventListener('click', (e) => {
+  const evEl = e.target.closest('.ev');
+  if (!evEl) return;
+  const ev = state.events.find(x => x.id === evEl.dataset.id);
+  if (!ev) return;
+  const act = e.target.closest('[data-act]')?.dataset.act;
+
+  if (act === 'edit') { openModal(ev); return; }
+  if (act === 'gadd') {
+    const ideaEl = evEl.querySelector('[data-gift-idea]');
+    const costEl = evEl.querySelector('[data-gift-cost]');
+    const idea = ideaEl.value.trim();
+    if (!idea) { toast('Type a gift idea first'); return; }
+    ev.gifts = ev.gifts || [];
+    ev.gifts.push({ id: uid(), idea, cost: costEl.value ? Number(costEl.value) : null, status: 'idea' });
+    save(); renderAll();
+    return;
+  }
+  if (act === 'cycle') {
+    const gid = e.target.closest('[data-gift]').dataset.gift;
+    const g = (ev.gifts || []).find(x => x.id === gid);
+    g.status = g.status === 'idea' ? 'bought' : g.status === 'bought' ? 'given' : 'idea';
+    save(); renderAll();
+    return;
+  }
+  if (act === 'gdel') {
+    const gid = e.target.closest('[data-gift]').dataset.gift;
+    ev.gifts = (ev.gifts || []).filter(x => x.id !== gid);
+    save(); renderAll();
+    return;
+  }
+  if (e.target.closest('.ev-head')) {
+    openId = openId === ev.id ? null : ev.id;
+    renderUpcoming();
+  }
+});
+$('#evList').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches('[data-gift-idea], [data-gift-cost]')) {
+    e.target.closest('.gift-add').querySelector('[data-act="gadd"]').click();
+  }
+});
+
+/* =====================================================================
+   Modal
+===================================================================== */
+let editingId = null;
+$('#fMonth').innerHTML = MONTH_NAMES.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+
+function openModal(ev) {
+  editingId = ev ? ev.id : null;
+  $('#evModalTitle').textContent = ev ? 'Edit date' : 'Add a date';
+  $('#evDelete').style.display = ev ? '' : 'none';
+  $('#fName').value = ev ? ev.name : '';
+  $('#fRelation').value = ev ? ev.relation : '💍';
+  $('#fType').value = ev ? ev.type : 'birthday';
+  $('#fDay').value = ev ? ev.day : '';
+  $('#fMonth').value = ev ? ev.month : (new Date().getMonth() + 1);
+  $('#fYear').value = ev && ev.year ? ev.year : '';
+  $('#fBudget').value = ev && ev.budget ? ev.budget : '';
+  $('#fNotes').value = ev ? (ev.notes || '') : '';
+  $('#evModal').classList.add('open');
+  $('#fName').focus();
+}
+$('#addEvBtn').addEventListener('click', () => {
+  if (state.events.length >= DEMO_MAX_EVENTS) {
+    toast(`Demo limit: ${DEMO_MAX_EVENTS} dates. The full version is unlimited — enquire on the homepage.`);
+    return;
+  }
+  openModal(null);
+});
+$('#evCancel').addEventListener('click', () => $('#evModal').classList.remove('open'));
+$('#evModal').addEventListener('click', (e) => { if (e.target === $('#evModal')) $('#evModal').classList.remove('open'); });
+$('#evSave').addEventListener('click', () => {
+  const name = $('#fName').value.trim();
+  const day = Number($('#fDay').value);
+  const month = Number($('#fMonth').value);
+  if (!name) { toast('Give it a name'); return; }
+  if (!(day >= 1 && day <= 31)) { toast('Enter a valid day (1–31)'); return; }
+  const data = {
+    name, relation: $('#fRelation').value, type: $('#fType').value,
+    day, month,
+    year: $('#fYear').value ? Number($('#fYear').value) : null,
+    budget: $('#fBudget').value ? Number($('#fBudget').value) : null,
+    notes: $('#fNotes').value.trim(),
+  };
+  if (editingId) {
+    Object.assign(state.events.find(x => x.id === editingId), data);
+  } else {
+    state.events.push({ id: uid(), gifts: [], ...data });
+  }
+  save();
+  $('#evModal').classList.remove('open');
+  renderAll();
+});
+$('#evDelete').addEventListener('click', () => {
+  if (!confirm('Delete this date and its gift ideas?')) return;
+  state.events = state.events.filter(x => x.id !== editingId);
+  save();
+  $('#evModal').classList.remove('open');
+  renderAll();
+});
+
+/* =====================================================================
+   Tabs
+===================================================================== */
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x === b));
+  $('#view-upcoming').style.display = b.dataset.view === 'upcoming' ? '' : 'none';
+  $('#view-year').style.display = b.dataset.view === 'year' ? '' : 'none';
+}));
+
+/* =====================================================================
+   ICS export — yearly recurring events with 7-day and 1-day alarms
+===================================================================== */
+function icsEscape(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+function buildICS() {
+  const lines = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Projects//DatesAndGifts//EN', 'CALSCALE:GREGORIAN',
+  ];
+  const now = new Date();
+  const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  for (const ev of state.events) {
+    const occ = nextOccurrence(ev);
+    const y = occ.getFullYear();
+    const dt = `${y}${String(ev.month).padStart(2, '0')}${String(ev.day).padStart(2, '0')}`;
+    const title = `${TYPE_EMOJI[ev.type] || '🎉'} ${ev.name}${ev.type === 'birthday' ? "'s birthday" : ev.type === 'anniversary' ? ' anniversary' : ''}`;
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${ev.id}@projects-dates`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${dt}`,
+      `RRULE:FREQ=YEARLY;BYMONTH=${ev.month};BYMONTHDAY=${ev.day}`,
+      `SUMMARY:${icsEscape(title)}`,
+      ev.notes ? `DESCRIPTION:${icsEscape(ev.notes)}` : '',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(title)} in 7 days — plan the gift! 🎁`, 'TRIGGER:-P7D', 'END:VALARM',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(title)} is tomorrow!`, 'TRIGGER:-P1D', 'END:VALARM',
+      'END:VEVENT',
+    );
+  }
+  lines.push('END:VCALENDAR');
+  return lines.filter(Boolean).join('\r\n');
+}
+$('#icsBtn').addEventListener('click', () => {
+  if (!state.events.length) { toast('Add some dates first'); return; }
+  const blob = new Blob([buildICS()], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'my-special-dates.ics'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+  toast('Calendar file downloaded — open it on your phone to import with reminders');
+});
+
+/* =====================================================================
+   Sample data
+===================================================================== */
+$('#sampleBtn').addEventListener('click', () => {
+  if (state.events.length && !confirm('Replace current dates with sample data?')) return;
+  const t = new Date();
+  const inDays = (n) => { const d = new Date(t.getFullYear(), t.getMonth(), t.getDate() + n); return { day: d.getDate(), month: d.getMonth() + 1 }; };
+  const soon = inDays(5), later = inDays(20), today = inDays(0);
+  state.events = [
+    { id: uid(), name: 'Priya', relation: '💍', type: 'birthday', ...soon, year: 1992, budget: 5000, notes: 'loves silver jewellery',
+      gifts: [{ id: uid(), idea: 'Silver anklets', cost: 2800, status: 'idea' }, { id: uid(), idea: 'Perfume set', cost: 1900, status: 'idea' }] },
+    { id: uid(), name: 'Our wedding', relation: '💍', type: 'anniversary', ...later, year: 2016, budget: 8000, notes: 'book the terrace restaurant',
+      gifts: [{ id: uid(), idea: 'Weekend trip to Pondy', cost: 7500, status: 'bought' }] },
+    { id: uid(), name: 'Amma', relation: '👩', type: 'birthday', ...today, year: 1961, budget: 3000, notes: '',
+      gifts: [{ id: uid(), idea: 'Kanjivaram saree', cost: 2900, status: 'given' }] },
+    { id: uid(), name: 'Aarav', relation: '👦', type: 'birthday', day: 14, month: 11, year: 2018, budget: 2000, notes: 'dinosaurs phase', gifts: [] },
+    { id: uid(), name: 'Appa', relation: '👨', type: 'birthday', day: 2, month: 3, year: 1958, budget: 3000, notes: '', gifts: [] },
+    { id: uid(), name: 'Diwali', relation: '🎊', type: 'other', day: 8, month: 11, year: null, budget: 10000, notes: 'gifts for both families', gifts: [] },
+  ];
+  save(); renderAll();
+  toast('Sample dates loaded');
+});
+
+/* =====================================================================
+   Theme, guide, toast
+===================================================================== */
+function applyTheme() {
+  const pref = state.settings.theme;
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.settings.theme === 'auto') applyTheme(); });
+$('#themeToggle').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  state.settings.theme = dark ? 'light' : 'dark';
+  save(); applyTheme();
+});
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() {
+  $('#guideModal').classList.remove('open');
+  if (!state.settings.guideSeen) { state.settings.guideSeen = true; save(); }
+}
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', (e) => { if (e.target === $('#guideModal')) closeGuide(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('#guideModal').classList.contains('open')) closeGuide();
+    if ($('#evModal').classList.contains('open')) $('#evModal').classList.remove('open');
+  }
+});
+
+/* =====================================================================
+   Boot
+===================================================================== */
+renderAll();
+applyTheme();
+save();
+if (!state.settings.guideSeen) openGuide();
+</script>
+</body>
+</html>
