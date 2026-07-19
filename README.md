@@ -6,6 +6,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 
 | App | Link |
 |---|---|
+| 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/Projects/family-dates.html |
 | 🧾 Invoice Generator | https://sivasankarn91.github.io/Projects/invoice-generator.html |
 | 📊 Data Analyzer | https://sivasankarn91.github.io/Projects/data-analyzer.html |
 | 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
@@ -42,6 +43,18 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 - **Multiple boards** — create, rename, and switch between boards, each with its own saved viewport
 - **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
 - **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
+
+## 💝 Dates & Gifts Reminder — [`family-dates.html`](family-dates.html)
+
+Never forget a birthday or anniversary again — track the family's special dates, plan gifts ahead, and get reminders on your phone.
+
+**Features**
+
+- **Upcoming view** — every date sorted by countdown ("TODAY", "tomorrow", "in N days"), with "turns 34" / "9th anniversary" computed from the original year
+- **Gift planner per occasion** — save ideas with prices the moment inspiration strikes, set a budget, cycle idea → bought → given; dates within two weeks with no gift ready are flagged
+- **Phone reminders** — one tap exports all dates as a calendar (.ics) file with yearly recurrence and alarms 7 days + 1 day before; import into Google Calendar or iPhone
+- **Year planner** — all twelve months at a glance to spot expensive months early
+- **Extras** — sample data, first-run guide, light/dark theme, mobile-first layout, autosaved in `localStorage`
 
 ## 🧾 Invoice Generator — [`invoice-generator.html`](invoice-generator.html)
 
