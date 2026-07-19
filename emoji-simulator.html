@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Physics Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .instructions {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        canvas {
+            border: 3px solid white;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 150px;
+        }
+
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .emoji-selector {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            display: block;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .emoji-selector h3 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .emoji-button {
+            font-size: 2.5em;
+            background: white;
+            border: 3px solid rgba(102, 126, 234, 0.5);
+            padding: 8px 12px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            display: inline-block;
+            min-width: 50px;
+            min-height: 50px;
+            line-height: 1;
+        }
+
+        .emoji-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: scale(1.15);
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .emoji-button.selected {
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+            transform: scale(1.05);
+        }
+
+        .stats {
+            color: white;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .aim-line {
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Emoji Physics Simulator</h1>
+        <p class="instructions">Click and drag to shoot emojis with realistic physics!</p>
+
+        <canvas id="canvas" width="1000" height="600"></canvas>
+
+        <div class="emoji-selector">
+            <h3>Select Your Emoji:</h3>
+            <button class="emoji-button selected" data-emoji="😀">😀</button>
+            <button class="emoji-button" data-emoji="🎯">🎯</button>
+            <button class="emoji-button" data-emoji="⚽">⚽</button>
+            <button class="emoji-button" data-emoji="🏀">🏀</button>
+            <button class="emoji-button" data-emoji="🎾">🎾</button>
+            <button class="emoji-button" data-emoji="🌟">🌟</button>
+            <button class="emoji-button" data-emoji="💎">💎</button>
+            <button class="emoji-button" data-emoji="🔥">🔥</button>
+            <button class="emoji-button" data-emoji="💧">💧</button>
+            <button class="emoji-button" data-emoji="🎈">🎈</button>
+            <button class="emoji-button" data-emoji="🚀">🚀</button>
+            <button class="emoji-button" data-emoji="⭐">⭐</button>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="gravity">Gravity: <span id="gravityValue">0.5</span></label>
+                <input type="range" id="gravity" min="0" max="2" step="0.1" value="0.5">
+            </div>
+
+            <div class="control-group">
+                <label for="bounciness">Bounciness: <span id="bouncinessValue">0.7</span></label>
+                <input type="range" id="bounciness" min="0" max="1" step="0.1" value="0.7">
+            </div>
+
+            <div class="control-group">
+                <label for="size">Emoji Size: <span id="sizeValue">30</span></label>
+                <input type="range" id="size" min="20" max="60" step="5" value="30">
+            </div>
+
+            <button id="clearBtn">Clear All</button>
+        </div>
+
+        <div class="stats">
+            <p>Emojis: <span id="emojiCount">0</span> | FPS: <span id="fps">60</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Physics constants
+        let GRAVITY = 0.5;
+        let BOUNCINESS = 0.7;
+        let FRICTION = 0.99;
+        let EMOJI_SIZE = 30;
+
+        // State
+        let particles = [];
+        let isMouseDown = false;
+        let startPos = { x: 0, y: 0 };
+        let currentPos = { x: 0, y: 0 };
+        let selectedEmoji = '😀';
+        let lastTime = Date.now();
+        let fps = 60;
+
+        // Particle class with real physics
+        class Particle {
+            constructor(x, y, vx, vy, emoji, size) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.emoji = emoji;
+                this.size = size;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+                this.mass = 1;
+                this.radius = size / 2;
+            }
+
+            update() {
+                // Apply gravity
+                this.vy += GRAVITY;
+
+                // Apply friction
+                this.vx *= FRICTION;
+                this.vy *= FRICTION;
+
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Update rotation
+                this.rotation += this.rotationSpeed;
+
+                // Ground collision
+                if (this.y + this.radius > canvas.height) {
+                    this.y = canvas.height - this.radius;
+                    this.vy *= -BOUNCINESS;
+                    this.vx *= 0.95; // Ground friction
+                    this.rotationSpeed *= 0.9;
+
+                    // Stop bouncing when velocity is very small
+                    if (Math.abs(this.vy) < 0.5) {
+                        this.vy = 0;
+                    }
+                }
+
+                // Ceiling collision
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy *= -BOUNCINESS;
+                }
+
+                // Left wall collision
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx *= -BOUNCINESS;
+                }
+
+                // Right wall collision
+                if (this.x + this.radius > canvas.width) {
+                    this.x = canvas.width - this.radius;
+                    this.vx *= -BOUNCINESS;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.font = `${this.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.emoji, 0, 0);
+                ctx.restore();
+            }
+
+            // Check collision with another particle
+            collidesWith(other) {
+                const dx = other.x - this.x;
+                const dy = other.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < (this.radius + other.radius);
+            }
+
+            // Resolve collision with another particle
+            resolveCollision(other) {
+                const dx = other.x - this.x;
+                const dy = other.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Prevent division by zero
+                if (distance === 0) return;
+
+                // Normalize collision vector
+                const nx = dx / distance;
+                const ny = dy / distance;
+
+                // Relative velocity
+                const dvx = other.vx - this.vx;
+                const dvy = other.vy - this.vy;
+
+                // Relative velocity in collision normal direction
+                const dvn = dvx * nx + dvy * ny;
+
+                // Do not resolve if velocities are separating
+                if (dvn > 0) return;
+
+                // Collision impulse
+                const impulse = (2 * dvn) / (this.mass + other.mass);
+
+                // Apply impulse
+                this.vx += impulse * other.mass * nx;
+                this.vy += impulse * other.mass * ny;
+                other.vx -= impulse * this.mass * nx;
+                other.vy -= impulse * this.mass * ny;
+
+                // Separate overlapping particles
+                const overlap = (this.radius + other.radius) - distance;
+                const separationX = (overlap / 2) * nx;
+                const separationY = (overlap / 2) * ny;
+
+                this.x -= separationX;
+                this.y -= separationY;
+                other.x += separationX;
+                other.y += separationY;
+
+                // Add some rotation on collision
+                this.rotationSpeed += (Math.random() - 0.5) * 0.1;
+                other.rotationSpeed += (Math.random() - 0.5) * 0.1;
+            }
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            startPos.x = e.clientX - rect.left;
+            startPos.y = e.clientY - rect.top;
+            currentPos.x = startPos.x;
+            currentPos.y = startPos.y;
+            isMouseDown = true;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const rect = canvas.getBoundingClientRect();
+                currentPos.x = e.clientX - rect.left;
+                currentPos.y = e.clientY - rect.top;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (isMouseDown) {
+                const rect = canvas.getBoundingClientRect();
+                const endX = e.clientX - rect.left;
+                const endY = e.clientY - rect.top;
+
+                // Calculate velocity based on drag distance
+                const vx = (startPos.x - endX) * 0.3;
+                const vy = (startPos.y - endY) * 0.3;
+
+                // Create particle with velocity
+                particles.push(new Particle(startPos.x, startPos.y, vx, vy, selectedEmoji, EMOJI_SIZE));
+
+                isMouseDown = false;
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+
+        // Emoji selection
+        document.querySelectorAll('.emoji-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.emoji-button').forEach(b => b.classList.remove('selected'));
+                button.classList.add('selected');
+                selectedEmoji = button.getAttribute('data-emoji');
+            });
+        });
+
+        // Controls
+        document.getElementById('gravity').addEventListener('input', (e) => {
+            GRAVITY = parseFloat(e.target.value);
+            document.getElementById('gravityValue').textContent = GRAVITY.toFixed(1);
+        });
+
+        document.getElementById('bounciness').addEventListener('input', (e) => {
+            BOUNCINESS = parseFloat(e.target.value);
+            document.getElementById('bouncinessValue').textContent = BOUNCINESS.toFixed(1);
+        });
+
+        document.getElementById('size').addEventListener('input', (e) => {
+            EMOJI_SIZE = parseInt(e.target.value);
+            document.getElementById('sizeValue').textContent = EMOJI_SIZE;
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            particles = [];
+        });
+
+        // Animation loop
+        function animate() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw aim line when dragging
+            if (isMouseDown) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(startPos.x, startPos.y);
+                ctx.lineTo(currentPos.x, currentPos.y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Draw power indicator
+                const distance = Math.sqrt(
+                    Math.pow(currentPos.x - startPos.x, 2) +
+                    Math.pow(currentPos.y - startPos.y, 2)
+                );
+                const power = Math.min(distance / 3, 100);
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Arial';
+                ctx.fillText(`Power: ${Math.round(power)}%`, startPos.x + 10, startPos.y - 10);
+            }
+
+            // Update and draw particles
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+
+            // Check particle collisions
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    if (particles[i].collidesWith(particles[j])) {
+                        particles[i].resolveCollision(particles[j]);
+                    }
+                }
+            }
+
+            // Update stats
+            document.getElementById('emojiCount').textContent = particles.length;
+
+            // Calculate FPS
+            const now = Date.now();
+            const delta = now - lastTime;
+            fps = Math.round(1000 / delta);
+            document.getElementById('fps').textContent = fps;
+            lastTime = now;
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>

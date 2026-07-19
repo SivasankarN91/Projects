@@ -2,7 +2,7 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Live demos**
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all six apps with live demos and an enquiry form.
 
 | App | Link |
 |---|---|
@@ -11,7 +11,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
-| 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/ |
+| 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
 
 ## 💰 Finance Tracker — [`finance-tracker.html`](finance-tracker.html)
 
@@ -86,7 +86,7 @@ A drag-and-drop **multi-page** landing site builder for marketers — assemble p
 - **Responsive preview** — desktop / tablet / phone viewport toggle; exported pages are mobile-responsive with zero JavaScript
 - **Export** — "Export site" downloads a ZIP of all pages as linked HTML files (`index.html`, `pricing.html`, …) with a dependency-free ZIP writer; "Export page" grabs just the current page; JSON backup import/export; undo/redo; autosave to `localStorage`
 
-## 🎪 Emoji Physics Simulator — [`index.html`](index.html)
+## 🎪 Emoji Physics Simulator — [`emoji-simulator.html`](emoji-simulator.html)
 
 An interactive emoji physics playground. Click to spawn emojis and watch them bounce around.
 

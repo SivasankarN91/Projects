@@ -1,482 +1,355 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Physics Simulator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projects — six ready-to-use web apps</title>
+<meta name="description" content="Six polished, dependency-free web apps: invoice generator, data analyzer, landing site builder, whiteboard, finance tracker, and more. Try them live, then get your own customized copy.">
+<meta property="og:title" content="Projects — six ready-to-use web apps">
+<meta property="og:description" content="Try them live in your browser, then get your own customized copy. No signups, no installs.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%9C%A6%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  :root {
+    color-scheme: light;
+    --primary: #2a78d6;
+    --page: #ffffff;
+    --tint: color-mix(in srgb, #2a78d6 7%, #ffffff);
+    --dark-band: #15151d;
+    --ink: #1c1c26;
+    --ink-soft: #5a5a68;
+    --line: rgba(127, 127, 160, 0.2);
+    --card-bg: rgba(127, 127, 160, 0.07);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --primary: #3987e5;
+    --page: #101016;
+    --tint: #16161f;
+    --dark-band: #0a0a0f;
+    --ink: #f2f2f6;
+    --ink-soft: #a8a8b6;
+    --line: rgba(200, 200, 230, 0.16);
+    --card-bg: rgba(200, 200, 230, 0.06);
+  }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-        }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--page); color: var(--ink);
+    line-height: 1.65; font-size: 16px; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 64px 0; }
+  a { color: inherit; text-decoration: none; }
 
-        .container {
-            text-align: center;
-            padding: 20px;
-        }
+  .btn {
+    display: inline-block; background: var(--primary); color: #fff; font-weight: 700;
+    padding: 13px 26px; border-radius: 12px; font-size: 1rem; cursor: pointer;
+    border: 2px solid var(--primary); font-family: inherit;
+  }
+  .btn.ghost { background: transparent; color: var(--primary); }
+  .btn.sm { padding: 8px 16px; font-size: 0.88rem; border-radius: 10px; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
 
-        h1 {
-            color: white;
-            margin-bottom: 10px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
+  /* nav */
+  nav { display: flex; align-items: center; gap: 26px; padding: 18px 0; flex-wrap: wrap; }
+  .nav-brand { font-weight: 800; font-size: 1.2rem; }
+  .nav-links { display: flex; gap: 22px; margin-left: auto; font-weight: 600; font-size: 0.92rem; flex-wrap: wrap; align-items: center; }
+  #themeToggle {
+    appearance: none; border: 1px solid var(--line); background: none; cursor: pointer;
+    font-size: 0.95rem; border-radius: 9px; padding: 5px 10px; color: var(--ink);
+  }
 
-        .instructions {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 20px;
-            font-size: 1.1em;
-        }
+  /* hero */
+  .hero { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+  .kicker {
+    display: inline-block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--primary); margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(2.1rem, 5vw, 3.3rem); line-height: 1.12; letter-spacing: -0.02em; font-weight: 800; }
+  .sub { font-size: 1.1rem; color: var(--ink-soft); max-width: 640px; margin-top: 18px; }
+  .hero-art {
+    font-size: clamp(4rem, 10vw, 6.5rem); line-height: 1.25; text-align: center;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
+  }
 
-        canvas {
-            border: 3px solid white;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            cursor: crosshair;
-            display: block;
-            margin: 0 auto;
-        }
+  h2 { font-size: clamp(1.5rem, 3.2vw, 2.2rem); line-height: 1.2; letter-spacing: -0.01em; font-weight: 800; margin-bottom: 10px; }
+  .center { text-align: center; }
+  .center .sub { margin-left: auto; margin-right: auto; }
 
-        .controls {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+  /* products */
+  .bg-tint { background: var(--tint); }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; margin-top: 40px; }
+  .card {
+    background: var(--page); border: 1px solid var(--line);
+    border-radius: 16px; padding: 26px; display: flex; flex-direction: column;
+  }
+  .card .emoji { font-size: 2.2rem; margin-bottom: 10px; }
+  .card h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 6px; }
+  .card .pitch { font-size: 0.92rem; color: var(--ink-soft); margin-bottom: 12px; }
+  .card ul { list-style: none; margin: 0 0 18px; display: grid; gap: 7px; font-size: 0.88rem; }
+  .card li::before { content: '✓  '; color: var(--primary); font-weight: 800; }
+  .card .cta { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 
-        .control-group {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-            color: white;
-        }
+  /* stats */
+  .bg-dark { background: var(--dark-band); color: #fff; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; text-align: center; }
+  .stat-v { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 800; }
+  .stat-l { font-size: 0.9rem; opacity: 0.7; margin-top: 4px; }
 
-        .control-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
+  /* steps */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; margin-top: 40px; counter-reset: step; }
+  .step { background: var(--card-bg); border: 1px solid var(--line); border-radius: 16px; padding: 26px; }
+  .step .n {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 12px;
+  }
+  .step h4 { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; }
+  .step p { font-size: 0.92rem; color: var(--ink-soft); }
 
-        input[type="range"] {
-            width: 150px;
-        }
+  /* contact */
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 34px; align-items: start; }
+  .form { display: grid; gap: 12px; }
+  .form label { font-size: 0.8rem; font-weight: 700; color: var(--ink-soft); }
+  .form input, .form select, .form textarea {
+    font: inherit; font-size: 1rem; padding: 12px 14px; width: 100%;
+    border: 1.5px solid var(--line); border-radius: 12px;
+    background: var(--page); color: var(--ink);
+  }
+  .form textarea { min-height: 110px; resize: vertical; }
+  .form input:focus, .form select:focus, .form textarea:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+  .form-note { font-size: 0.82rem; color: var(--ink-soft); }
+  .form-note a { color: var(--primary); font-weight: 600; }
+  .contact-blurb p { color: var(--ink-soft); margin-top: 10px; font-size: 0.95rem; }
+  .contact-blurb ul { list-style: none; margin-top: 16px; display: grid; gap: 9px; font-size: 0.92rem; }
+  .contact-blurb li::before { content: '✦  '; color: var(--primary); }
 
-        button {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+  footer { border-top: 1px solid var(--line); padding: 30px 0; font-size: 0.88rem; }
+  footer .wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  footer .muted { opacity: 0.6; }
+  footer .links { margin-left: auto; display: flex; gap: 18px; font-weight: 600; }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .emoji-selector {
-            background: rgba(255, 255, 255, 0.3);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            display: block;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .emoji-selector h3 {
-            color: white;
-            margin-bottom: 10px;
-            font-size: 1.2em;
-        }
-
-        .emoji-button {
-            font-size: 2.5em;
-            background: white;
-            border: 3px solid rgba(102, 126, 234, 0.5);
-            padding: 8px 12px;
-            margin: 5px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            display: inline-block;
-            min-width: 50px;
-            min-height: 50px;
-            line-height: 1;
-        }
-
-        .emoji-button:hover {
-            background: rgba(255, 255, 255, 0.9);
-            transform: scale(1.15);
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .emoji-button.selected {
-            border-color: #667eea;
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
-            transform: scale(1.05);
-        }
-
-        .stats {
-            color: white;
-            margin-top: 10px;
-            font-size: 0.9em;
-        }
-
-        .aim-line {
-            position: absolute;
-            pointer-events: none;
-        }
-    </style>
+  @media (max-width: 820px) {
+    section { padding: 44px 0; }
+    .hero { grid-template-columns: 1fr; gap: 20px; }
+    .hero-art { order: -1; font-size: 3rem; }
+    .grid, .steps { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .nav-links { gap: 14px; }
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Emoji Physics Simulator</h1>
-        <p class="instructions">Click and drag to shoot emojis with realistic physics!</p>
 
-        <canvas id="canvas" width="1000" height="600"></canvas>
+<div class="wrap">
+  <nav>
+    <span class="nav-brand">✦ Projects</span>
+    <span class="nav-links">
+      <a href="#apps">Apps</a>
+      <a href="#how">How it works</a>
+      <a href="#contact">Contact</a>
+      <button id="themeToggle" title="Toggle theme">🌗</button>
+      <a class="btn sm" href="#contact">Get in touch</a>
+    </span>
+  </nav>
+</div>
 
-        <div class="emoji-selector">
-            <h3>Select Your Emoji:</h3>
-            <button class="emoji-button selected" data-emoji="😀">😀</button>
-            <button class="emoji-button" data-emoji="🎯">🎯</button>
-            <button class="emoji-button" data-emoji="⚽">⚽</button>
-            <button class="emoji-button" data-emoji="🏀">🏀</button>
-            <button class="emoji-button" data-emoji="🎾">🎾</button>
-            <button class="emoji-button" data-emoji="🌟">🌟</button>
-            <button class="emoji-button" data-emoji="💎">💎</button>
-            <button class="emoji-button" data-emoji="🔥">🔥</button>
-            <button class="emoji-button" data-emoji="💧">💧</button>
-            <button class="emoji-button" data-emoji="🎈">🎈</button>
-            <button class="emoji-button" data-emoji="🚀">🚀</button>
-            <button class="emoji-button" data-emoji="⭐">⭐</button>
-        </div>
-
-        <div class="controls">
-            <div class="control-group">
-                <label for="gravity">Gravity: <span id="gravityValue">0.5</span></label>
-                <input type="range" id="gravity" min="0" max="2" step="0.1" value="0.5">
-            </div>
-
-            <div class="control-group">
-                <label for="bounciness">Bounciness: <span id="bouncinessValue">0.7</span></label>
-                <input type="range" id="bounciness" min="0" max="1" step="0.1" value="0.7">
-            </div>
-
-            <div class="control-group">
-                <label for="size">Emoji Size: <span id="sizeValue">30</span></label>
-                <input type="range" id="size" min="20" max="60" step="5" value="30">
-            </div>
-
-            <button id="clearBtn">Clear All</button>
-        </div>
-
-        <div class="stats">
-            <p>Emojis: <span id="emojiCount">0</span> | FPS: <span id="fps">60</span></p>
-        </div>
+<section>
+  <div class="wrap hero">
+    <div>
+      <span class="kicker">Live demos · No signups · Works offline</span>
+      <h1>Six ready-to-use web apps. Try them live, make them yours.</h1>
+      <p class="sub">Invoicing, data analysis, site building, whiteboarding and more — each one a fast, polished tool that runs entirely in the browser. Test-drive any of them right now, then get your own customized copy.</p>
+      <div class="btn-row" style="margin-top:26px">
+        <a class="btn" href="#apps">Browse the apps</a>
+        <a class="btn ghost" href="#contact">Get in touch</a>
+      </div>
     </div>
+    <div class="hero-art" aria-hidden="true">
+      <span>🧾</span><span>📊</span><span>🏗️</span>
+      <span>🗺️</span><span>💰</span><span>🎪</span>
+    </div>
+  </div>
+</section>
 
-    <script>
-        // Canvas setup
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
+<section class="bg-tint" id="apps">
+  <div class="wrap">
+    <div class="center">
+      <h2>The apps</h2>
+      <p class="sub">Every app is a single self-contained file — no installs, no accounts, no external services. Click a demo and it just runs.</p>
+    </div>
+    <div class="grid" id="productGrid"></div>
+  </div>
+</section>
 
-        // Physics constants
-        let GRAVITY = 0.5;
-        let BOUNCINESS = 0.7;
-        let FRICTION = 0.99;
-        let EMOJI_SIZE = 30;
+<section class="bg-dark">
+  <div class="wrap stats">
+    <div><div class="stat-v">6</div><div class="stat-l">Ready-to-use apps</div></div>
+    <div><div class="stat-v">0</div><div class="stat-l">Dependencies or signups</div></div>
+    <div><div class="stat-v">100%</div><div class="stat-l">Yours — source included</div></div>
+    <div><div class="stat-v">✈️</div><div class="stat-l">Works fully offline</div></div>
+  </div>
+</section>
 
-        // State
-        let particles = [];
-        let isMouseDown = false;
-        let startPos = { x: 0, y: 0 };
-        let currentPos = { x: 0, y: 0 };
-        let selectedEmoji = '😀';
-        let lastTime = Date.now();
-        let fps = 60;
+<section id="how">
+  <div class="wrap">
+    <div class="center">
+      <h2>How it works</h2>
+      <p class="sub">From demo to your own app in three simple steps.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h4>Try the live demo</h4><p>Every app above is fully functional right now — click "Try live demo" and use it for real. Your data stays in your browser.</p></div>
+      <div class="step"><div class="n">2</div><h4>Send an enquiry</h4><p>Like one? Use the form below to tell me which app you want and how you'd like it customized — your branding, your features, your language.</p></div>
+      <div class="step"><div class="n">3</div><h4>Get your own copy</h4><p>You receive your own tailored version to host anywhere — your website, your domain, or offline on your machines. It's yours outright.</p></div>
+    </div>
+  </div>
+</section>
 
-        // Particle class with real physics
-        class Particle {
-            constructor(x, y, vx, vy, emoji, size) {
-                this.x = x;
-                this.y = y;
-                this.vx = vx;
-                this.vy = vy;
-                this.emoji = emoji;
-                this.size = size;
-                this.rotation = 0;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.3;
-                this.mass = 1;
-                this.radius = size / 2;
-            }
+<section class="bg-tint" id="contact">
+  <div class="wrap">
+    <div class="center">
+      <h2>Interested in an app?</h2>
+      <p class="sub">Tell me which one and what you need — I'll get back to you quickly.</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-blurb">
+        <h3 style="font-size:1.2rem; font-weight:800">What you can ask for</h3>
+        <ul>
+          <li>A branded copy of any app — your name, logo and colors</li>
+          <li>Custom features added for your workflow</li>
+          <li>A landing site or invoice setup done for you</li>
+          <li>Something new built in the same style</li>
+        </ul>
+        <p>Prefer email directly? Write to <a href="mailto:sethursiva@gmail.com" style="color:var(--primary); font-weight:700">sethursiva@gmail.com</a></p>
+      </div>
+      <form class="form" id="enquiryForm">
+        <div>
+          <label for="fName">Your name</label>
+          <input type="text" id="fName" placeholder="Your name" required>
+        </div>
+        <div>
+          <label for="fEmail">Your email</label>
+          <input type="email" id="fEmail" placeholder="you@example.com" required>
+        </div>
+        <div>
+          <label for="fProduct">Which app are you interested in?</label>
+          <select id="fProduct"></select>
+        </div>
+        <div>
+          <label for="fMsg">Message</label>
+          <textarea id="fMsg" placeholder="What would you like — a branded copy, extra features, help setting it up…?"></textarea>
+        </div>
+        <a class="btn" id="sendLink" href="mailto:sethursiva@gmail.com">✉️ Send enquiry</a>
+        <p class="form-note">This opens your email app with the message ready to send — nothing is stored or tracked on this page.</p>
+      </form>
+    </div>
+  </div>
+</section>
 
-            update() {
-                // Apply gravity
-                this.vy += GRAVITY;
+<footer>
+  <div class="wrap">
+    <span class="nav-brand" style="font-size:1rem">✦ Projects</span>
+    <span class="muted">© 2026 · Built as single-file web apps</span>
+    <span class="links">
+      <a href="https://github.com/SivasankarN91/Projects" rel="noopener">GitHub</a>
+      <a href="#apps">Apps</a>
+    </span>
+  </div>
+</footer>
 
-                // Apply friction
-                this.vx *= FRICTION;
-                this.vy *= FRICTION;
+<script>
+'use strict';
 
-                // Update position
-                this.x += this.vx;
-                this.y += this.vy;
+const PRODUCTS = [
+  { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html',
+    pitch: 'Professional invoices with live totals, GST and print-ready PDF output.',
+    points: ['Auto numbering & paid/sent tracking', 'Tax, discounts & amount-in-words', 'Clean print / save-as-PDF'] },
+  { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html',
+    pitch: 'Drop in any CSV and explore it — sort, filter, summarize and chart instantly.',
+    points: ['Auto-detects numbers, dates & text', 'Group-by summaries with charts', 'Export filtered data & charts'] },
+  { emoji: '🏗️', name: 'Landing Site Builder', file: 'pagebuilder.html',
+    pitch: 'Build multi-page landing sites visually and export ready-to-host HTML.',
+    points: ['Drag-and-drop sections, live editing', 'WhatsApp contact form & payment links', 'Exports a complete site as a ZIP'] },
+  { emoji: '🗺️', name: 'Whiteboard', file: 'whiteboard.html',
+    pitch: 'An infinite canvas for ideas — sticky notes, shapes, arrows and sketches.',
+    points: ['Pan & zoom infinite canvas', 'Connect ideas with live arrows', 'Multiple boards, PNG export'] },
+  { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html',
+    pitch: 'Track income, expenses, budgets and savings goals with clear charts.',
+    points: ['Monthly budgets with warnings', 'Spending charts & trends', 'CSV / JSON export & backup'] },
+  { emoji: '🎪', name: 'Emoji Physics Simulator', file: 'emoji-simulator.html',
+    pitch: 'A playful physics toy — spawn emojis and watch them bounce. Great fun for kids.',
+    points: ['Real bouncy physics', 'Endless emoji chaos', 'A guaranteed smile'] },
+];
+const EMAIL = 'sethursiva@gmail.com';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-                // Update rotation
-                this.rotation += this.rotationSpeed;
+/* products grid */
+$('#productGrid').innerHTML = PRODUCTS.map((p, i) => `
+  <div class="card">
+    <div class="emoji">${p.emoji}</div>
+    <h3>${esc(p.name)}</h3>
+    <p class="pitch">${esc(p.pitch)}</p>
+    <ul>${p.points.map(pt => `<li>${esc(pt)}</li>`).join('')}</ul>
+    <div class="cta">
+      <a class="btn sm" href="${p.file}" target="_blank" rel="noopener">Try live demo →</a>
+      <button class="btn sm ghost" data-enquire="${i}">Enquire</button>
+    </div>
+  </div>`).join('');
 
-                // Ground collision
-                if (this.y + this.radius > canvas.height) {
-                    this.y = canvas.height - this.radius;
-                    this.vy *= -BOUNCINESS;
-                    this.vx *= 0.95; // Ground friction
-                    this.rotationSpeed *= 0.9;
+/* product select */
+$('#fProduct').innerHTML =
+  PRODUCTS.map((p, i) => `<option value="${i}">${p.emoji} ${esc(p.name)}</option>`).join('') +
+  `<option value="custom">✨ Something custom</option>`;
 
-                    // Stop bouncing when velocity is very small
-                    if (Math.abs(this.vy) < 0.5) {
-                        this.vy = 0;
-                    }
-                }
+/* enquire buttons preselect + scroll */
+document.querySelectorAll('[data-enquire]').forEach(b => b.addEventListener('click', () => {
+  $('#fProduct').value = b.dataset.enquire;
+  updateMailto();
+  document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => $('#fName').focus({ preventScroll: true }), 600);
+}));
 
-                // Ceiling collision
-                if (this.y - this.radius < 0) {
-                    this.y = this.radius;
-                    this.vy *= -BOUNCINESS;
-                }
+/* keep the Send link's mailto href in sync with the form */
+function updateMailto() {
+  const sel = $('#fProduct').value;
+  const product = sel === 'custom' ? 'A custom app' : PRODUCTS[+sel].name;
+  const name = $('#fName').value.trim();
+  const email = $('#fEmail').value.trim();
+  const msg = $('#fMsg').value.trim();
+  const subject = `Enquiry: ${product}`;
+  const body =
+`Hi,
 
-                // Left wall collision
-                if (this.x - this.radius < 0) {
-                    this.x = this.radius;
-                    this.vx *= -BOUNCINESS;
-                }
+I'm interested in: ${product}
 
-                // Right wall collision
-                if (this.x + this.radius > canvas.width) {
-                    this.x = canvas.width - this.radius;
-                    this.vx *= -BOUNCINESS;
-                }
-            }
+${msg || '(your message here)'}
 
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                ctx.font = `${this.size}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(this.emoji, 0, 0);
-                ctx.restore();
-            }
+— ${name || '(your name)'}${email ? `\n${email}` : ''}`;
+  $('#sendLink').href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+['fName', 'fEmail', 'fMsg'].forEach(id => document.getElementById(id).addEventListener('input', updateMailto));
+$('#fProduct').addEventListener('change', updateMailto);
+updateMailto();
 
-            // Check collision with another particle
-            collidesWith(other) {
-                const dx = other.x - this.x;
-                const dy = other.y - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                return distance < (this.radius + other.radius);
-            }
-
-            // Resolve collision with another particle
-            resolveCollision(other) {
-                const dx = other.x - this.x;
-                const dy = other.y - this.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                // Prevent division by zero
-                if (distance === 0) return;
-
-                // Normalize collision vector
-                const nx = dx / distance;
-                const ny = dy / distance;
-
-                // Relative velocity
-                const dvx = other.vx - this.vx;
-                const dvy = other.vy - this.vy;
-
-                // Relative velocity in collision normal direction
-                const dvn = dvx * nx + dvy * ny;
-
-                // Do not resolve if velocities are separating
-                if (dvn > 0) return;
-
-                // Collision impulse
-                const impulse = (2 * dvn) / (this.mass + other.mass);
-
-                // Apply impulse
-                this.vx += impulse * other.mass * nx;
-                this.vy += impulse * other.mass * ny;
-                other.vx -= impulse * this.mass * nx;
-                other.vy -= impulse * this.mass * ny;
-
-                // Separate overlapping particles
-                const overlap = (this.radius + other.radius) - distance;
-                const separationX = (overlap / 2) * nx;
-                const separationY = (overlap / 2) * ny;
-
-                this.x -= separationX;
-                this.y -= separationY;
-                other.x += separationX;
-                other.y += separationY;
-
-                // Add some rotation on collision
-                this.rotationSpeed += (Math.random() - 0.5) * 0.1;
-                other.rotationSpeed += (Math.random() - 0.5) * 0.1;
-            }
-        }
-
-        // Mouse events
-        canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            startPos.x = e.clientX - rect.left;
-            startPos.y = e.clientY - rect.top;
-            currentPos.x = startPos.x;
-            currentPos.y = startPos.y;
-            isMouseDown = true;
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (isMouseDown) {
-                const rect = canvas.getBoundingClientRect();
-                currentPos.x = e.clientX - rect.left;
-                currentPos.y = e.clientY - rect.top;
-            }
-        });
-
-        canvas.addEventListener('mouseup', (e) => {
-            if (isMouseDown) {
-                const rect = canvas.getBoundingClientRect();
-                const endX = e.clientX - rect.left;
-                const endY = e.clientY - rect.top;
-
-                // Calculate velocity based on drag distance
-                const vx = (startPos.x - endX) * 0.3;
-                const vy = (startPos.y - endY) * 0.3;
-
-                // Create particle with velocity
-                particles.push(new Particle(startPos.x, startPos.y, vx, vy, selectedEmoji, EMOJI_SIZE));
-
-                isMouseDown = false;
-            }
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            isMouseDown = false;
-        });
-
-        // Emoji selection
-        document.querySelectorAll('.emoji-button').forEach(button => {
-            button.addEventListener('click', () => {
-                document.querySelectorAll('.emoji-button').forEach(b => b.classList.remove('selected'));
-                button.classList.add('selected');
-                selectedEmoji = button.getAttribute('data-emoji');
-            });
-        });
-
-        // Controls
-        document.getElementById('gravity').addEventListener('input', (e) => {
-            GRAVITY = parseFloat(e.target.value);
-            document.getElementById('gravityValue').textContent = GRAVITY.toFixed(1);
-        });
-
-        document.getElementById('bounciness').addEventListener('input', (e) => {
-            BOUNCINESS = parseFloat(e.target.value);
-            document.getElementById('bouncinessValue').textContent = BOUNCINESS.toFixed(1);
-        });
-
-        document.getElementById('size').addEventListener('input', (e) => {
-            EMOJI_SIZE = parseInt(e.target.value);
-            document.getElementById('sizeValue').textContent = EMOJI_SIZE;
-        });
-
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            particles = [];
-        });
-
-        // Animation loop
-        function animate() {
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw aim line when dragging
-            if (isMouseDown) {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(startPos.x, startPos.y);
-                ctx.lineTo(currentPos.x, currentPos.y);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Draw power indicator
-                const distance = Math.sqrt(
-                    Math.pow(currentPos.x - startPos.x, 2) +
-                    Math.pow(currentPos.y - startPos.y, 2)
-                );
-                const power = Math.min(distance / 3, 100);
-
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.font = '14px Arial';
-                ctx.fillText(`Power: ${Math.round(power)}%`, startPos.x + 10, startPos.y - 10);
-            }
-
-            // Update and draw particles
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-            }
-
-            // Check particle collisions
-            for (let i = 0; i < particles.length; i++) {
-                for (let j = i + 1; j < particles.length; j++) {
-                    if (particles[i].collidesWith(particles[j])) {
-                        particles[i].resolveCollision(particles[j]);
-                    }
-                }
-            }
-
-            // Update stats
-            document.getElementById('emojiCount').textContent = particles.length;
-
-            // Calculate FPS
-            const now = Date.now();
-            const delta = now - lastTime;
-            fps = Math.round(1000 / delta);
-            document.getElementById('fps').textContent = fps;
-            lastTime = now;
-
-            requestAnimationFrame(animate);
-        }
-
-        // Start animation
-        animate();
-    </script>
+/* theme */
+const THEME_KEY = 'projectsHomeTheme';
+function applyTheme() {
+  const pref = localStorage.getItem(THEME_KEY) || 'auto';
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+$('#themeToggle').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  localStorage.setItem(THEME_KEY, dark ? 'light' : 'dark');
+  applyTheme();
+});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+applyTheme();
+</script>
 </body>
 </html>
