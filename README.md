@@ -6,6 +6,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 
 | App | Link |
 |---|---|
+| 📊 Data Analyzer | https://sivasankarn91.github.io/Projects/data-analyzer.html |
 | 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
@@ -40,6 +41,19 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 - **Multiple boards** — create, rename, and switch between boards, each with its own saved viewport
 - **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
 - **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
+
+## 📊 Data Analyzer — [`data-analyzer.html`](data-analyzer.html)
+
+Drop in any CSV and explore it instantly — a mini Excel + BI dashboard. Nothing is uploaded; all analysis happens in your browser.
+
+**Features**
+
+- **Robust CSV import** — drag-and-drop, file picker, or paste from a spreadsheet; auto-detects the delimiter and handles quoted fields, embedded commas/newlines, and BOMs; built-in sample dataset
+- **Automatic type detection** — numbers (including ₹/$/€ and thousand separators), dates in common formats, booleans; per-column stat cards (sum/avg/median/min/max, unique counts, top values, missing cells)
+- **Explore** — sortable columns, global search, and per-column filters: text search, numeric ranges, date ranges, and value pickers for categorical columns; paginated for large files
+- **Analyze** — group by any column (dates bucketed by day/month/year) with count/sum/avg/min/max aggregation; results as a summary table plus an auto-chosen chart (bars, line, or donut) with hover tooltips, all respecting active filters
+- **Export** — filtered rows or the summary as CSV, and the chart as a PNG
+- **Extras** — light/dark theme, built-in guide (? button), autosave of dataset and filters for smaller files
 
 ## 🏗️ Landing Page Builder — [`pagebuilder.html`](pagebuilder.html)
 
