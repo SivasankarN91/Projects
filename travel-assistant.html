@@ -260,6 +260,7 @@
     </ol>
     <p>Tap <b>⭐ Save route</b> under any route answer to keep frequent trips (like Home → Office) in the bar for one-tap checks.</p>
     <p>First time? Tap <b>⚙️</b> to add your free TomTom key (2-minute signup) — that unlocks traffic and nearby search. Weather works right away with no key.</p>
+    <p class="muted" style="font-size:0.8rem">This demo allows <b>5 live-traffic checks a day</b> (weather is unlimited). Want it without limits, branded and set up for you? <b>Enquire on the homepage</b>.</p>
     <div class="modal-actions">
       <button class="btn primary" id="guideClose">Let's go</button>
     </div>
@@ -282,7 +283,7 @@ const TN_CENTER = { lat: 11.6, lon: 78.9 };
    State
 ===================================================================== */
 function freshState() {
-  return { version: 1, key: '', home: 'Chennai', history: [], saved: [], settings: { theme: 'auto', guideSeen: false } };
+  return { version: 1, key: '', home: 'Chennai', history: [], saved: [], demo: { day: '', count: 0 }, settings: { theme: 'auto', guideSeen: false } };
 }
 function loadState() {
   try {
@@ -293,6 +294,7 @@ function loadState() {
     const base = freshState();
     return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
       saved: Array.isArray(data.saved) ? data.saved : [],
+      demo: data.demo && typeof data.demo === 'object' ? data.demo : { day: '', count: 0 },
       history: Array.isArray(data.history) ? data.history.slice(-60) : [] };
   } catch { return freshState(); }
 }
@@ -301,6 +303,28 @@ function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history: state.history.slice(-60) })); }
   catch { state.history = state.history.slice(-20); try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {} }
 }
+
+/* =====================================================================
+   Demo freemium limit — N live-data (traffic/route/nearby) checks per day.
+   Weather is free & keyless, so it never counts.
+===================================================================== */
+const DEMO_MAX_LIVE = 5;
+function demoOverLimit() {
+  const today = new Date().toDateString();
+  if (state.demo.day !== today) return false; // new day → fresh allowance
+  return (state.demo.count || 0) >= DEMO_MAX_LIVE;
+}
+function useDemoCredit() {
+  const today = new Date().toDateString();
+  if (state.demo.day !== today) state.demo = { day: today, count: 0 };
+  if (state.demo.count >= DEMO_MAX_LIVE) return false;
+  state.demo.count++;
+  save();
+  return true;
+}
+const DEMO_LIMIT_MSG = () =>
+  `You've used today's <b>${DEMO_MAX_LIVE} free live-traffic checks</b> in the demo 🚦<br>` +
+  `🌦 Weather questions still work, unlimited. For unlimited traffic, routes and nearby search — plus your own branded copy — <b>enquire on the homepage</b> and I'll set it up for you.`;
 
 /* =====================================================================
    Chat rendering
@@ -612,6 +636,7 @@ async function handleRoute(q) {
 }
 
 async function routeAnswer(a, b) {
+  if (!useDemoCredit()) return { html: DEMO_LIMIT_MSG() };
   const routes = await ttRoute(a, b);
   if (!routes.length) throw new Error('noroute');
   const r = routes[0];
@@ -652,6 +677,7 @@ async function handleLeaveBy(q) {
   if (!hasKey()) return { html: NO_KEY_MSG() };
   const target = parseTimeStr(q.timeStr);
   if (!target) return { html: `I didn't catch the time 🤔 — try something like <b>"reach Pondicherry by 8 pm"</b> or <b>"...by 20:30"</b>.` };
+  if (!useDemoCredit()) return { html: DEMO_LIMIT_MSG() };
   const fromName = q.from || state.home || 'Chennai';
   const [a, b] = await Promise.all([geocode(fromName), geocode(q.to)]);
   const routes = await ttRoute(a, b, { arriveAt: target.toISOString() });
@@ -683,6 +709,7 @@ async function handleLeaveBy(q) {
 
 async function handleFlow(q) {
   if (!hasKey()) return { html: NO_KEY_MSG() };
+  if (!useDemoCredit()) return { html: DEMO_LIMIT_MSG() };
   const p = await geocode(q.place);
   const f = await ttFlow(p);
   const ratio = f.freeFlowSpeed ? f.currentSpeed / f.freeFlowSpeed : 1;
@@ -727,6 +754,7 @@ function getLocation() {
 
 async function handleNearby(q) {
   if (!hasKey()) return { html: NO_KEY_MSG() };
+  if (!useDemoCredit()) return { html: DEMO_LIMIT_MSG() };
   let p;
   if (q.place) p = await geocode(q.place);
   else {
