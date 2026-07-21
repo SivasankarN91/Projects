@@ -51,7 +51,8 @@ An AI-style chat assistant for Tamil Nadu & Pondicherry travel — ask in plain 
 
 **Ask it things like**
 
-- *"Traffic from Chennai to Pondicherry"* — live drive time with congestion, how much slower than usual, expected arrival time, an alternate-route hint, destination weather, and a mini route map with a traffic overlay
+- *"Traffic from Chennai to Pondicherry"* — live drive time with congestion, how much slower than usual, expected arrival time, an alternate-route hint, destination weather, and a mini route map with a traffic overlay; save frequent trips to a one-tap ⭐ bar
+- *"Reach Pondicherry by 8 pm"* — the latest safe departure time, computed from TomTom's predictive traffic for your arrival window
 - *"Traffic in Coimbatore"* — current congestion level from live road-speed data
 - *"Weather in Madurai"* — current conditions plus rain probability for the next few hours
 - *"Petrol bunk near Tindivanam"* — nearest fuel, restaurants, hotels, hospitals, ATMs, toilets, mechanics with distances
