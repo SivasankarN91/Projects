@@ -6,6 +6,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 
 | App | Link |
 |---|---|
+| 🚦 TN Travel Assistant | https://sivasankarn91.github.io/Projects/travel-assistant.html |
 | 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/Projects/family-dates.html |
 | 🧾 Invoice Generator | https://sivasankarn91.github.io/Projects/invoice-generator.html |
 | 📊 Data Analyzer | https://sivasankarn91.github.io/Projects/data-analyzer.html |
@@ -43,6 +44,25 @@ An infinite-canvas whiteboard and mind-mapping tool — a mini Miro/Excalidraw i
 - **Multiple boards** — create, rename, and switch between boards, each with its own saved viewport
 - **Export** — the board as a PNG image, or all boards as a JSON backup (with import)
 - **Extras** — light/dark theme, keyboard shortcuts for every tool (press ? in-app), autosave to `localStorage`
+
+## 🚦 TN Travel Assistant — [`travel-assistant.html`](travel-assistant.html)
+
+An AI-style chat assistant for Tamil Nadu & Pondicherry travel — ask in plain English, get live answers.
+
+**Ask it things like**
+
+- *"Traffic from Chennai to Pondicherry"* — live drive time with congestion, how much slower than usual, expected arrival time, an alternate-route hint, destination weather, and a mini route map with a traffic overlay
+- *"Traffic in Coimbatore"* — current congestion level from live road-speed data
+- *"Weather in Madurai"* — current conditions plus rain probability for the next few hours
+- *"Petrol bunk near Tindivanam"* — nearest fuel, restaurants, hotels, hospitals, ATMs, toilets, mechanics with distances
+- *"I'm stuck in traffic"* — practical help: alternate routes, nearby stops, WhatsApp share to family
+
+**How it's powered**
+
+- **Live traffic, routing, geocoding, places**: TomTom APIs — bring your own free API key (2-minute signup at developer.tomtom.com, 2,500 requests/day, no credit card); guided in-app setup, key stored only in your browser
+- **Weather**: Open-Meteo — completely free, no key, works immediately
+- **The "AI"**: a built-in rule-based assistant — no LLM key, no per-message cost, works offline-first with graceful errors
+- Hand-rolled mini map (web-mercator tiles + route polyline + traffic overlay), chat history persistence, first-run guide, light/dark themes
 
 ## 💝 Dates & Gifts Reminder — [`family-dates.html`](family-dates.html)
 
