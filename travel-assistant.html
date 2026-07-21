@@ -123,6 +123,26 @@
     border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;
   }
   .chip:hover { border-color: var(--accent); color: var(--accent); }
+  /* saved routes bar */
+  #savedBar {
+    max-width: 760px; margin: 0 auto; padding: 6px 12px 0; display: flex; gap: 6px;
+    overflow-x: auto; scrollbar-width: none; width: 100%; align-items: center;
+  }
+  #savedBar::-webkit-scrollbar { display: none; }
+  #savedBar .saved-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); flex: none; }
+  .saved-chip {
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 999px; padding: 5px 6px 5px 11px; font-size: 0.78rem; font-weight: 600;
+  }
+  .saved-chip .go { cursor: pointer; color: var(--text-primary); }
+  .saved-chip .go:hover { color: var(--accent); }
+  .saved-chip .del {
+    appearance: none; border: none; background: none; cursor: pointer;
+    color: var(--text-muted); font-size: 0.8rem; line-height: 1; padding: 2px 4px; border-radius: 50%;
+  }
+  .saved-chip .del:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
   #composer {
     flex: none; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px 14px;
   }
@@ -183,8 +203,11 @@
 
 <div id="chatScroll"><div id="chat"></div></div>
 
+<div id="savedBar" style="display:none"></div>
+
 <div id="suggest">
   <button class="chip" data-q="Traffic from Chennai to Pondicherry">🚗 Chennai → Pondicherry</button>
+  <button class="chip" data-q="Reach Pondicherry by 8 pm">🕑 Reach Pondy by 8 pm</button>
   <button class="chip" data-q="Weather in Madurai">🌦 Weather in Madurai</button>
   <button class="chip" data-q="Petrol bunk near Tindivanam">⛽ Petrol near Tindivanam</button>
   <button class="chip" data-q="Traffic in Coimbatore">🚥 Traffic in Coimbatore</button>
@@ -231,9 +254,11 @@
       <li><b>“Traffic from Chennai to Pondicherry”</b> — current drive time, how bad the traffic is, when you'll arrive, and the destination weather</li>
       <li><b>“Traffic in Coimbatore”</b> — how congested the city's roads are right now</li>
       <li><b>“Weather in Madurai”</b> — current conditions and whether rain is coming</li>
+      <li><b>“Reach Pondicherry by 8 pm”</b> — I work out the latest time you should leave, using predicted traffic</li>
       <li><b>“Petrol bunk near Tindivanam”</b> — nearest fuel, food, hotels, hospitals, ATMs, toilets, mechanics</li>
       <li><b>“I'm stuck in traffic”</b> — practical help: alternate routes, nearby stops, share your location on WhatsApp</li>
     </ol>
+    <p>Tap <b>⭐ Save route</b> under any route answer to keep frequent trips (like Home → Office) in the bar for one-tap checks.</p>
     <p>First time? Tap <b>⚙️</b> to add your free TomTom key (2-minute signup) — that unlocks traffic and nearby search. Weather works right away with no key.</p>
     <div class="modal-actions">
       <button class="btn primary" id="guideClose">Let's go</button>
@@ -249,6 +274,7 @@
 const STORE_KEY = 'travelAssistantData_v1';
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 // bias searches toward Tamil Nadu / Pondicherry
 const TN_CENTER = { lat: 11.6, lon: 78.9 };
 
@@ -256,7 +282,7 @@ const TN_CENTER = { lat: 11.6, lon: 78.9 };
    State
 ===================================================================== */
 function freshState() {
-  return { version: 1, key: '', home: 'Chennai', history: [], settings: { theme: 'auto', guideSeen: false } };
+  return { version: 1, key: '', home: 'Chennai', history: [], saved: [], settings: { theme: 'auto', guideSeen: false } };
 }
 function loadState() {
   try {
@@ -266,6 +292,7 @@ function loadState() {
     if (!data) return freshState();
     const base = freshState();
     return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
+      saved: Array.isArray(data.saved) ? data.saved : [],
       history: Array.isArray(data.history) ? data.history.slice(-60) : [] };
   } catch { return freshState(); }
 }
@@ -330,14 +357,17 @@ async function omGeocode(q) {
 }
 async function geocode(q) { return hasKey() ? ttGeocode(q) : omGeocode(q); }
 
-async function ttRoute(a, b) {
-  const u = `https://api.tomtom.com/routing/1/calculateRoute/${a.lat},${a.lon}:${b.lat},${b.lon}/json?key=${state.key}&traffic=true&maxAlternatives=1&routeType=fastest`;
+async function ttRoute(a, b, opts = {}) {
+  let u = `https://api.tomtom.com/routing/1/calculateRoute/${a.lat},${a.lon}:${b.lat},${b.lon}/json?key=${state.key}&traffic=true&maxAlternatives=1&routeType=fastest`;
+  if (opts.arriveAt) u += `&arriveAt=${encodeURIComponent(opts.arriveAt)}`;
   const j = await getJSON(u);
   return (j.routes || []).map(r => ({
     meters: r.summary.lengthInMeters,
     seconds: r.summary.travelTimeInSeconds,
     delay: r.summary.trafficDelayInSeconds || 0,
     noTraffic: r.summary.noTrafficTravelTimeInSeconds || (r.summary.travelTimeInSeconds - (r.summary.trafficDelayInSeconds || 0)),
+    departureTime: r.summary.departureTime || null,
+    arrivalTime: r.summary.arrivalTime || null,
     points: (r.legs || []).flatMap(l => l.points || []),
   }));
 }
@@ -514,6 +544,13 @@ function parse(text) {
     return { intent: 'weather', place: m ? m[1].trim() : null };
   }
 
+  // "leave by" planner: "reach X by 8 pm", "be in X before 20:00", "from A reach B by 8pm"
+  let lb = t.match(/(?:reach|be (?:in|at)|arrive (?:in|at)?|get to)\s+(.+?)\s+(?:by|before)\s+([\d.: ]+\s*(?:am|pm)?|noon|midnight)$/);
+  if (lb) {
+    const fromM = t.match(/from\s+(.+?)\s+(?:reach|be|arrive|get)/);
+    return { intent: 'leaveby', from: fromM ? fromM[1].trim() : null, to: lb[1].replace(/^.*from\s+\S+\s+/, '').trim(), timeStr: lb[2].trim() };
+  }
+
   // route: "from X to Y" or "... to Y from X"
   let m = t.match(/from\s+(.+?)\s+to\s+(.+)$/);
   if (m) return { intent: 'route', from: m[1].trim(), to: m[2].trim() };
@@ -536,6 +573,31 @@ function parse(text) {
 }
 
 /* =====================================================================
+   Time parsing — "8 pm", "20:30", "8.15am", "noon" → next future Date
+===================================================================== */
+function parseTimeStr(s) {
+  s = s.trim().toLowerCase().replace(/\./g, ':').replace(/\s+/g, ' ');
+  if (s === 'noon') s = '12 pm';
+  if (s === 'midnight') s = '12 am';
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/);
+  if (!m) return null;
+  let h = +m[1], min = +(m[2] || 0);
+  if (h > 23 || min > 59) return null;
+  const now = new Date();
+  const mk = (hh, plusDays = 0) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + plusDays, hh, min);
+  const candidates = [];
+  if (m[3] === 'pm') { if (h < 12) h += 12; candidates.push(mk(h), mk(h, 1)); }
+  else if (m[3] === 'am') { if (h === 12) h = 0; candidates.push(mk(h), mk(h, 1)); }
+  else {
+    // no am/pm: consider both interpretations, pick the nearest future one
+    candidates.push(mk(h), h < 12 ? mk(h + 12) : null, mk(h, 1));
+  }
+  const future = candidates.filter(Boolean).filter(d => d > now).sort((a, b) => a - b);
+  return future[0] || null;
+}
+function fmtClock(d) { return new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+
+/* =====================================================================
    Answer handlers
 ===================================================================== */
 const NO_KEY_MSG = () =>
@@ -546,6 +608,10 @@ async function handleRoute(q) {
   if (!hasKey()) return { html: NO_KEY_MSG() };
   const fromName = q.from || state.home || 'Chennai';
   const [a, b] = await Promise.all([geocode(fromName), geocode(q.to)]);
+  return routeAnswer(a, b);
+}
+
+async function routeAnswer(a, b) {
   const routes = await ttRoute(a, b);
   if (!routes.length) throw new Error('noroute');
   const r = routes[0];
@@ -566,17 +632,53 @@ async function handleRoute(q) {
     const rain = Math.max(...(w.hourly?.precipitation_probability || [0]));
     if (rain >= 50) html += ` <b>${rain}% chance of rain</b> in the next few hours — plan for it 🌧`;
   } catch {}
+  const isSaved = state.saved.some(s => s.fromLabel === a.label && s.toLabel === b.label);
+  const payload = encodeURIComponent(JSON.stringify({ fromLabel: a.label, toLabel: b.label, from: { lat: a.lat, lon: a.lon }, to: { lat: b.lat, lon: b.lon } }));
   html += `<div class="card-block"><div class="map-slot"></div>
     <div class="card-pad kv">
       <span class="pill">🕐 ${fmtDur(r.seconds)}</span>
       <span class="pill">📏 ${fmtKm(r.meters)}</span>
       <span class="pill">🏁 ~${fmtArrival(r.seconds)}</span>
       ${r.delay >= 60 ? `<span class="pill">⏳ +${fmtDur(r.delay)} traffic</span>` : ''}
+      ${isSaved ? '' : `<button class="btn small" data-save-route="${payload}">⭐ Save route</button>`}
     </div></div>`;
   // thin the polyline for storage
   const pts = r.points.filter((_, i) => i % Math.ceil(r.points.length / 120) === 0);
   if (r.points.length) pts.push(r.points[r.points.length - 1]);
   return { html, mapData: { points: pts } };
+}
+
+async function handleLeaveBy(q) {
+  if (!hasKey()) return { html: NO_KEY_MSG() };
+  const target = parseTimeStr(q.timeStr);
+  if (!target) return { html: `I didn't catch the time 🤔 — try something like <b>"reach Pondicherry by 8 pm"</b> or <b>"...by 20:30"</b>.` };
+  const fromName = q.from || state.home || 'Chennai';
+  const [a, b] = await Promise.all([geocode(fromName), geocode(q.to)]);
+  const routes = await ttRoute(a, b, { arriveAt: target.toISOString() });
+  if (!routes.length) throw new Error('noroute');
+  const r = routes[0];
+  const now = new Date();
+  const departure = r.departureTime ? new Date(r.departureTime) : new Date(target.getTime() - r.seconds * 1000);
+  const [sevCls, sevLabel] = severity(r.delay, r.noTraffic);
+  let html;
+  if (departure <= now) {
+    html = `😕 To reach <b>${esc(b.label)}</b> by <b>${fmtClock(target)}</b> you'd need to have left already — the drive from ${esc(a.label)} takes about <b>${fmtDur(r.seconds)}</b> right now (<span class="${sevCls}">${sevLabel}</span>). Leaving now, you'd arrive around <b>${fmtArrival(r.seconds)}</b>.`;
+  } else {
+    const buffer = Math.round((departure - now) / 60000);
+    html = `🕑 To reach <b>${esc(b.label)}</b> by <b>${fmtClock(target)}</b>, leave <b>${esc(a.label)}</b> by <b>${fmtClock(departure)}</b>.<br>`;
+    html += `The drive is about <b>${fmtDur(r.seconds)}</b> with expected traffic — <span class="${sevCls}">${sevLabel}</span>.`;
+    html += buffer <= 0 ? `<br>⚠ That's basically right now — head out!`
+      : buffer < 60 ? `<br>You have about <b>${buffer} min</b> before you should leave.`
+      : `<br>You have a comfortable <b>${fmtDur(buffer * 60)}</b> before you need to leave.`;
+  }
+  try {
+    const w = await omWeather(b);
+    const [em, desc] = wmo(w.current.weather_code);
+    html += `<br>${em} At ${esc(b.label)}: <b>${Math.round(w.current.temperature_2m)}°C</b>, ${desc}.`;
+    const rain = Math.max(...(w.hourly?.precipitation_probability || [0]));
+    if (rain >= 50) html += ` <b>${rain}% chance of rain</b> — leave a little earlier 🌧`;
+  } catch {}
+  return { html };
 }
 
 async function handleFlow(q) {
@@ -678,6 +780,7 @@ async function ask(text) {
     else if (q.intent === 'help') out = { html: GREET() };
     else if (q.intent === 'stuck') out = handleStuck();
     else if (q.intent === 'route') out = await handleRoute(q);
+    else if (q.intent === 'leaveby') out = await handleLeaveBy(q);
     else if (q.intent === 'flow') out = await handleFlow(q);
     else if (q.intent === 'weather') out = await handleWeather(q);
     else if (q.intent === 'nearby') out = await handleNearby(q);
@@ -697,6 +800,62 @@ async function ask(text) {
 $('#sendBtn').addEventListener('click', () => { const v = $('#input').value; $('#input').value = ''; ask(v); });
 $('#input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = $('#input').value; $('#input').value = ''; ask(v); } });
 document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => ask(c.dataset.q)));
+
+/* =====================================================================
+   Saved routes
+===================================================================== */
+function renderSaved() {
+  const bar = $('#savedBar');
+  if (!state.saved.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = `<span class="saved-label">⭐ Saved</span>` + state.saved.map(s =>
+    `<span class="saved-chip" data-id="${s.id}">
+       <span class="go" data-go="${s.id}">${esc(s.fromLabel)} → ${esc(s.toLabel)}</span>
+       <button class="del" data-del-saved="${s.id}" title="Remove">✕</button>
+     </span>`).join('');
+}
+$('#savedBar').addEventListener('click', (e) => {
+  const del = e.target.closest('[data-del-saved]');
+  if (del) {
+    state.saved = state.saved.filter(s => s.id !== del.dataset.delSaved);
+    save(); renderSaved();
+    return;
+  }
+  const go = e.target.closest('[data-go]');
+  if (go) {
+    const s = state.saved.find(x => x.id === go.dataset.go);
+    if (s) runSaved(s);
+  }
+});
+async function runSaved(s) {
+  if (busy) return;
+  addMsg('user', `Traffic ${esc(s.fromLabel)} → ${esc(s.toLabel)}`);
+  busy = true;
+  const typing = addTyping();
+  try {
+    const out = await routeAnswer({ ...s.from, label: s.fromLabel }, { ...s.to, label: s.toLabel });
+    typing.remove();
+    addMsg('bot', out.html, { mapData: out.mapData || null });
+  } catch (err) {
+    typing.remove();
+    addMsg('bot', `Couldn't refresh that route right now (${esc(String(err.message || err))}). Try again in a moment 🙏`);
+  }
+  busy = false;
+}
+// ⭐ Save route button inside a bot bubble
+$('#chat').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-save-route]');
+  if (!btn) return;
+  let payload;
+  try { payload = JSON.parse(decodeURIComponent(btn.dataset.saveRoute)); } catch { return; }
+  if (state.saved.some(s => s.fromLabel === payload.fromLabel && s.toLabel === payload.toLabel)) {
+    toast('That route is already saved ⭐'); return;
+  }
+  state.saved.push({ id: uid(), ...payload });
+  save(); renderSaved();
+  btn.outerHTML = '<span class="pill">⭐ Saved</span>';
+  toast('Saved — tap it in the ⭐ bar to re-check anytime');
+});
 
 /* =====================================================================
    Settings & guide
@@ -767,10 +926,14 @@ function toast(msg) {
    Boot
 ===================================================================== */
 function welcome() {
-  addMsg('bot', GREET() + (hasKey() ? '' : `<br><br><span class="muted">⚙️ Add your free TomTom key to unlock live traffic — weather already works!</span>`), { persist: false });
+  let html = GREET();
+  if (state.saved.length) html += `<br><br>⭐ <b>Your saved routes</b> are in the bar below — tap one for its current drive time.`;
+  if (!hasKey()) html += `<br><br><span class="muted">⚙️ Add your free TomTom key to unlock live traffic — weather already works!</span>`;
+  addMsg('bot', html, { persist: false });
 }
 restoreHistory();
 if (!state.history.length) welcome();
+renderSaved();
 renderKeyBadge();
 applyTheme();
 save();
