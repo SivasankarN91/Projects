@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TN Travel Assistant</title>
+<meta name="description" content="Ask about live traffic, drive times, weather and nearby places across Tamil Nadu & Pondicherry — in plain English.">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --accent: #2a78d6;
+    --danger: #d03b3b;
+    --good: #0ca30c;
+    --warn: #c98500;
+    --user-bubble: #2a78d6;
+    --shadow: 0 1px 3px rgba(11, 11, 11, 0.06);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --accent: #3987e5;
+    --danger: #e66767;
+    --good: #0ca30c;
+    --warn: #c98500;
+    --user-bubble: #2a5f9e;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page); color: var(--text-primary);
+    display: flex; flex-direction: column; -webkit-font-smoothing: antialiased;
+  }
+
+  header.topbar {
+    display: flex; align-items: center; gap: 8px; padding: 12px 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border); flex: none;
+  }
+  .brand { font-weight: 700; font-size: 1.05rem; display: flex; gap: 8px; align-items: center; }
+  .brand .sub { font-size: 0.7rem; font-weight: 500; color: var(--text-muted); display: block; }
+  .spacer { flex: 1; }
+  .btn {
+    appearance: none; border: 1px solid var(--border); cursor: pointer;
+    font: inherit; font-size: 0.83rem; font-weight: 600;
+    background: var(--surface); color: var(--text-primary);
+    padding: 7px 11px; border-radius: 9px; box-shadow: var(--shadow);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.icon { padding: 7px 9px; }
+  .btn.small { padding: 4px 9px; font-size: 0.76rem; }
+
+  /* chat area */
+  #chatScroll { flex: 1; overflow-y: auto; }
+  #chat { max-width: 760px; margin: 0 auto; padding: 16px 12px 8px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { display: flex; }
+  .msg.user { justify-content: flex-end; }
+  .bubble {
+    max-width: 86%; padding: 10px 14px; border-radius: 16px;
+    font-size: 0.92rem; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  }
+  .msg.user .bubble { background: var(--user-bubble); color: #fff; border-bottom-right-radius: 5px; }
+  .msg.bot .bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    border-bottom-left-radius: 5px; box-shadow: var(--shadow); white-space: normal;
+  }
+  .bubble b { font-weight: 700; }
+  .bubble .muted { color: var(--text-muted); font-size: 0.82rem; }
+  .bubble .sev-smooth { color: var(--good); font-weight: 700; }
+  .bubble .sev-moderate { color: var(--warn); font-weight: 700; }
+  .bubble .sev-heavy { color: var(--danger); font-weight: 700; }
+  .typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+  /* cards inside bot bubbles */
+  .card-block {
+    margin-top: 10px; border: 1px solid var(--grid); border-radius: 12px;
+    overflow: hidden; background: var(--page);
+  }
+  .map-slot { width: 100%; height: 190px; display: block; background: #dfe8dd; }
+  .card-pad { padding: 10px 12px; }
+  .kv { display: flex; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; }
+  .kv .pill {
+    background: var(--surface); border: 1px solid var(--grid); border-radius: 999px;
+    padding: 3px 10px; font-weight: 600;
+  }
+  .poi-row { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 7px 12px; border-top: 1px solid var(--grid); font-size: 0.85rem; align-items: baseline; }
+  .poi-row:first-child { border-top: none; }
+  .poi-name { font-weight: 600; flex: 1; }
+  .poi-dist { color: var(--text-muted); font-size: 0.76rem; white-space: nowrap; }
+  .poi-addr { color: var(--text-muted); font-size: 0.74rem; flex-basis: 100%; }
+  .actions-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* suggestions + composer */
+  #suggest {
+    max-width: 760px; margin: 0 auto; padding: 4px 12px 8px; display: flex; gap: 6px;
+    overflow-x: auto; scrollbar-width: none; width: 100%;
+  }
+  #suggest::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; appearance: none; cursor: pointer; font: inherit; font-size: 0.78rem; font-weight: 600;
+    background: var(--surface); color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  #composer {
+    flex: none; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px 14px;
+  }
+  #composer .inner { max-width: 760px; margin: 0 auto; display: flex; gap: 8px; }
+  #input {
+    flex: 1; font: inherit; font-size: 1rem; padding: 11px 14px;
+    border: 1.5px solid var(--baseline); border-radius: 12px;
+    background: var(--page); color: var(--text-primary);
+  }
+  #input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+  #sendBtn { border-radius: 12px; padding: 0 18px; font-size: 1rem; }
+
+  /* modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100;
+    display: none; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px; width: 100%; max-width: 500px; box-shadow: var(--shadow);
+    max-height: 88vh; overflow-y: auto;
+  }
+  .modal h3 { font-size: 1.08rem; margin-bottom: 10px; }
+  .modal p, .modal li { font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6; }
+  .modal ol { padding-left: 20px; margin: 8px 0; }
+  .modal a { color: var(--accent); font-weight: 600; }
+  .modal input {
+    width: 100%; font: inherit; font-size: 0.9rem; padding: 10px 12px; margin-top: 8px;
+    border: 1.5px solid var(--baseline); border-radius: 10px;
+    background: var(--page); color: var(--text-primary);
+  }
+  .modal label { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); display: block; margin-top: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .keybadge { font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+  .keybadge.on { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .keybadge.off { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+
+  .toast {
+    position: fixed; bottom: 84px; left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    background: var(--text-primary); color: var(--page);
+    padding: 9px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+    transition: transform 0.25s; z-index: 300; pointer-events: none; max-width: 92vw; text-align: center;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">🚦 <span>TN Travel Assistant<span class="sub">Tamil Nadu & Pondicherry · live traffic · weather</span></span></span>
+  <span class="spacer"></span>
+  <span class="keybadge off" id="keyBadge">no key</span>
+  <button class="btn icon" id="settingsBtn" title="Settings & API key">⚙️</button>
+  <button class="btn icon" id="themeToggle" title="Toggle theme">🌗</button>
+  <button class="btn icon" id="guideBtn" title="Help">?</button>
+</header>
+
+<div id="chatScroll"><div id="chat"></div></div>
+
+<div id="suggest">
+  <button class="chip" data-q="Traffic from Chennai to Pondicherry">🚗 Chennai → Pondicherry</button>
+  <button class="chip" data-q="Weather in Madurai">🌦 Weather in Madurai</button>
+  <button class="chip" data-q="Petrol bunk near Tindivanam">⛽ Petrol near Tindivanam</button>
+  <button class="chip" data-q="Traffic in Coimbatore">🚥 Traffic in Coimbatore</button>
+  <button class="chip" data-q="I am stuck in traffic">🆘 I'm stuck in traffic</button>
+</div>
+
+<div id="composer">
+  <div class="inner">
+    <input id="input" type="text" placeholder="Ask about traffic, routes, weather, nearby places…" autocomplete="off">
+    <button class="btn primary" id="sendBtn">➤</button>
+  </div>
+</div>
+
+<!-- Settings / key modal -->
+<div class="modal-backdrop" id="setupModal">
+  <div class="modal">
+    <h3>⚙️ Settings</h3>
+    <p>Live traffic, routes and nearby places are powered by <b>TomTom</b> — free for personal use (2,500 requests/day, no credit card).</p>
+    <ol>
+      <li>Go to <a href="https://developer.tomtom.com" target="_blank" rel="noopener">developer.tomtom.com</a> and register (free)</li>
+      <li>In the dashboard, copy your <b>API Key</b></li>
+      <li>Paste it below — it's stored only in this browser</li>
+    </ol>
+    <label>TomTom API key</label>
+    <input type="text" id="keyInput" placeholder="Paste your key here" autocomplete="off">
+    <label>Your home city <span style="font-weight:400">(used when you don't say where you're starting from)</span></label>
+    <input type="text" id="homeInput" placeholder="e.g. Chennai">
+    <div class="modal-actions">
+      <button class="btn" id="clearChatBtn">🗑 Clear chat</button>
+      <span class="spacer"></span>
+      <button class="btn" id="setupSkip">Later</button>
+      <button class="btn primary" id="setupSave">Save</button>
+    </div>
+    <p class="muted" style="margin-top:10px; font-size:0.76rem">Weather works without any key. Nothing you type here leaves your browser except the API calls themselves.</p>
+  </div>
+</div>
+
+<!-- Guide -->
+<div class="modal-backdrop" id="guideModal">
+  <div class="modal">
+    <h3>👋 Your Tamil Nadu travel assistant</h3>
+    <p>Ask me things in plain English (or Tanglish!) and I'll answer with <b>live data</b>:</p>
+    <ol>
+      <li><b>“Traffic from Chennai to Pondicherry”</b> — current drive time, how bad the traffic is, when you'll arrive, and the destination weather</li>
+      <li><b>“Traffic in Coimbatore”</b> — how congested the city's roads are right now</li>
+      <li><b>“Weather in Madurai”</b> — current conditions and whether rain is coming</li>
+      <li><b>“Petrol bunk near Tindivanam”</b> — nearest fuel, food, hotels, hospitals, ATMs, toilets, mechanics</li>
+      <li><b>“I'm stuck in traffic”</b> — practical help: alternate routes, nearby stops, share your location on WhatsApp</li>
+    </ol>
+    <p>First time? Tap <b>⚙️</b> to add your free TomTom key (2-minute signup) — that unlocks traffic and nearby search. Weather works right away with no key.</p>
+    <div class="modal-actions">
+      <button class="btn primary" id="guideClose">Let's go</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const STORE_KEY = 'travelAssistantData_v1';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// bias searches toward Tamil Nadu / Pondicherry
+const TN_CENTER = { lat: 11.6, lon: 78.9 };
+
+/* =====================================================================
+   State
+===================================================================== */
+function freshState() {
+  return { version: 1, key: '', home: 'Chennai', history: [], settings: { theme: 'auto', guideSeen: false } };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return freshState();
+    const data = JSON.parse(raw);
+    if (!data) return freshState();
+    const base = freshState();
+    return { ...base, ...data, settings: { ...base.settings, ...(data.settings || {}) },
+      history: Array.isArray(data.history) ? data.history.slice(-60) : [] };
+  } catch { return freshState(); }
+}
+let state = loadState();
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ ...state, history: state.history.slice(-60) })); }
+  catch { state.history = state.history.slice(-20); try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {} }
+}
+
+/* =====================================================================
+   Chat rendering
+===================================================================== */
+const chat = $('#chat');
+function scrollDown() { $('#chatScroll').scrollTop = $('#chatScroll').scrollHeight; }
+
+function addMsg(role, html, { persist = true, mapData = null } = {}) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<div class="bubble">${html}</div>`;
+  chat.appendChild(div);
+  if (mapData) {
+    const slot = div.querySelector('.map-slot');
+    if (slot) { slot.dataset.map = JSON.stringify(mapData); drawMap(slot); }
+  }
+  if (persist) { state.history.push({ role, html, mapData }); save(); }
+  scrollDown();
+  return div;
+}
+function addTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg bot';
+  div.innerHTML = `<div class="bubble"><span class="typing"><span></span><span></span><span></span></span></div>`;
+  chat.appendChild(div);
+  scrollDown();
+  return div;
+}
+function restoreHistory() {
+  for (const m of state.history) addMsg(m.role, m.html, { persist: false, mapData: m.mapData });
+}
+
+/* =====================================================================
+   Fetch helpers — TomTom + Open-Meteo
+===================================================================== */
+const hasKey = () => !!state.key;
+async function getJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+async function ttGeocode(q) {
+  const u = `https://api.tomtom.com/search/2/geocode/${encodeURIComponent(q)}.json?key=${state.key}&countrySet=IN&limit=1&lat=${TN_CENTER.lat}&lon=${TN_CENTER.lon}`;
+  const j = await getJSON(u);
+  const r = j.results && j.results[0];
+  if (!r) throw new Error('notfound');
+  return { lat: r.position.lat, lon: r.position.lon, label: r.address.municipality || r.address.freeformAddress || q };
+}
+async function omGeocode(q) {
+  const j = await getJSON(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=en`);
+  const r = (j.results || []).find(x => x.country_code === 'IN') || (j.results || [])[0];
+  if (!r) throw new Error('notfound');
+  return { lat: r.latitude, lon: r.longitude, label: r.name };
+}
+async function geocode(q) { return hasKey() ? ttGeocode(q) : omGeocode(q); }
+
+async function ttRoute(a, b) {
+  const u = `https://api.tomtom.com/routing/1/calculateRoute/${a.lat},${a.lon}:${b.lat},${b.lon}/json?key=${state.key}&traffic=true&maxAlternatives=1&routeType=fastest`;
+  const j = await getJSON(u);
+  return (j.routes || []).map(r => ({
+    meters: r.summary.lengthInMeters,
+    seconds: r.summary.travelTimeInSeconds,
+    delay: r.summary.trafficDelayInSeconds || 0,
+    noTraffic: r.summary.noTrafficTravelTimeInSeconds || (r.summary.travelTimeInSeconds - (r.summary.trafficDelayInSeconds || 0)),
+    points: (r.legs || []).flatMap(l => l.points || []),
+  }));
+}
+async function ttFlow(p) {
+  const u = `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json?key=${state.key}&point=${p.lat},${p.lon}`;
+  const j = await getJSON(u);
+  return j.flowSegmentData;
+}
+async function ttPoi(query, p) {
+  const u = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(query)}.json?key=${state.key}&lat=${p.lat}&lon=${p.lon}&radius=20000&limit=5`;
+  const j = await getJSON(u);
+  return (j.results || []).map(r => ({
+    name: r.poi && r.poi.name, dist: r.dist,
+    addr: r.address && r.address.freeformAddress,
+    lat: r.position.lat, lon: r.position.lon,
+  }));
+}
+async function omWeather(p) {
+  const u = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m&hourly=precipitation_probability&forecast_hours=6&timezone=auto`;
+  return getJSON(u);
+}
+const WMO = {
+  0: ['☀️', 'clear skies'], 1: ['🌤', 'mostly clear'], 2: ['⛅', 'partly cloudy'], 3: ['☁️', 'cloudy'],
+  45: ['🌫', 'foggy'], 48: ['🌫', 'foggy'], 51: ['🌦', 'light drizzle'], 53: ['🌦', 'drizzle'], 55: ['🌧', 'heavy drizzle'],
+  61: ['🌧', 'light rain'], 63: ['🌧', 'rain'], 65: ['⛈', 'heavy rain'], 80: ['🌧', 'rain showers'], 81: ['🌧', 'rain showers'],
+  82: ['⛈', 'violent showers'], 95: ['⛈', 'thunderstorm'], 96: ['⛈', 'thunderstorm with hail'], 99: ['⛈', 'thunderstorm with hail'],
+};
+function wmo(code) { return WMO[code] || ['🌡', 'mixed conditions']; }
+
+/* =====================================================================
+   Formatting
+===================================================================== */
+function fmtDur(sec) {
+  const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60);
+  return h ? `${h}h ${m}m` : `${m} min`;
+}
+function fmtKm(m) { return (m / 1000).toFixed(m < 20000 ? 1 : 0) + ' km'; }
+function fmtArrival(sec) {
+  return new Date(Date.now() + sec * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+function severity(delay, noTraffic) {
+  const r = noTraffic ? delay / noTraffic : 0;
+  if (delay < 300 || r < 0.05) return ['sev-smooth', '🟢 smooth'];
+  if (r < 0.18) return ['sev-moderate', '🟡 moderate traffic'];
+  return ['sev-heavy', '🔴 heavy traffic'];
+}
+
+/* =====================================================================
+   Mini map (hand-rolled web-mercator, TomTom tiles + traffic overlay)
+===================================================================== */
+function lon2x(lon, z) { return (lon + 180) / 360 * Math.pow(2, z) * 256; }
+function lat2y(lat, z) {
+  const r = lat * Math.PI / 180;
+  return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z) * 256;
+}
+function drawMap(slotDiv) {
+  const data = JSON.parse(slotDiv.dataset.map || 'null');
+  if (!data || !data.points || data.points.length < 2) return;
+  const canvas = document.createElement('canvas');
+  const W = slotDiv.clientWidth || 700, H = 190;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = '100%'; canvas.style.height = H + 'px';
+  slotDiv.innerHTML = '';
+  slotDiv.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const lats = data.points.map(p => p.latitude ?? p.lat);
+  const lons = data.points.map(p => p.longitude ?? p.lon);
+  const bounds = { minLat: Math.min(...lats), maxLat: Math.max(...lats), minLon: Math.min(...lons), maxLon: Math.max(...lons) };
+  // pick zoom that fits
+  let z = 12;
+  for (; z > 4; z--) {
+    const w = lon2x(bounds.maxLon, z) - lon2x(bounds.minLon, z);
+    const h = lat2y(bounds.minLat, z) - lat2y(bounds.maxLat, z);
+    if (w < W * 0.85 && h < H * 0.85) break;
+  }
+  const cx = (lon2x(bounds.minLon, z) + lon2x(bounds.maxLon, z)) / 2;
+  const cy = (lat2y(bounds.minLat, z) + lat2y(bounds.maxLat, z)) / 2;
+  const px = (lon) => lon2x(lon, z) - cx + W / 2;
+  const py = (lat) => lat2y(lat, z) - cy + H / 2;
+
+  // background
+  ctx.fillStyle = getComputedStyle(document.documentElement).getAttribute?.('data-theme') === 'dark' ? '#22261f' : '#e9efe4';
+  ctx.fillStyle = '#e9efe4';
+  ctx.fillRect(0, 0, W, H);
+
+  const drawRoute = () => {
+    ctx.beginPath();
+    data.points.forEach((p, i) => {
+      const x = px(p.longitude ?? p.lon), y = py(p.latitude ?? p.lat);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.strokeStyle = '#2a78d6'; ctx.lineWidth = 3.5; ctx.stroke();
+    // endpoints
+    const s = data.points[0], e = data.points[data.points.length - 1];
+    for (const [pt, color] of [[s, '#0ca30c'], [e, '#d03b3b']]) {
+      ctx.beginPath();
+      ctx.arc(px(pt.longitude ?? pt.lon), py(pt.latitude ?? pt.lat), 6, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+  };
+  drawRoute();
+
+  // tiles (base + traffic overlay), drawn async under the route
+  if (hasKey()) {
+    const tx0 = Math.floor((cx - W / 2) / 256), tx1 = Math.floor((cx + W / 2) / 256);
+    const ty0 = Math.floor((cy - H / 2) / 256), ty1 = Math.floor((cy + H / 2) / 256);
+    let pending = 0;
+    const layers = [
+      `https://api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${state.key}`,
+      `https://api.tomtom.com/traffic/map/4/tile/flow/relative0/{z}/{x}/{y}.png?key=${state.key}`,
+    ];
+    const tiles = [];
+    for (const layer of layers) {
+      for (let tx = tx0; tx <= tx1; tx++) for (let ty = ty0; ty <= ty1; ty++) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        pending++;
+        img.onload = img.onerror = () => { if (--pending === 0) redraw(); };
+        img.src = layer.replace('{z}', z).replace('{x}', tx).replace('{y}', ty);
+        tiles.push({ img, x: tx * 256 - cx + W / 2, y: ty * 256 - cy + H / 2, overlay: layer.includes('traffic') });
+      }
+    }
+    const redraw = () => {
+      ctx.fillStyle = '#e9efe4'; ctx.fillRect(0, 0, W, H);
+      for (const t of tiles) {
+        if (!t.img.complete || !t.img.naturalWidth) continue;
+        ctx.globalAlpha = t.overlay ? 0.9 : 1;
+        try { ctx.drawImage(t.img, t.x, t.y, 256, 256); } catch {}
+      }
+      ctx.globalAlpha = 1;
+      drawRoute();
+    };
+  }
+}
+window.addEventListener('resize', () => document.querySelectorAll('.map-slot').forEach(drawMap));
+
+/* =====================================================================
+   NLU — intent detection
+===================================================================== */
+const POI_MAP = [
+  [/petrol|fuel|gas|bunk/, 'petrol station', '⛽'],
+  [/restaurant|food|eat|hungry|hotel(?!s? (room|stay))/, 'restaurant', '🍽'],
+  [/stay|lodge|room/, 'hotel', '🏨'],
+  [/hospital|clinic|doctor|emergency/, 'hospital', '🏥'],
+  [/atm|cash/, 'atm', '🏧'],
+  [/toilet|restroom|washroom/, 'toilet', '🚻'],
+  [/mechanic|puncture|repair|garage/, 'car repair', '🔧'],
+];
+
+function parse(text) {
+  const t = text.trim().toLowerCase().replace(/[?!.]+$/, '');
+  if (!t) return null;
+  if (/^(hi|hello|hey|vanakkam|namaste)\b/.test(t)) return { intent: 'greet' };
+  if (/help$|what can you do|how to use/.test(t)) return { intent: 'help' };
+  if (/stuck|jam\b|jammed/.test(t) && !/from .+ to /.test(t)) return { intent: 'stuck' };
+
+  // nearby: "<thing> near <place|me>"
+  for (const [re, cat, emoji] of POI_MAP) {
+    if (re.test(t) && /\bnear\b|\bnearby\b|\bclose\b/.test(t)) {
+      const m = t.match(/near(?:by)?\s+(.+)$/);
+      const place = m && m[1] && !/^me$|^my location$|^here$/.test(m[1].trim()) ? m[1].trim() : null;
+      return { intent: 'nearby', cat, emoji, place };
+    }
+  }
+
+  // weather
+  if (/weather|rain|temperature|climate|humidity|hot\b|forecast/.test(t)) {
+    const m = t.match(/(?:in|at|for)\s+([a-z .]+)$/);
+    return { intent: 'weather', place: m ? m[1].trim() : null };
+  }
+
+  // route: "from X to Y" or "... to Y from X"
+  let m = t.match(/from\s+(.+?)\s+to\s+(.+)$/);
+  if (m) return { intent: 'route', from: m[1].trim(), to: m[2].trim() };
+  m = t.match(/to\s+(.+?)\s+from\s+(.+)$/);
+  if (m) return { intent: 'route', from: m[2].trim(), to: m[1].trim() };
+
+  // "traffic in X"
+  m = t.match(/traffic\s+(?:in|at|near)\s+(.+)$/);
+  if (m) return { intent: 'flow', place: m[1].trim() };
+
+  // bare "X to Y"
+  m = t.match(/^([a-z .]+?)\s+to\s+([a-z .]+)$/);
+  if (m) return { intent: 'route', from: m[1].trim(), to: m[2].trim() };
+
+  // "how long to reach X" / "route to X" — origin = home
+  m = t.match(/(?:reach|route to|go to|going to|drive to|time to)\s+(.+)$/);
+  if (m) return { intent: 'route', from: null, to: m[1].trim() };
+
+  return { intent: 'unknown' };
+}
+
+/* =====================================================================
+   Answer handlers
+===================================================================== */
+const NO_KEY_MSG = () =>
+  `For live traffic and nearby places I need a <b>free TomTom key</b> (2-minute signup, no card).<br>
+   Tap <b>⚙️ above</b> — I'll walk you through it. Meanwhile, I can already answer <b>weather</b> questions! 🌦`;
+
+async function handleRoute(q) {
+  if (!hasKey()) return { html: NO_KEY_MSG() };
+  const fromName = q.from || state.home || 'Chennai';
+  const [a, b] = await Promise.all([geocode(fromName), geocode(q.to)]);
+  const routes = await ttRoute(a, b);
+  if (!routes.length) throw new Error('noroute');
+  const r = routes[0];
+  const [sevCls, sevLabel] = severity(r.delay, r.noTraffic);
+  let html = `🚗 <b>${esc(a.label)} → ${esc(b.label)}</b><br>`;
+  html += `Distance <b>${fmtKm(r.meters)}</b> · right now it takes <b>${fmtDur(r.seconds)}</b> — <span class="${sevCls}">${sevLabel}</span>`;
+  if (r.delay >= 300) html += ` (about <b>${fmtDur(r.delay)}</b> slower than usual)`;
+  html += `.<br>Leave now and you'll arrive around <b>${fmtArrival(r.seconds)}</b>.`;
+  const alt = routes[1];
+  if (alt && r.seconds - alt.seconds > 600) {
+    html += `<br>💡 An alternate route is about <b>${fmtDur(r.seconds - alt.seconds)} faster</b> right now.`;
+  }
+  // weather at destination (best-effort)
+  try {
+    const w = await omWeather(b);
+    const [em, desc] = wmo(w.current.weather_code);
+    html += `<br>${em} At ${esc(b.label)}: <b>${Math.round(w.current.temperature_2m)}°C</b>, ${desc}.`;
+    const rain = Math.max(...(w.hourly?.precipitation_probability || [0]));
+    if (rain >= 50) html += ` <b>${rain}% chance of rain</b> in the next few hours — plan for it 🌧`;
+  } catch {}
+  html += `<div class="card-block"><div class="map-slot"></div>
+    <div class="card-pad kv">
+      <span class="pill">🕐 ${fmtDur(r.seconds)}</span>
+      <span class="pill">📏 ${fmtKm(r.meters)}</span>
+      <span class="pill">🏁 ~${fmtArrival(r.seconds)}</span>
+      ${r.delay >= 60 ? `<span class="pill">⏳ +${fmtDur(r.delay)} traffic</span>` : ''}
+    </div></div>`;
+  // thin the polyline for storage
+  const pts = r.points.filter((_, i) => i % Math.ceil(r.points.length / 120) === 0);
+  if (r.points.length) pts.push(r.points[r.points.length - 1]);
+  return { html, mapData: { points: pts } };
+}
+
+async function handleFlow(q) {
+  if (!hasKey()) return { html: NO_KEY_MSG() };
+  const p = await geocode(q.place);
+  const f = await ttFlow(p);
+  const ratio = f.freeFlowSpeed ? f.currentSpeed / f.freeFlowSpeed : 1;
+  let mood, cls;
+  if (ratio >= 0.85) { mood = '🟢 Traffic is flowing smoothly'; cls = 'sev-smooth'; }
+  else if (ratio >= 0.6) { mood = '🟡 Moderately congested'; cls = 'sev-moderate'; }
+  else { mood = '🔴 Heavily congested'; cls = 'sev-heavy'; }
+  let html = `🚥 <b>Traffic in ${esc(p.label)}</b><br><span class="${cls}">${mood}</span> — `;
+  html += `roads moving at about <b>${Math.round(f.currentSpeed)} km/h</b> versus <b>${Math.round(f.freeFlowSpeed)} km/h</b> when clear`;
+  if (ratio < 0.85) html += ` (${Math.round((1 - ratio) * 100)}% slower than usual)`;
+  html += `.`;
+  try {
+    const w = await omWeather(p);
+    const [em, desc] = wmo(w.current.weather_code);
+    html += `<br>${em} ${Math.round(w.current.temperature_2m)}°C, ${desc}.`;
+  } catch {}
+  return { html };
+}
+
+async function handleWeather(q) {
+  const place = q.place || state.home || 'Chennai';
+  const p = await geocode(place);
+  const w = await omWeather(p);
+  const [em, desc] = wmo(w.current.weather_code);
+  const rain = Math.max(...(w.hourly?.precipitation_probability || [0]));
+  let html = `${em} <b>Weather in ${esc(p.label)}</b><br>`;
+  html += `<b>${Math.round(w.current.temperature_2m)}°C</b>, ${desc} · humidity ${w.current.relative_humidity_2m}% · wind ${Math.round(w.current.wind_speed_10m)} km/h.<br>`;
+  html += rain >= 50 ? `🌧 <b>${rain}% chance of rain</b> in the next few hours — carry a raincoat.`
+    : rain >= 20 ? `🌦 Slight chance of rain (${rain}%) in the next few hours.`
+    : `No rain expected in the next few hours. ✅`;
+  return { html };
+}
+
+function getLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('nogeo'));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: 'your location' }),
+      () => reject(new Error('denied')), { timeout: 8000 });
+  });
+}
+
+async function handleNearby(q) {
+  if (!hasKey()) return { html: NO_KEY_MSG() };
+  let p;
+  if (q.place) p = await geocode(q.place);
+  else {
+    try { p = await getLocation(); }
+    catch { return { html: `I couldn't get your location 😕 — try naming a place, e.g. <b>"${q.cat} near Tindivanam"</b>.` }; }
+  }
+  const pois = await ttPoi(q.cat, p);
+  if (!pois.length) return { html: `I couldn't find any ${esc(q.cat)} near ${esc(p.label)} — try a bigger town nearby.` };
+  let html = `${q.emoji} <b>${esc(q.cat[0].toUpperCase() + q.cat.slice(1))}s near ${esc(p.label)}</b><div class="card-block">`;
+  html += pois.map(x => `<div class="poi-row">
+    <span class="poi-name">${esc(x.name || q.cat)}</span>
+    <span class="poi-dist">${fmtKm(x.dist || 0)}</span>
+    ${x.addr ? `<span class="poi-addr">${esc(x.addr)}</span>` : ''}
+  </div>`).join('');
+  html += `</div><div class="muted" style="margin-top:6px">Tip: open any of these in your maps app for turn-by-turn directions.</div>`;
+  return { html };
+}
+
+function handleStuck() {
+  const html = `Hang in there 🙏 Here's what usually helps:<br>
+  <b>1.</b> Ask me <b>"traffic from here to &lt;destination&gt;"</b> — I'll check if an alternate route is faster right now.<br>
+  <b>2.</b> Long wait? Find a stop: try <b>"petrol bunk near me"</b>, <b>"restaurant near me"</b>, or <b>"toilet near me"</b>.<br>
+  <b>3.</b> Let family know you're delayed:
+  <div class="actions-row">
+    <a class="btn small" id="waShare" href="https://wa.me/?text=${encodeURIComponent("I'm stuck in traffic, will be late. Tracking my drive 🚗")}" target="_blank" rel="noopener">📲 Share on WhatsApp</a>
+  </div>
+  <div class="muted" style="margin-top:8px">Stay hydrated, keep some distance from the vehicle ahead, and don't block the free-left lane 🚦</div>`;
+  return { html };
+}
+
+const GREET = () => `Vanakkam! 🙏 I'm your Tamil Nadu travel assistant. Try:<br>
+  🚗 <b>"Traffic from Chennai to Pondicherry"</b><br>
+  🚥 <b>"Traffic in Coimbatore"</b><br>
+  🌦 <b>"Weather in Madurai"</b><br>
+  ⛽ <b>"Petrol bunk near Tindivanam"</b>`;
+
+/* =====================================================================
+   Ask pipeline
+===================================================================== */
+let busy = false;
+async function ask(text) {
+  if (busy) return;
+  const q = parse(text);
+  if (!q) return;
+  addMsg('user', esc(text));
+  busy = true;
+  const typing = addTyping();
+  try {
+    let out;
+    if (q.intent === 'greet') out = { html: GREET() };
+    else if (q.intent === 'help') out = { html: GREET() };
+    else if (q.intent === 'stuck') out = handleStuck();
+    else if (q.intent === 'route') out = await handleRoute(q);
+    else if (q.intent === 'flow') out = await handleFlow(q);
+    else if (q.intent === 'weather') out = await handleWeather(q);
+    else if (q.intent === 'nearby') out = await handleNearby(q);
+    else out = { html: `I'm not sure I got that 🤔 — I'm best at <b>traffic, routes, weather and nearby places</b>.<br>${GREET()}` };
+    typing.remove();
+    addMsg('bot', out.html, { mapData: out.mapData || null });
+  } catch (err) {
+    typing.remove();
+    const msg = String(err.message || err);
+    if (msg === 'notfound') addMsg('bot', `I couldn't find that place 🗺 — try the town name alone, e.g. <b>"Villupuram"</b>.`);
+    else if (/HTTP 403|HTTP 401/.test(msg)) addMsg('bot', `Your TomTom key was rejected (${esc(msg)}). Double-check it in <b>⚙️ Settings</b>.`);
+    else addMsg('bot', `Something went wrong reaching the live data service (${esc(msg)}). Check your internet connection and try again 🙏`);
+  }
+  busy = false;
+}
+
+$('#sendBtn').addEventListener('click', () => { const v = $('#input').value; $('#input').value = ''; ask(v); });
+$('#input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = $('#input').value; $('#input').value = ''; ask(v); } });
+document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => ask(c.dataset.q)));
+
+/* =====================================================================
+   Settings & guide
+===================================================================== */
+function renderKeyBadge() {
+  const b = $('#keyBadge');
+  b.className = 'keybadge ' + (hasKey() ? 'on' : 'off');
+  b.textContent = hasKey() ? '● live data on' : 'no key';
+}
+$('#settingsBtn').addEventListener('click', () => {
+  $('#keyInput').value = state.key;
+  $('#homeInput').value = state.home;
+  $('#setupModal').classList.add('open');
+});
+$('#setupSave').addEventListener('click', () => {
+  state.key = $('#keyInput').value.trim();
+  state.home = $('#homeInput').value.trim() || 'Chennai';
+  save(); renderKeyBadge();
+  $('#setupModal').classList.remove('open');
+  toast(hasKey() ? 'Key saved — live traffic enabled! Try a route question 🚗' : 'Saved. Add a TomTom key anytime for live traffic.');
+});
+$('#setupSkip').addEventListener('click', () => $('#setupModal').classList.remove('open'));
+$('#setupModal').addEventListener('click', (e) => { if (e.target === $('#setupModal')) $('#setupModal').classList.remove('open'); });
+$('#clearChatBtn').addEventListener('click', () => {
+  if (!confirm('Clear the whole conversation?')) return;
+  state.history = [];
+  save(); chat.innerHTML = '';
+  $('#setupModal').classList.remove('open');
+  welcome();
+});
+
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() {
+  $('#guideModal').classList.remove('open');
+  if (!state.settings.guideSeen) { state.settings.guideSeen = true; save(); }
+}
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', (e) => { if (e.target === $('#guideModal')) closeGuide(); });
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('#guideModal').classList.contains('open')) closeGuide();
+    $('#setupModal').classList.remove('open');
+  }
+});
+
+function applyTheme() {
+  const pref = state.settings.theme;
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.settings.theme === 'auto') applyTheme(); });
+$('#themeToggle').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  state.settings.theme = dark ? 'light' : 'dark';
+  save(); applyTheme();
+});
+
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* =====================================================================
+   Boot
+===================================================================== */
+function welcome() {
+  addMsg('bot', GREET() + (hasKey() ? '' : `<br><br><span class="muted">⚙️ Add your free TomTom key to unlock live traffic — weather already works!</span>`), { persist: false });
+}
+restoreHistory();
+if (!state.history.length) welcome();
+renderKeyBadge();
+applyTheme();
+save();
+if (!state.settings.guideSeen) openGuide();
+</script>
+</body>
+</html>
