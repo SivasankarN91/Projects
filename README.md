@@ -2,10 +2,11 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all seven apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all eight apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
+| 🛍️ Online Store Builder | https://sivasankarn91.github.io/Projects/store-builder.html |
 | 🚦 TN Travel Assistant | https://sivasankarn91.github.io/Projects/travel-assistant.html |
 | 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/Projects/family-dates.html |
 | 🧾 Invoice Generator | https://sivasankarn91.github.io/Projects/invoice-generator.html |
@@ -14,6 +15,21 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+
+## 🛍️ Online Store Builder — [`store-builder.html`](store-builder.html)
+
+Build your own online shop and take orders on WhatsApp — no Shopify, no monthly fees, no code. Add products, preview the real storefront live, and export a single self-contained HTML file you can host anywhere.
+
+**Features**
+
+- **Products** — add items with photos (auto-downscaled & embedded), price, optional MRP with automatic discount %, category, description, and in-stock toggle; edit and delete anytime
+- **Store setup** — shop name, tagline, logo, WhatsApp number, currency (₹/$/€/£), brand colour (8 presets), optional UPI ID, announcement bar, and a checkout delivery note
+- **Live preview** — an embedded, fully interactive copy of the real storefront that updates as you type; what you preview is exactly what exports (WYSIWYG by construction)
+- **The storefront your customers get** — search, category filters, product detail sheets with quantity steppers, and a cart drawer; checkout builds a complete order message and opens **WhatsApp** to your number, with an optional **Pay via UPI** deep link; carts persist in the visitor's browser
+- **Export & host** — one click downloads the whole shop as a single dependency-free HTML file (products, images and runtime inlined) with SEO/Open-Graph tags and an emoji favicon; upload it to GitHub Pages, Netlify, or any static host
+- **Extras** — first-run guide, sample store, light/dark theme, autosave to `localStorage`
+
+No backend, no payment gateway account, no per-sale fees — orders come straight to your WhatsApp.
 
 ## 💰 Finance Tracker — [`finance-tracker.html`](finance-tracker.html)
 
