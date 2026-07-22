@@ -676,6 +676,10 @@ header.sf-head{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1p
 .sf-tag{font-size:.76rem;color:#70707c}
 .sf-cartbtn{margin-left:auto;position:relative;appearance:none;border:1px solid #e0e0e6;background:#fff;cursor:pointer;font:inherit;font-weight:700;font-size:.9rem;padding:9px 14px;border-radius:10px}
 .sf-count{position:absolute;top:-7px;right:-7px;background:var(--brand);color:#fff;font-size:.68rem;font-weight:800;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.sf-count.pop{animation:sfpop .35s ease}
+.sf-cartbtn.flash{background:var(--brand);color:#fff;border-color:var(--brand)}
+@keyframes sfpop{0%{transform:scale(1)}45%{transform:scale(1.5)}100%{transform:scale(1)}}
+.sf-card,.sf-add,.sf-heart,.sf-cartbtn,.sf-chip,.sf-opt{-webkit-tap-highlight-color:transparent}
 .sf-wrap{max-width:1040px;margin:0 auto;padding:16px}
 .sf-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .sf-search{flex:1;min-width:160px;font:inherit;font-size:.95rem;padding:10px 13px;border:1px solid #dcdce2;border-radius:11px;background:#fff}
@@ -701,6 +705,7 @@ header.sf-head{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1p
 .sf-low{font-size:.72rem;font-weight:700;color:#d9531e}
 .sf-add{margin:0 13px 13px;appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:.85rem;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:9px}
 .sf-add:disabled{background:#e2e2e8;color:#9a9aa4;cursor:default}
+.sf-add.added{background:#0a9d0a}
 .sf-empty{text-align:center;color:#9a9aa4;padding:50px 16px}
 footer.sf-foot{text-align:center;font-size:.76rem;color:#9a9aa4;padding:26px 16px}
 footer.sf-foot a{color:#70707c}
@@ -875,6 +880,20 @@ function storefrontRuntime() {
     const n = cartCount(), el = document.getElementById('sfCount');
     el.textContent = n; el.style.display = n ? 'flex' : 'none';
   }
+  function flashAdded(btn) {
+    // strong, obvious feedback so shoppers know it worked
+    if (btn) {
+      const orig = btn.dataset.orig || btn.textContent;
+      btn.dataset.orig = orig;
+      btn.textContent = '✓ Added'; btn.classList.add('added');
+      clearTimeout(btn._t); btn._t = setTimeout(() => { btn.textContent = btn.dataset.orig; btn.classList.remove('added'); }, 1100);
+    }
+    const badge = document.getElementById('sfCount');
+    if (badge) { badge.classList.remove('pop'); void badge.offsetWidth; badge.classList.add('pop'); }
+    const cbtn = document.getElementById('sfCart');
+    if (cbtn) { cbtn.classList.add('flash'); setTimeout(() => cbtn.classList.remove('flash'), 250); }
+    toast('Added to cart 🛒');
+  }
   function addToCart(id, sel, qty) {
     const p = byId(id); if (!p || soldOut(p)) return;
     const k = lineKey(id, sel);
@@ -1018,7 +1037,9 @@ function storefrontRuntime() {
       e.stopPropagation();
       const p = byId(add.dataset.add);
       if (p && p.options && p.options.length) { openDetail(p.id); return; } // needs choices
-      addToCart(add.dataset.add, {}, 1); toast('Added to cart'); return;
+      addToCart(add.dataset.add, {}, 1);
+      flashAdded(add);
+      return;
     }
     const open = e.target.closest('[data-open]');
     if (open) { openDetail(open.dataset.open); return; }
