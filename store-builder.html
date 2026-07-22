@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Online Store Builder</title>
-<meta name="description" content="Build your own online shop with WhatsApp checkout — add products, preview, and export a live store. No Shopify fees, no coding.">
+<meta name="description" content="Build your own online shop with WhatsApp checkout — add products with variants, discount codes and delivery, preview, and export a live store. No Shopify fees, no coding.">
 <style>
   :root {
     color-scheme: light;
@@ -75,7 +75,7 @@
 
   /* product admin cards */
   .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; }
+  .prod-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; position: relative; }
   .prod-thumb { width: 100%; height: 140px; object-fit: cover; background: var(--grid); display: block; }
   .prod-thumb.ph { display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--text-muted); }
   .prod-body { padding: 10px 12px; flex: 1; display: flex; flex-direction: column; gap: 3px; }
@@ -83,9 +83,13 @@
   .prod-price { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--accent); }
   .prod-mrp { text-decoration: line-through; color: var(--text-muted); font-size: 0.8rem; font-weight: 500; margin-left: 6px; }
   .prod-cat { font-size: 0.74rem; color: var(--text-muted); }
+  .prod-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px; }
   .badge { font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 6px; align-self: flex-start; }
   .badge.in { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
   .badge.out { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
+  .badge.feat { background: color-mix(in srgb, var(--series-4) 20%, transparent); color: var(--series-4); }
+  .badge.tag { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
+  .badge.multi { background: var(--grid); color: var(--text-secondary); }
   .prod-actions { display: flex; gap: 6px; padding: 0 12px 12px; }
   .empty { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 40px 16px; line-height: 1.7; }
   .empty .big { font-size: 2.4rem; display: block; margin-bottom: 8px; }
@@ -100,15 +104,33 @@
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
   @media (max-width: 560px) { .form-2 { grid-template-columns: 1fr; } }
-  .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 16px; max-width: 620px; }
+  .settings-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 16px; max-width: 620px; margin-bottom: 16px; }
+  .settings-card h3 { font-size: 0.95rem; margin-bottom: 12px; }
   .swatch-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .swatch { width: 26px; height: 26px; border-radius: 7px; cursor: pointer; border: 2px solid transparent; }
   .swatch.active { border-color: var(--text-primary); }
   .toggle { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+  .hint { font-size: 0.76rem; color: var(--text-muted); margin: -6px 0 12px; line-height: 1.5; }
 
   /* logo preview */
   .logo-prev { display: flex; align-items: center; gap: 10px; }
   .logo-prev img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; border: 1px solid var(--grid); }
+
+  /* coupons list */
+  .coupon-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .coupon-row:last-child { border-bottom: none; }
+  .coupon-code { font-weight: 800; font-family: ui-monospace, monospace; letter-spacing: 0.03em; }
+  .coupon-desc { color: var(--text-secondary); }
+
+  /* modal image thumbs */
+  .thumb-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .mini { position: relative; width: 58px; height: 58px; }
+  .mini img { width: 58px; height: 58px; object-fit: cover; border-radius: 9px; border: 1px solid var(--grid); }
+  .mini .cover-tag { position: absolute; left: 0; bottom: 0; right: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 0.56rem; font-weight: 700; text-align: center; border-radius: 0 0 9px 9px; padding: 1px; }
+  .mini .rm { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%; background: var(--danger); color: #fff; border: none; cursor: pointer; font-size: 0.7rem; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .add-img { width: 58px; height: 58px; border-radius: 9px; border: 1.5px dashed var(--baseline); background: none; cursor: pointer; font-size: 1.2rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+  .opt-row { display: grid; grid-template-columns: 100px 1fr; gap: 8px; margin-bottom: 8px; }
+  @media (max-width: 560px) { .opt-row { grid-template-columns: 1fr; } }
 
   /* preview */
   #view-preview .wrap { max-width: 1100px; }
@@ -118,13 +140,11 @@
   /* modal */
   .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
   .modal-backdrop.open { display: flex; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 460px; box-shadow: var(--shadow); max-height: 88vh; overflow-y: auto; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 480px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; }
   .modal h3 { font-size: 1.05rem; margin-bottom: 14px; }
   .modal-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; }
   .modal-actions .right { display: flex; gap: 8px; margin-left: auto; }
-  .img-pick { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .img-pick img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--grid); }
-  .img-pick .ph { width: 64px; height: 64px; border-radius: 10px; border: 1.5px dashed var(--baseline); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: var(--text-muted); }
+  .section-lbl { font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); margin: 4px 0 8px; }
 
   .guide-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .guide-step:last-of-type { border-bottom: none; }
@@ -169,6 +189,7 @@
   <section class="view" id="view-store">
     <div class="wrap">
       <div class="settings-card">
+        <h3>🏪 Your store</h3>
         <label class="field">Store name
           <input type="text" id="sName" placeholder="e.g. Priya's Boutique" maxlength="60">
         </label>
@@ -207,6 +228,41 @@
           <textarea id="sDelivery" placeholder="Delivery in 2–3 days across Chennai. COD available."></textarea>
         </label>
       </div>
+
+      <div class="settings-card">
+        <h3>🚚 Delivery charges</h3>
+        <div class="form-2">
+          <label class="field">Delivery fee <span style="font-weight:400">(0 = free)</span>
+            <input type="number" id="sDeliveryFee" min="0" step="any" placeholder="0">
+          </label>
+          <label class="field">Free delivery over <span style="font-weight:400">(0 = never)</span>
+            <input type="number" id="sFreeOver" min="0" step="any" placeholder="0">
+          </label>
+        </div>
+        <p class="hint">Customers see the fee (or “Free”) in their cart, and it’s added to the order total sent to WhatsApp.</p>
+      </div>
+
+      <div class="settings-card">
+        <h3>🏷️ Discount codes</h3>
+        <div id="couponList"></div>
+        <div class="form-2" style="margin-top:10px">
+          <label class="field">Code
+            <input type="text" id="cCode" placeholder="DIWALI10" maxlength="20" style="text-transform:uppercase">
+          </label>
+          <label class="field">Type
+            <select id="cType"><option value="pct">% off</option><option value="flat">Flat amount off</option></select>
+          </label>
+        </div>
+        <div class="form-2">
+          <label class="field">Value <span style="font-weight:400">(10 = 10% or ₹10)</span>
+            <input type="number" id="cValue" min="0" step="any" placeholder="10">
+          </label>
+          <label class="field">Min order <span style="font-weight:400">(optional)</span>
+            <input type="number" id="cMin" min="0" step="any" placeholder="0">
+          </label>
+        </div>
+        <button class="btn small primary" id="cAdd">＋ Add code</button>
+      </div>
     </div>
   </section>
 
@@ -222,11 +278,8 @@
 <div class="modal-backdrop" id="prodModal">
   <div class="modal">
     <h3 id="prodModalTitle">Add product</h3>
-    <div class="img-pick">
-      <span id="prodImgPrev"></span>
-      <button class="btn small" id="prodImgBtn">Upload photo</button>
-      <button class="btn small danger" id="prodImgClear" style="display:none">Remove</button>
-    </div>
+    <div class="section-lbl">Photos <span style="font-weight:400;color:var(--text-muted)">(first is the cover; add several for a gallery)</span></div>
+    <div class="thumb-row" id="prodImgs"></div>
     <label class="field">Name
       <input type="text" id="pName" placeholder="Product name" maxlength="80">
     </label>
@@ -245,7 +298,20 @@
     <label class="field">Description <span style="font-weight:400">(optional)</span>
       <textarea id="pDesc" placeholder="Short description customers will see" maxlength="300"></textarea>
     </label>
-    <label class="toggle" style="margin-bottom:12px"><input type="checkbox" id="pStock" checked style="width:auto"> In stock</label>
+    <div class="form-2">
+      <label class="field">Badge <span style="font-weight:400">(optional)</span>
+        <input type="text" id="pBadge" placeholder="e.g. Bestseller, New, Sale" maxlength="16">
+      </label>
+      <label class="field">Stock count <span style="font-weight:400">(blank = unlimited)</span>
+        <input type="number" id="pStockCount" min="0" step="1" placeholder="e.g. 3">
+      </label>
+    </div>
+    <label class="toggle" style="margin-bottom:10px"><input type="checkbox" id="pStock" checked style="width:auto"> In stock</label>
+    <label class="toggle" style="margin-bottom:14px"><input type="checkbox" id="pFeatured" style="width:auto"> ⭐ Feature on storefront</label>
+
+    <div class="section-lbl">Options / variants <span style="font-weight:400;color:var(--text-muted)">(optional — e.g. Size: S, M, L)</span></div>
+    <div id="optRows"></div>
+
     <div class="modal-actions">
       <button class="btn danger" id="prodDelete" style="display:none">🗑 Delete</button>
       <span class="right">
@@ -262,19 +328,19 @@
     <h3>👋 Build your online shop in minutes</h3>
     <div class="guide-step"><span class="g-em">📦</span><div>
       <div class="g-title">Add your products</div>
-      <div class="g-text">Tap <b>＋ Add product</b> — give it a photo, price, category and description. Mark things out of stock anytime.</div>
+      <div class="g-text">Tap <b>＋ Add product</b> — add several photos, a price, category, and <b>options like Size or Colour</b>. Mark bestsellers, feature them, or set a stock count for “Only 2 left!”.</div>
     </div></div>
     <div class="guide-step"><span class="g-em">🏪</span><div>
       <div class="g-title">Set up your store</div>
-      <div class="g-text">In <b>Store settings</b> add your shop name, logo, brand colour, and your <b>WhatsApp number</b> — that's where orders arrive.</div>
+      <div class="g-text">In <b>Store settings</b> add your name, logo, brand colour, <b>WhatsApp number</b> (where orders arrive), delivery charges, and <b>discount codes</b>.</div>
     </div></div>
     <div class="guide-step"><span class="g-em">👀</span><div>
       <div class="g-title">Preview the real shop</div>
-      <div class="g-text">The <b>Preview</b> tab shows exactly what customers get — browse, add to cart, and test the WhatsApp order right there.</div>
+      <div class="g-text">The <b>Preview</b> tab shows exactly what customers get — search, sort, wishlist, add to cart, apply a code, and test the WhatsApp order right there.</div>
     </div></div>
     <div class="guide-step"><span class="g-em">🛒</span><div>
       <div class="g-title">Customers order on WhatsApp</div>
-      <div class="g-text">Shoppers add items to a cart and hit <b>Order on WhatsApp</b> — the full order opens as a message to you. Add a UPI ID for one-tap payment too.</div>
+      <div class="g-text">Shoppers add items (with their chosen size/colour) and hit <b>Order on WhatsApp</b> — the full order, discount and delivery open as a message to you. Add a UPI ID for one-tap payment too.</div>
     </div></div>
     <div class="guide-step"><span class="g-em">🚀</span><div>
       <div class="g-title">Export &amp; go live</div>
@@ -303,11 +369,21 @@ const SLOT_HEX = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb683
 ===================================================================== */
 function freshState() {
   return {
-    version: 1,
-    store: { name: '', tagline: '', logo: '', whatsapp: '', currency: '₹', brandSlot: 1, upi: '', delivery: '', announce: '' },
+    version: 2,
+    store: { name: '', tagline: '', logo: '', whatsapp: '', currency: '₹', brandSlot: 1, upi: '', delivery: '', announce: '', deliveryFee: 0, freeOver: 0, coupons: [] },
     products: [],
     settings: { theme: 'auto', guideSeen: false },
   };
+}
+function migrateProduct(p) {
+  // v1 products had a single `img`; move to images[]
+  if (!Array.isArray(p.images)) p.images = p.img ? [p.img] : [];
+  delete p.img;
+  if (!Array.isArray(p.options)) p.options = [];
+  if (typeof p.featured !== 'boolean') p.featured = false;
+  if (typeof p.badge !== 'string') p.badge = '';
+  if (!('stock' in p)) p.stock = null;
+  return p;
 }
 function loadState() {
   try {
@@ -316,13 +392,16 @@ function loadState() {
     const data = JSON.parse(raw);
     if (!data || !Array.isArray(data.products)) return freshState();
     const base = freshState();
-    return { ...base, ...data, store: { ...base.store, ...(data.store || {}) }, settings: { ...base.settings, ...(data.settings || {}) } };
+    const merged = { ...base, ...data, store: { ...base.store, ...(data.store || {}) }, settings: { ...base.settings, ...(data.settings || {}) } };
+    merged.products = merged.products.map(migrateProduct);
+    if (!Array.isArray(merged.store.coupons)) merged.store.coupons = [];
+    return merged;
   } catch { return freshState(); }
 }
 let state = loadState();
 function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-  catch { toast('Storage full — use smaller product photos'); }
+  catch { toast('Storage full — use fewer/smaller product photos'); }
 }
 
 /* =====================================================================
@@ -378,16 +457,25 @@ function renderProducts() {
   }
   grid.innerHTML = state.products.map(p => {
     const disc = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+    const cover = p.images && p.images[0];
     return `<div class="prod-card" data-id="${p.id}">
-      ${p.img ? `<img class="prod-thumb" src="${p.img}" alt="">` : `<div class="prod-thumb ph">🖼️</div>`}
+      ${cover ? `<img class="prod-thumb" src="${cover}" alt="">` : `<div class="prod-thumb ph">🖼️</div>`}
       <div class="prod-body">
-        <span class="badge ${p.inStock ? 'in' : 'out'}">${p.inStock ? 'In stock' : 'Out of stock'}</span>
+        <div class="prod-tags">
+          <span class="badge ${p.inStock ? 'in' : 'out'}">${p.inStock ? 'In stock' : 'Out of stock'}</span>
+          ${p.featured ? `<span class="badge feat">⭐ Featured</span>` : ''}
+          ${p.badge ? `<span class="badge tag">${esc(p.badge)}</span>` : ''}
+          ${p.images && p.images.length > 1 ? `<span class="badge multi">🖼️ ${p.images.length}</span>` : ''}
+          ${p.options && p.options.length ? `<span class="badge multi">⚙︎ ${p.options.map(o => o.label).join(', ')}</span>` : ''}
+        </div>
         <div class="prod-name">${esc(p.name)}</div>
         <div><span class="prod-price">${money(p.price)}</span>${p.mrp && p.mrp > p.price ? `<span class="prod-mrp">${money(p.mrp)}</span>` : ''}${disc ? ` <span style="color:var(--good);font-size:0.76rem;font-weight:700">-${disc}%</span>` : ''}</div>
         ${p.category ? `<div class="prod-cat">${esc(p.category)}</div>` : ''}
+        ${p.stock != null ? `<div class="prod-cat">Stock: ${p.stock}</div>` : ''}
       </div>
       <div class="prod-actions">
         <button class="btn small" data-act="edit">✏️ Edit</button>
+        <button class="btn small" data-act="dup">⧉ Copy</button>
         <button class="btn small danger" data-act="del">🗑</button>
       </div>
     </div>`;
@@ -395,23 +483,55 @@ function renderProducts() {
 }
 $('#prodGrid').addEventListener('click', (e) => {
   const card = e.target.closest('.prod-card'); if (!card) return;
-  const p = state.products.find(x => x.id === card.dataset.id); if (!p) return;
+  const idx = state.products.findIndex(x => x.id === card.dataset.id); if (idx < 0) return;
+  const p = state.products[idx];
   const act = e.target.closest('[data-act]')?.dataset.act;
   if (act === 'del') {
     if (!confirm(`Delete "${p.name}"?`)) return;
-    state.products = state.products.filter(x => x.id !== p.id);
+    state.products.splice(idx, 1);
     save(); renderProducts(); refreshPreview();
+  } else if (act === 'dup') {
+    if (state.products.length >= DEMO_MAX_PRODUCTS) { toast(`Demo limit: ${DEMO_MAX_PRODUCTS} products. The full version is unlimited — enquire on the homepage.`); return; }
+    const copy = JSON.parse(JSON.stringify(p)); copy.id = uid(); copy.name = p.name + ' (copy)';
+    state.products.splice(idx + 1, 0, copy);
+    save(); renderProducts(); refreshPreview(); toast('Product copied');
   } else {
     openProdModal(p);
   }
 });
 
 /* ---- product modal ---- */
-let editingId = null, modalImg = '';
-function setModalImg(uri) {
-  modalImg = uri;
-  $('#prodImgPrev').innerHTML = uri ? `<img src="${uri}" alt="">` : `<span class="ph">🖼️</span>`;
-  $('#prodImgClear').style.display = uri ? '' : 'none';
+let editingId = null, modalImgs = [], modalOpts = [];
+function renderModalImgs() {
+  const row = $('#prodImgs');
+  row.innerHTML = modalImgs.map((uri, i) =>
+    `<span class="mini"><img src="${uri}" alt=""><button class="rm" data-rmimg="${i}" title="Remove">✕</button>${i === 0 ? '<span class="cover-tag">COVER</span>' : ''}</span>`).join('') +
+    (modalImgs.length < 6 ? `<button class="add-img" id="addImgBtn" title="Add photo">＋</button>` : '');
+}
+$('#prodImgs').addEventListener('click', (e) => {
+  if (e.target.closest('#addImgBtn')) { pickImage(800, uri => { modalImgs.push(uri); renderModalImgs(); }); return; }
+  const rm = e.target.closest('[data-rmimg]');
+  if (rm) { modalImgs.splice(Number(rm.dataset.rmimg), 1); renderModalImgs(); }
+});
+function renderModalOpts() {
+  // always show up to 2 option groups (fill blanks)
+  const rows = [0, 1].map(i => {
+    const o = modalOpts[i] || { label: '', values: [] };
+    return `<div class="opt-row">
+      <input type="text" data-optlabel="${i}" placeholder="${i === 0 ? 'Size' : 'Colour'}" value="${esc(o.label)}" maxlength="20">
+      <input type="text" data-optvals="${i}" placeholder="S, M, L, XL" value="${esc((o.values || []).join(', '))}" maxlength="120">
+    </div>`;
+  }).join('');
+  $('#optRows').innerHTML = rows;
+}
+function collectOpts() {
+  const out = [];
+  [0, 1].forEach(i => {
+    const label = ($(`[data-optlabel="${i}"]`).value || '').trim();
+    const values = ($(`[data-optvals="${i}"]`).value || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (label && values.length) out.push({ label, values });
+  });
+  return out;
 }
 function openProdModal(p) {
   if (!p && state.products.length >= DEMO_MAX_PRODUCTS) {
@@ -426,14 +546,18 @@ function openProdModal(p) {
   $('#pMrp').value = p && p.mrp ? p.mrp : '';
   $('#pCategory').value = p ? (p.category || '') : '';
   $('#pDesc').value = p ? (p.desc || '') : '';
+  $('#pBadge').value = p ? (p.badge || '') : '';
+  $('#pStockCount').value = p && p.stock != null ? p.stock : '';
   $('#pStock').checked = p ? p.inStock : true;
-  setModalImg(p ? (p.img || '') : '');
+  $('#pFeatured').checked = p ? !!p.featured : false;
+  modalImgs = p && p.images ? p.images.slice() : [];
+  modalOpts = p && p.options ? JSON.parse(JSON.stringify(p.options)) : [];
+  renderModalImgs();
+  renderModalOpts();
   $('#prodModal').classList.add('open');
   $('#pName').focus();
 }
 $('#addProdBtn').addEventListener('click', () => openProdModal(null));
-$('#prodImgBtn').addEventListener('click', () => pickImage(800, uri => setModalImg(uri)));
-$('#prodImgClear').addEventListener('click', () => setModalImg(''));
 $('#prodCancel').addEventListener('click', () => $('#prodModal').classList.remove('open'));
 $('#prodModal').addEventListener('click', (e) => { if (e.target === $('#prodModal')) $('#prodModal').classList.remove('open'); });
 $('#prodDelete').addEventListener('click', () => {
@@ -447,7 +571,19 @@ $('#prodSave').addEventListener('click', () => {
   if (!name) { toast('Enter a product name'); return; }
   if (!(price >= 0)) { toast('Enter a valid price'); return; }
   const mrp = $('#pMrp').value ? Number($('#pMrp').value) : null;
-  const data = { name, price, mrp, category: $('#pCategory').value.trim(), desc: $('#pDesc').value.trim(), img: modalImg, inStock: $('#pStock').checked };
+  const stockRaw = $('#pStockCount').value;
+  const stock = stockRaw === '' ? null : Math.max(0, Math.floor(Number(stockRaw)));
+  const data = {
+    name, price, mrp,
+    category: $('#pCategory').value.trim(),
+    desc: $('#pDesc').value.trim(),
+    images: modalImgs.slice(),
+    inStock: $('#pStock').checked,
+    featured: $('#pFeatured').checked,
+    badge: $('#pBadge').value.trim(),
+    stock,
+    options: collectOpts(),
+  };
   if (editingId) {
     Object.assign(state.products.find(x => x.id === editingId), data);
   } else {
@@ -458,13 +594,15 @@ $('#prodSave').addEventListener('click', () => {
 
 $('#sampleBtn').addEventListener('click', () => {
   if (state.products.length && !confirm('Replace current products with sample data?')) return;
-  const mk = (name, price, mrp, category, desc) => ({ id: uid(), name, price, mrp, category, desc, img: '', inStock: true });
+  const mk = (name, price, mrp, category, desc, images, extra) => ({ id: uid(), name, price, mrp, category, desc, images: images || [], inStock: true, featured: false, badge: '', stock: null, options: [], ...(extra || {}) });
   state.products = [
-    mk('Kanjivaram Silk Saree', 4500, 6000, 'Sarees', 'Handwoven pure silk with gold zari border.'),
-    mk('Cotton Kurti', 899, 1299, 'Kurtis', 'Breathable daily-wear cotton, block-printed.'),
-    mk('Silver Jhumkas', 1200, null, 'Jewellery', 'Oxidised silver temple jhumkas.'),
-    mk('Leather Juttis', 1499, 1999, 'Footwear', 'Handcrafted embroidered juttis.'),
+    mk('Kanjivaram Silk Saree', 4500, 6000, 'Sarees', 'Handwoven pure silk with gold zari border.', [], { featured: true, badge: 'Bestseller', options: [{ label: 'Colour', values: ['Maroon', 'Teal', 'Mustard'] }] }),
+    mk('Cotton Kurti', 899, 1299, 'Kurtis', 'Breathable daily-wear cotton, block-printed.', [], { badge: 'New', options: [{ label: 'Size', values: ['S', 'M', 'L', 'XL'] }] }),
+    mk('Silver Jhumkas', 1200, null, 'Jewellery', 'Oxidised silver temple jhumkas.', [], { stock: 3 }),
+    mk('Leather Juttis', 1499, 1999, 'Footwear', 'Handcrafted embroidered juttis.', [], { featured: true, options: [{ label: 'Size', values: ['6', '7', '8', '9'] }] }),
   ];
+  state.store.deliveryFee = 50; state.store.freeOver = 1999;
+  state.store.coupons = [{ code: 'WELCOME10', type: 'pct', value: 10, min: 0 }];
   if (!state.store.name) state.store.name = 'Priya’s Boutique';
   if (!state.store.whatsapp) state.store.whatsapp = '919876543210';
   save(); renderProducts(); renderStore(); refreshPreview();
@@ -474,26 +612,56 @@ $('#sampleBtn').addEventListener('click', () => {
 /* =====================================================================
    Store settings tab
 ===================================================================== */
+function renderCoupons() {
+  const list = $('#couponList');
+  const cs = state.store.coupons || [];
+  if (!cs.length) { list.innerHTML = `<p class="hint" style="margin:0">No codes yet. Add one below — customers type it at checkout.</p>`; return; }
+  list.innerHTML = cs.map((c, i) =>
+    `<div class="coupon-row">
+      <span class="coupon-code">${esc(c.code)}</span>
+      <span class="coupon-desc">${c.type === 'pct' ? c.value + '% off' : money(c.value) + ' off'}${c.min ? ` · min ${money(c.min)}` : ''}</span>
+      <button class="btn small danger" data-rmcoupon="${i}" style="margin-left:auto">Remove</button>
+    </div>`).join('');
+}
 function renderStore() {
   const s = state.store;
   $('#sName').value = s.name; $('#sTagline').value = s.tagline;
   $('#sWhatsapp').value = s.whatsapp; $('#sCurrency').value = s.currency;
   $('#sUpi').value = s.upi; $('#sAnnounce').value = s.announce; $('#sDelivery').value = s.delivery;
+  $('#sDeliveryFee').value = s.deliveryFee || ''; $('#sFreeOver').value = s.freeOver || '';
   $('#logoPrev').innerHTML = s.logo ? `<img src="${s.logo}" alt="logo">` : '';
   $('#logoClear').style.display = s.logo ? '' : 'none';
   $('#brandRow').innerHTML = SLOT_HEX.map((hex, i) =>
     `<span class="swatch${s.brandSlot === i + 1 ? ' active' : ''}" data-slot="${i + 1}" style="background:${hex}"></span>`).join('');
+  renderCoupons();
 }
 const bindStore = (sel, key, after) => $(sel).addEventListener('input', (e) => { state.store[key] = e.target.value; save(); if (after) after(); refreshPreview(); });
 bindStore('#sName', 'name'); bindStore('#sTagline', 'tagline'); bindStore('#sWhatsapp', 'whatsapp');
 bindStore('#sUpi', 'upi'); bindStore('#sAnnounce', 'announce'); bindStore('#sDelivery', 'delivery');
-$('#sCurrency').addEventListener('change', (e) => { state.store.currency = e.target.value; save(); renderProducts(); refreshPreview(); });
+const bindNum = (sel, key) => $(sel).addEventListener('input', (e) => { state.store[key] = Number(e.target.value) || 0; save(); refreshPreview(); });
+bindNum('#sDeliveryFee', 'deliveryFee'); bindNum('#sFreeOver', 'freeOver');
+$('#sCurrency').addEventListener('change', (e) => { state.store.currency = e.target.value; save(); renderProducts(); renderStore(); refreshPreview(); });
 $('#brandRow').addEventListener('click', (e) => {
   const sw = e.target.closest('[data-slot]'); if (!sw) return;
   state.store.brandSlot = Number(sw.dataset.slot); save(); renderStore(); refreshPreview();
 });
 $('#logoBtn').addEventListener('click', () => pickImage(300, uri => { state.store.logo = uri; save(); renderStore(); refreshPreview(); }));
 $('#logoClear').addEventListener('click', () => { state.store.logo = ''; save(); renderStore(); refreshPreview(); });
+$('#cAdd').addEventListener('click', () => {
+  const code = ($('#cCode').value || '').trim().toUpperCase();
+  const value = Number($('#cValue').value);
+  if (!code) { toast('Enter a code'); return; }
+  if (!(value > 0)) { toast('Enter a discount value'); return; }
+  if ((state.store.coupons || []).some(c => c.code === code)) { toast('That code already exists'); return; }
+  state.store.coupons.push({ code, type: $('#cType').value, value, min: Number($('#cMin').value) || 0 });
+  $('#cCode').value = ''; $('#cValue').value = ''; $('#cMin').value = '';
+  save(); renderCoupons(); refreshPreview(); toast('Code added');
+});
+$('#couponList').addEventListener('click', (e) => {
+  const rm = e.target.closest('[data-rmcoupon]'); if (!rm) return;
+  state.store.coupons.splice(Number(rm.dataset.rmcoupon), 1);
+  save(); renderCoupons(); refreshPreview();
+});
 
 /* =====================================================================
    Storefront generator (shared by preview + export)
@@ -510,11 +678,19 @@ header.sf-head{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1p
 .sf-count{position:absolute;top:-7px;right:-7px;background:var(--brand);color:#fff;font-size:.68rem;font-weight:800;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
 .sf-wrap{max-width:1040px;margin:0 auto;padding:16px}
 .sf-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.sf-search{flex:1;min-width:180px;font:inherit;font-size:.95rem;padding:10px 13px;border:1px solid #dcdce2;border-radius:11px;background:#fff}
+.sf-search{flex:1;min-width:160px;font:inherit;font-size:.95rem;padding:10px 13px;border:1px solid #dcdce2;border-radius:11px;background:#fff}
+.sf-sort{font:inherit;font-size:.9rem;padding:10px 12px;border:1px solid #dcdce2;border-radius:11px;background:#fff;cursor:pointer}
 .sf-chip{appearance:none;cursor:pointer;font:inherit;font-size:.8rem;font-weight:600;border:1px solid #dcdce2;background:#fff;color:#52525e;border-radius:999px;padding:7px 13px}
 .sf-chip.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.sf-chip.wish.active{background:#e0245e;border-color:#e0245e}
+.sf-secttl{font-weight:800;font-size:1rem;margin:6px 0 10px;display:flex;align-items:center;gap:7px}
+.sf-featwrap{margin-bottom:18px}
+.sf-featrow{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+.sf-featrow .sf-card{min-width:190px;max-width:190px;scroll-snap-align:start}
 .sf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
-.sf-card{background:#fff;border:1px solid #e7e7ec;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer}
+.sf-card{background:#fff;border:1px solid #e7e7ec;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;position:relative}
+.sf-badge{position:absolute;top:9px;left:9px;z-index:2;background:var(--brand);color:#fff;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:7px}
+.sf-heart{position:absolute;top:7px;right:7px;z-index:2;appearance:none;border:none;background:rgba(255,255,255,.9);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .sf-thumb{width:100%;aspect-ratio:1;object-fit:cover;background:#eee;display:block}
 .sf-thumb.ph{display:flex;align-items:center;justify-content:center;font-size:2.4rem;color:#bbb}
 .sf-cbody{padding:11px 13px;flex:1;display:flex;flex-direction:column;gap:4px}
@@ -522,6 +698,7 @@ header.sf-head{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1p
 .sf-price{font-weight:800;color:var(--brand);font-variant-numeric:tabular-nums}
 .sf-mrp{text-decoration:line-through;color:#9a9aa4;font-size:.8rem;font-weight:500;margin-left:5px}
 .sf-cat{font-size:.72rem;color:#9a9aa4}
+.sf-low{font-size:.72rem;font-weight:700;color:#d9531e}
 .sf-add{margin:0 13px 13px;appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:.85rem;background:var(--brand);color:#fff;border:none;border-radius:10px;padding:9px}
 .sf-add:disabled{background:#e2e2e8;color:#9a9aa4;cursor:default}
 .sf-empty{text-align:center;color:#9a9aa4;padding:50px 16px}
@@ -534,8 +711,17 @@ footer.sf-foot a{color:#70707c}
 @media(min-width:640px){.sf-sheet{border-radius:16px}}
 .sf-sheet h3{font-size:1.1rem;margin-bottom:4px}
 .sf-x{float:right;appearance:none;border:none;background:none;font-size:1.3rem;cursor:pointer;color:#70707c;line-height:1}
-.sf-detimg{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:#eee;margin:6px 0 12px}
+.sf-gallery{margin:6px 0 12px}
+.sf-detimg{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:#eee}
 .sf-detimg.ph{display:flex;align-items:center;justify-content:center;font-size:3rem;color:#bbb}
+.sf-thumbs{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+.sf-thumbs img{width:48px;height:48px;object-fit:cover;border-radius:8px;border:2px solid transparent;cursor:pointer}
+.sf-thumbs img.active{border-color:var(--brand)}
+.sf-optgrp{margin-top:12px}
+.sf-optgrp .lbl{font-size:.78rem;font-weight:700;color:#52525e;margin-bottom:5px}
+.sf-optvals{display:flex;gap:6px;flex-wrap:wrap}
+.sf-opt{appearance:none;cursor:pointer;font:inherit;font-size:.82rem;font-weight:600;border:1px solid #dcdce2;background:#fff;color:#333;border-radius:9px;padding:6px 12px}
+.sf-opt.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 .sf-qty{display:inline-flex;align-items:center;gap:0;border:1px solid #dcdce2;border-radius:10px;overflow:hidden}
 .sf-qty button{appearance:none;border:none;background:#f2f2f5;cursor:pointer;font:inherit;font-size:1.1rem;width:34px;height:34px}
 .sf-qty span{min-width:34px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
@@ -543,11 +729,17 @@ footer.sf-foot a{color:#70707c}
 .sf-line img{width:46px;height:46px;object-fit:cover;border-radius:8px;background:#eee}
 .sf-line .l-main{flex:1;min-width:0}
 .sf-line .l-name{font-weight:600;font-size:.86rem}
+.sf-line .l-sub{font-size:.74rem;color:#9a9aa4}
 .sf-line .l-price{font-size:.78rem;color:#70707c}
 .sf-rm{appearance:none;border:none;background:none;cursor:pointer;color:#c0392b;font-size:.9rem}
 .sf-field{display:flex;flex-direction:column;gap:4px;font-size:.76rem;font-weight:600;color:#52525e;margin-top:10px}
 .sf-field input,.sf-field textarea{font:inherit;font-size:.92rem;padding:9px 11px;border:1px solid #dcdce2;border-radius:9px;background:#fff}
-.sf-total{display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem;margin:14px 0 4px}
+.sf-coupon{display:flex;gap:8px;margin-top:12px}
+.sf-coupon input{flex:1;font:inherit;font-size:.9rem;padding:9px 11px;border:1px solid #dcdce2;border-radius:9px;text-transform:uppercase}
+.sf-coupon button{appearance:none;cursor:pointer;font:inherit;font-weight:700;font-size:.85rem;background:#e8e8ee;border:none;border-radius:9px;padding:0 16px}
+.sf-sum{display:flex;justify-content:space-between;font-size:.9rem;margin-top:9px;color:#52525e}
+.sf-sum.disc{color:#0a9d0a;font-weight:700}
+.sf-total{display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem;margin:8px 0 4px;padding-top:9px;border-top:1px solid #eee}
 .sf-order{width:100%;appearance:none;cursor:pointer;font:inherit;font-weight:800;font-size:1rem;background:#25d366;color:#fff;border:none;border-radius:12px;padding:13px;margin-top:12px}
 .sf-upi{width:100%;display:block;text-align:center;text-decoration:none;font-weight:700;font-size:.92rem;background:var(--brand);color:#fff;border-radius:12px;padding:11px;margin-top:8px}
 .sf-note{font-size:.78rem;color:#70707c;margin-top:10px;white-space:pre-wrap}
@@ -565,15 +757,37 @@ function storefrontRuntime() {
   const money = (n) => cur + (Number(n) || 0).toLocaleString(cur === '₹' ? 'en-IN' : undefined, { maximumFractionDigits: 2 });
   const products = D.products;
   const byId = (id) => products.find(p => p.id === id);
-  const cartKey = 'sfcart_' + (D.store.name || 'store').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  let cart = {};
+  const slug = (D.store.name || 'store').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const cartKey = 'sfcart_' + slug, wishKey = 'sfwish_' + slug;
+  const soldOut = (p) => !p.inStock || p.stock === 0;
+
+  let cart = {};    // lineKey -> { id, sel:{label:val}, qty }
   try { cart = JSON.parse(localStorage.getItem(cartKey)) || {}; } catch {}
+  let wish = [];
+  try { wish = JSON.parse(localStorage.getItem(wishKey)) || []; } catch {}
   const saveCart = () => { try { localStorage.setItem(cartKey, JSON.stringify(cart)); } catch {} };
-  const cartCount = () => Object.values(cart).reduce((s, q) => s + q, 0);
-  const cartTotal = () => Object.entries(cart).reduce((s, [id, q]) => { const p = byId(id); return s + (p ? p.price * q : 0); }, 0);
+  const saveWish = () => { try { localStorage.setItem(wishKey, JSON.stringify(wish)); } catch {} };
+  const cartCount = () => Object.values(cart).reduce((s, l) => s + l.qty, 0);
+  const cartSubtotal = () => Object.values(cart).reduce((s, l) => { const p = byId(l.id); return s + (p ? p.price * l.qty : 0); }, 0);
+  const lineKey = (id, sel) => id + '::' + Object.keys(sel || {}).sort().map(k => k + '=' + sel[k]).join('|');
+  const selText = (sel) => Object.keys(sel || {}).map(k => `${k}: ${sel[k]}`).join(', ');
+
+  let appliedCoupon = null;
+  function discountFor(sub) {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.min && sub < appliedCoupon.min) return 0;
+    const d = appliedCoupon.type === 'pct' ? sub * appliedCoupon.value / 100 : appliedCoupon.value;
+    return Math.min(d, sub);
+  }
+  function deliveryFor(sub) {
+    const fee = Number(D.store.deliveryFee) || 0;
+    if (fee <= 0) return 0;
+    if (D.store.freeOver && sub >= D.store.freeOver) return 0;
+    return fee;
+  }
 
   const cats = [...new Set(products.map(p => (p.category || '').trim()).filter(Boolean))];
-  let activeCat = 'all', query = '';
+  let activeCat = 'all', query = '', sortBy = 'featured', wishOnly = false;
 
   const app = document.getElementById('app');
   app.innerHTML =
@@ -586,8 +800,15 @@ function storefrontRuntime() {
     <div class="sf-wrap">
       <div class="sf-controls">
         <input class="sf-search" id="sfSearch" placeholder="Search products…">
+        <select class="sf-sort" id="sfSort">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: low to high</option>
+          <option value="price-desc">Price: high to low</option>
+          <option value="newest">Newest</option>
+        </select>
       </div>
       <div class="sf-controls" id="sfChips"></div>
+      <div id="sfFeatured"></div>
       <div class="sf-grid" id="sfGrid"></div>
     </div>
     <footer class="sf-foot">${esc(D.store.name || 'My Store')} · <a href="https://sivasankarn91.github.io/Projects/" target="_blank" rel="noopener">Made with Projects Store Builder</a></footer>
@@ -596,42 +817,69 @@ function storefrontRuntime() {
 
   const chipsEl = document.getElementById('sfChips');
   function renderChips() {
-    chipsEl.innerHTML = ['all', ...cats].map(c =>
-      `<button class="sf-chip${activeCat === c ? ' active' : ''}" data-cat="${esc(c)}">${c === 'all' ? 'All' : esc(c)}</button>`).join('');
+    const catChips = ['all', ...cats].map(c =>
+      `<button class="sf-chip${activeCat === c && !wishOnly ? ' active' : ''}" data-cat="${esc(c)}">${c === 'all' ? 'All' : esc(c)}</button>`).join('');
+    const wishChip = wish.length ? `<button class="sf-chip wish${wishOnly ? ' active' : ''}" data-wishtoggle>❤️ Saved (${wish.length})</button>` : '';
+    chipsEl.innerHTML = catChips + wishChip;
   }
-  if (cats.length) renderChips(); else chipsEl.style.display = 'none';
+  renderChips();
+
+  function cardHtml(p) {
+    const disc = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
+    const cover = p.images && p.images[0];
+    const low = p.stock != null && p.stock > 0 && p.stock <= 5;
+    const hearted = wish.includes(p.id);
+    const canQuickAdd = !soldOut(p) && !(p.options && p.options.length);
+    return `<div class="sf-card" data-open="${p.id}">
+      ${p.badge ? `<span class="sf-badge">${esc(p.badge)}</span>` : (p.featured ? `<span class="sf-badge">⭐ Featured</span>` : '')}
+      <button class="sf-heart" data-wish="${p.id}" title="Save">${hearted ? '❤️' : '🤍'}</button>
+      ${cover ? `<img class="sf-thumb" src="${cover}" alt="">` : `<div class="sf-thumb ph">🛍️</div>`}
+      <div class="sf-cbody">
+        <div class="sf-pname">${esc(p.name)}</div>
+        <div><span class="sf-price">${money(p.price)}</span>${p.mrp && p.mrp > p.price ? `<span class="sf-mrp">${money(p.mrp)}</span>` : ''}${disc ? ` <span style="color:#0a9d0a;font-size:.74rem;font-weight:700">-${disc}%</span>` : ''}</div>
+        ${p.category ? `<div class="sf-cat">${esc(p.category)}</div>` : ''}
+        ${low ? `<div class="sf-low">Only ${p.stock} left!</div>` : ''}
+      </div>
+      <button class="sf-add" data-add="${p.id}" ${soldOut(p) ? 'disabled' : ''}>${soldOut(p) ? 'Out of stock' : (canQuickAdd ? 'Add to cart' : 'Choose options')}</button>
+    </div>`;
+  }
 
   const gridEl = document.getElementById('sfGrid');
+  const featEl = document.getElementById('sfFeatured');
   function visible() {
     const q = query.toLowerCase();
-    return products.filter(p =>
+    let list = products.filter(p =>
       (activeCat === 'all' || (p.category || '').trim() === activeCat) &&
+      (!wishOnly || wish.includes(p.id)) &&
       (!q || (p.name + ' ' + (p.desc || '') + ' ' + (p.category || '')).toLowerCase().includes(q)));
+    if (sortBy === 'price-asc') list = list.slice().sort((a, b) => a.price - b.price);
+    else if (sortBy === 'price-desc') list = list.slice().sort((a, b) => b.price - a.price);
+    else if (sortBy === 'newest') list = list.slice().reverse();
+    else list = list.slice().sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0)); // featured first
+    return list;
   }
   function renderGrid() {
+    // featured strip: only in default view (no search / no category / no wishlist filter / featured sort)
+    const showFeat = sortBy === 'featured' && activeCat === 'all' && !query && !wishOnly;
+    const feats = showFeat ? products.filter(p => p.featured) : [];
+    if (feats.length) {
+      featEl.innerHTML = `<div class="sf-featwrap"><div class="sf-secttl">⭐ Featured</div><div class="sf-featrow">${feats.map(cardHtml).join('')}</div></div>` +
+        `<div class="sf-secttl">All products</div>`;
+    } else { featEl.innerHTML = ''; }
     const list = visible();
     if (!list.length) { gridEl.innerHTML = `<div class="sf-empty" style="grid-column:1/-1">No products found.</div>`; return; }
-    gridEl.innerHTML = list.map(p => {
-      const disc = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
-      return `<div class="sf-card" data-open="${p.id}">
-        ${p.img ? `<img class="sf-thumb" src="${p.img}" alt="">` : `<div class="sf-thumb ph">🛍️</div>`}
-        <div class="sf-cbody">
-          <div class="sf-pname">${esc(p.name)}</div>
-          <div><span class="sf-price">${money(p.price)}</span>${p.mrp && p.mrp > p.price ? `<span class="sf-mrp">${money(p.mrp)}</span>` : ''}${disc ? ` <span style="color:#0a9d0a;font-size:.74rem;font-weight:700">-${disc}%</span>` : ''}</div>
-          ${p.category ? `<div class="sf-cat">${esc(p.category)}</div>` : ''}
-        </div>
-        <button class="sf-add" data-add="${p.id}" ${p.inStock ? '' : 'disabled'}>${p.inStock ? 'Add to cart' : 'Out of stock'}</button>
-      </div>`;
-    }).join('');
+    gridEl.innerHTML = list.map(cardHtml).join('');
   }
 
   function updateCount() {
     const n = cartCount(), el = document.getElementById('sfCount');
     el.textContent = n; el.style.display = n ? 'flex' : 'none';
   }
-  function addToCart(id, qty) {
-    const p = byId(id); if (!p || !p.inStock) return;
-    cart[id] = (cart[id] || 0) + (qty || 1);
+  function addToCart(id, sel, qty) {
+    const p = byId(id); if (!p || soldOut(p)) return;
+    const k = lineKey(id, sel);
+    if (cart[k]) cart[k].qty += (qty || 1);
+    else cart[k] = { id, sel: sel || {}, qty: qty || 1 };
     saveCart(); updateCount();
   }
 
@@ -640,22 +888,36 @@ function storefrontRuntime() {
   function openDetail(id) {
     const p = byId(id); if (!p) return;
     const disc = p.mrp && p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0;
-    let qty = 1;
+    const imgs = (p.images && p.images.length) ? p.images : [];
+    let qty = 1, imgIdx = 0;
+    const sel = {};
+    (p.options || []).forEach(o => { sel[o.label] = o.values[0]; });
+    const low = p.stock != null && p.stock > 0 && p.stock <= 5;
     detEl.innerHTML = `<button class="sf-x" data-close>×</button><h3>${esc(p.name)}</h3>
       ${p.category ? `<div class="sf-cat">${esc(p.category)}</div>` : ''}
-      ${p.img ? `<img class="sf-detimg" src="${p.img}" alt="">` : `<div class="sf-detimg ph">🛍️</div>`}
+      <div class="sf-gallery">
+        ${imgs.length ? `<img class="sf-detimg" id="sfDetImg" src="${imgs[0]}" alt="">` : `<div class="sf-detimg ph">🛍️</div>`}
+        ${imgs.length > 1 ? `<div class="sf-thumbs" id="sfThumbs">${imgs.map((u, i) => `<img src="${u}" data-thumb="${i}" class="${i === 0 ? 'active' : ''}" alt="">`).join('')}</div>` : ''}
+      </div>
       <div style="font-size:1.15rem"><span class="sf-price">${money(p.price)}</span>${p.mrp && p.mrp > p.price ? `<span class="sf-mrp">${money(p.mrp)}</span>` : ''}${disc ? ` <span style="color:#0a9d0a;font-weight:700;font-size:.85rem">-${disc}% off</span>` : ''}</div>
+      ${low ? `<div class="sf-low" style="margin-top:4px">Only ${p.stock} left!</div>` : ''}
       ${p.desc ? `<p style="color:#52525e;font-size:.9rem;margin-top:8px">${esc(p.desc)}</p>` : ''}
-      <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
-        ${p.inStock ? `<span class="sf-qty"><button data-q="-1">−</button><span id="sfQ">1</span><button data-q="1">+</button></span>
-        <button class="sf-add" style="margin:0;flex:1" data-addqty="${p.id}">Add to cart</button>` : `<span style="color:#c0392b;font-weight:700">Out of stock</span>`}
+      ${(p.options || []).map(o => `<div class="sf-optgrp" data-group="${esc(o.label)}"><div class="lbl">${esc(o.label)}</div><div class="sf-optvals">${o.values.map((v, i) => `<button class="sf-opt${i === 0 ? ' active' : ''}" data-optval="${esc(v)}">${esc(v)}</button>`).join('')}</div></div>`).join('')}
+      <div style="display:flex;align-items:center;gap:12px;margin-top:16px">
+        ${soldOut(p) ? `<span style="color:#c0392b;font-weight:700">Out of stock</span>` :
+        `<span class="sf-qty"><button data-q="-1">−</button><span id="sfQ">1</span><button data-q="1">+</button></span>
+        <button class="sf-add" style="margin:0;flex:1" data-addqty="${p.id}">Add to cart</button>`}
       </div>`;
     detBack.classList.add('open');
     detEl.onclick = (e) => {
       if (e.target.closest('[data-close]')) { detBack.classList.remove('open'); return; }
+      const th = e.target.closest('[data-thumb]');
+      if (th) { imgIdx = Number(th.dataset.thumb); document.getElementById('sfDetImg').src = imgs[imgIdx]; document.querySelectorAll('#sfThumbs img').forEach(t => t.classList.toggle('active', t === th)); return; }
+      const ov = e.target.closest('[data-optval]');
+      if (ov) { const grp = ov.closest('[data-group]'); sel[grp.dataset.group] = ov.dataset.optval; grp.querySelectorAll('.sf-opt').forEach(b => b.classList.toggle('active', b === ov)); return; }
       const q = e.target.closest('[data-q]');
       if (q) { qty = Math.max(1, qty + Number(q.dataset.q)); document.getElementById('sfQ').textContent = qty; return; }
-      if (e.target.closest('[data-addqty]')) { addToCart(id, qty); detBack.classList.remove('open'); openCart(); }
+      if (e.target.closest('[data-addqty]')) { addToCart(id, sel, qty); detBack.classList.remove('open'); openCart(); }
     };
   }
   detBack.onclick = (e) => { if (e.target === detBack) detBack.classList.remove('open'); };
@@ -663,45 +925,68 @@ function storefrontRuntime() {
   // cart sheet
   const cartBack = document.getElementById('sfCartBack'), cartSheet = document.getElementById('sfCartSheet');
   function openCart() {
-    const ids = Object.keys(cart).filter(id => byId(id) && cart[id] > 0);
-    if (!ids.length) {
+    const keys = Object.keys(cart).filter(k => byId(cart[k].id) && cart[k].qty > 0);
+    if (!keys.length) {
       cartSheet.innerHTML = `<button class="sf-x" data-close>×</button><h3>Your cart</h3><div class="sf-empty">Your cart is empty 🛒</div>`;
-    } else {
-      const lines = ids.map(id => { const p = byId(id); return `<div class="sf-line" data-id="${id}">
-        ${p.img ? `<img src="${p.img}" alt="">` : ''}
-        <div class="l-main"><div class="l-name">${esc(p.name)}</div><div class="l-price">${money(p.price)} each</div></div>
-        <span class="sf-qty"><button data-dec>−</button><span>${cart[id]}</span><button data-inc>+</button></span>
-        <button class="sf-rm" data-rm>✕</button></div>`; }).join('');
-      cartSheet.innerHTML = `<button class="sf-x" data-close>×</button><h3>Your cart</h3>${lines}
-        <div class="sf-total"><span>Total</span><span>${money(cartTotal())}</span></div>
-        <label class="sf-field">Your name<input id="sfName" placeholder="Name"></label>
-        <label class="sf-field">Phone<input id="sfPhone" placeholder="Phone number"></label>
-        <label class="sf-field">Delivery address<textarea id="sfAddr" placeholder="Address"></textarea></label>
-        <button class="sf-order" id="sfOrder">Order on WhatsApp</button>
-        ${D.store.upi ? `<a class="sf-upi" id="sfUpi" href="#">Pay ${money(cartTotal())} via UPI</a>` : ''}
-        ${D.store.delivery ? `<div class="sf-note">${esc(D.store.delivery)}</div>` : ''}`;
+      cartBack.classList.add('open'); return;
     }
+    const lines = keys.map(k => { const l = cart[k]; const p = byId(l.id); const st = selText(l.sel);
+      return `<div class="sf-line" data-key="${k}">
+        ${p.images && p.images[0] ? `<img src="${p.images[0]}" alt="">` : ''}
+        <div class="l-main"><div class="l-name">${esc(p.name)}</div>${st ? `<div class="l-sub">${esc(st)}</div>` : ''}<div class="l-price">${money(p.price)} each</div></div>
+        <span class="sf-qty"><button data-dec>−</button><span>${l.qty}</span><button data-inc>+</button></span>
+        <button class="sf-rm" data-rm>✕</button></div>`; }).join('');
+    const sub = cartSubtotal();
+    const dObj = discountFor(sub), del = deliveryFor(sub - dObj);
+    const total = sub - dObj + del;
+    const fee = Number(D.store.deliveryFee) || 0;
+    const coupons = D.store.coupons || [];
+    cartSheet.innerHTML = `<button class="sf-x" data-close>×</button><h3>Your cart</h3>${lines}
+      ${coupons.length ? `<div class="sf-coupon"><input id="sfCode" placeholder="Discount code"${appliedCoupon ? ` value="${esc(appliedCoupon.code)}" disabled` : ''}><button id="sfApply">${appliedCoupon ? 'Remove' : 'Apply'}</button></div>` : ''}
+      <div class="sf-sum"><span>Subtotal</span><span>${money(sub)}</span></div>
+      ${dObj > 0 ? `<div class="sf-sum disc"><span>Discount (${esc(appliedCoupon.code)})</span><span>-${money(dObj)}</span></div>` : ''}
+      ${fee > 0 ? `<div class="sf-sum"><span>Delivery</span><span>${del === 0 ? 'FREE' : money(del)}</span></div>` : ''}
+      <div class="sf-total"><span>Total</span><span>${money(total)}</span></div>
+      <label class="sf-field">Your name<input id="sfName" placeholder="Name"></label>
+      <label class="sf-field">Phone<input id="sfPhone" placeholder="Phone number"></label>
+      <label class="sf-field">Delivery address<textarea id="sfAddr" placeholder="Address"></textarea></label>
+      <button class="sf-order" id="sfOrder">Order on WhatsApp</button>
+      ${D.store.upi ? `<a class="sf-upi" id="sfUpi" href="#">Pay ${money(total)} via UPI</a>` : ''}
+      ${D.store.delivery ? `<div class="sf-note">${esc(D.store.delivery)}</div>` : ''}`;
     cartBack.classList.add('open');
   }
   cartBack.onclick = (e) => { if (e.target === cartBack) cartBack.classList.remove('open'); };
   cartSheet.onclick = (e) => {
     if (e.target.closest('[data-close]')) { cartBack.classList.remove('open'); return; }
-    const line = e.target.closest('[data-id]');
+    const line = e.target.closest('[data-key]');
     if (line) {
-      const id = line.dataset.id;
-      if (e.target.closest('[data-inc]')) cart[id]++;
-      else if (e.target.closest('[data-dec]')) cart[id] = Math.max(0, cart[id] - 1);
-      else if (e.target.closest('[data-rm]')) cart[id] = 0;
-      if (cart[id] <= 0) delete cart[id];
+      const k = line.dataset.key;
+      if (e.target.closest('[data-inc]')) cart[k].qty++;
+      else if (e.target.closest('[data-dec]')) cart[k].qty = Math.max(0, cart[k].qty - 1);
+      else if (e.target.closest('[data-rm]')) cart[k].qty = 0;
+      if (cart[k].qty <= 0) delete cart[k];
       saveCart(); updateCount(); openCart();
       return;
+    }
+    if (e.target.closest('#sfApply')) {
+      if (appliedCoupon) { appliedCoupon = null; openCart(); return; }
+      const code = (document.getElementById('sfCode').value || '').trim().toUpperCase();
+      const c = (D.store.coupons || []).find(x => x.code === code);
+      if (!c) { alert('That code is not valid.'); return; }
+      if (c.min && cartSubtotal() < c.min) { alert('Add more to use this code (min ' + money(c.min) + ').'); return; }
+      appliedCoupon = c; openCart(); return;
     }
     if (e.target.closest('#sfOrder')) {
       const name = (document.getElementById('sfName') || {}).value || '';
       const phone = (document.getElementById('sfPhone') || {}).value || '';
       const addr = (document.getElementById('sfAddr') || {}).value || '';
-      const lines = Object.keys(cart).map(id => { const p = byId(id); return `- ${cart[id]} × ${p.name} = ${money(p.price * cart[id])}`; }).join('\n');
-      let msg = `🛒 New order — ${D.store.name || 'Store'}\n\n${lines}\n\nTotal: ${money(cartTotal())}`;
+      const sub = cartSubtotal(), dObj = discountFor(sub), del = deliveryFor(sub - dObj), total = sub - dObj + del;
+      const lines = Object.values(cart).map(l => { const p = byId(l.id); const st = selText(l.sel);
+        return `- ${l.qty} × ${p.name}${st ? ' (' + st + ')' : ''} = ${money(p.price * l.qty)}`; }).join('\n');
+      let msg = `🛒 New order — ${D.store.name || 'Store'}\n\n${lines}\n\nSubtotal: ${money(sub)}`;
+      if (dObj > 0) msg += `\nDiscount (${appliedCoupon.code}): -${money(dObj)}`;
+      if ((Number(D.store.deliveryFee) || 0) > 0) msg += `\nDelivery: ${del === 0 ? 'FREE' : money(del)}`;
+      msg += `\nTotal: ${money(total)}`;
       if (name) msg += `\n\nName: ${name}`;
       if (phone) msg += `\nPhone: ${phone}`;
       if (addr) msg += `\nAddress: ${addr}`;
@@ -711,21 +996,39 @@ function storefrontRuntime() {
     }
     const upi = e.target.closest('#sfUpi');
     if (upi) {
+      const sub = cartSubtotal(), dObj = discountFor(sub), del = deliveryFor(sub - dObj), total = sub - dObj + del;
       const pa = encodeURIComponent(D.store.upi), pn = encodeURIComponent(D.store.name || 'Store');
-      upi.href = `upi://pay?pa=${pa}&pn=${pn}&am=${cartTotal()}&cu=INR&tn=${encodeURIComponent('Order')}`;
+      upi.href = `upi://pay?pa=${pa}&pn=${pn}&am=${total}&cu=INR&tn=${encodeURIComponent('Order')}`;
     }
   };
 
   app.addEventListener('click', (e) => {
+    const heart = e.target.closest('[data-wish]');
+    if (heart) {
+      e.stopPropagation();
+      const id = heart.dataset.wish;
+      const i = wish.indexOf(id);
+      if (i >= 0) wish.splice(i, 1); else wish.push(id);
+      saveWish(); heart.textContent = wish.includes(id) ? '❤️' : '🤍';
+      renderChips(); if (wishOnly) renderGrid();
+      return;
+    }
     const add = e.target.closest('[data-add]');
-    if (add) { e.stopPropagation(); addToCart(add.dataset.add); toast('Added to cart'); return; }
+    if (add) {
+      e.stopPropagation();
+      const p = byId(add.dataset.add);
+      if (p && p.options && p.options.length) { openDetail(p.id); return; } // needs choices
+      addToCart(add.dataset.add, {}, 1); toast('Added to cart'); return;
+    }
     const open = e.target.closest('[data-open]');
     if (open) { openDetail(open.dataset.open); return; }
     if (e.target.closest('#sfCart')) openCart();
     const chip = e.target.closest('[data-cat]');
-    if (chip) { activeCat = chip.dataset.cat; renderChips(); renderGrid(); }
+    if (chip) { activeCat = chip.dataset.cat; wishOnly = false; renderChips(); renderGrid(); }
+    if (e.target.closest('[data-wishtoggle]')) { wishOnly = !wishOnly; renderChips(); renderGrid(); }
   });
   document.getElementById('sfSearch').addEventListener('input', (e) => { query = e.target.value; renderGrid(); });
+  document.getElementById('sfSort').addEventListener('change', (e) => { sortBy = e.target.value; renderGrid(); });
 
   let toastT;
   function toast(m) {
