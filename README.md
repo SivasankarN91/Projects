@@ -22,10 +22,11 @@ Build your own online shop and take orders on WhatsApp — no Shopify, no monthl
 
 **Features**
 
-- **Products** — add items with photos (auto-downscaled & embedded), price, optional MRP with automatic discount %, category, description, and in-stock toggle; edit and delete anytime
+- **Products** — add items with a **photo gallery** (auto-downscaled & embedded), price, optional MRP with automatic discount %, category, description, and in-stock toggle; mark **bestseller/new badges**, **feature** items, set a **stock count** ("Only 2 left!"), and add **variants** (e.g. Size: S/M/L, Colour) that customers choose before ordering; duplicate, edit and delete anytime
 - **Store setup** — shop name, tagline, logo, WhatsApp number, currency (₹/$/€/£), brand colour (8 presets), optional UPI ID, announcement bar, and a checkout delivery note
+- **Delivery & discounts** — set a **delivery fee** with a **free-delivery threshold**, and create **discount codes** (percentage or flat, with an optional minimum order) that customers apply at checkout
 - **Live preview** — an embedded, fully interactive copy of the real storefront that updates as you type; what you preview is exactly what exports (WYSIWYG by construction)
-- **The storefront your customers get** — search, category filters, product detail sheets with quantity steppers, and a cart drawer; checkout builds a complete order message and opens **WhatsApp** to your number, with an optional **Pay via UPI** deep link; carts persist in the visitor's browser
+- **The storefront your customers get** — search, **sorting** (price / newest / featured), category filters, a **featured row**, a **wishlist**, product detail sheets with a swipeable gallery, variant pickers and quantity steppers, and a cart drawer that itemises subtotal, discount and delivery; checkout builds a complete order message (with each item's chosen variant) and opens **WhatsApp** to your number, plus an optional **Pay via UPI** deep link; carts persist in the visitor's browser
 - **Export & host** — one click downloads the whole shop as a single dependency-free HTML file (products, images and runtime inlined) with SEO/Open-Graph tags and an emoji favicon; upload it to GitHub Pages, Netlify, or any static host
 - **Extras** — first-run guide, sample store, light/dark theme, autosave to `localStorage`
 
