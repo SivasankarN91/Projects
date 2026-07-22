@@ -519,7 +519,7 @@ function renderModalOpts() {
     const o = modalOpts[i] || { label: '', values: [] };
     return `<div class="opt-row">
       <input type="text" data-optlabel="${i}" placeholder="${i === 0 ? 'Size' : 'Colour'}" value="${esc(o.label)}" maxlength="20">
-      <input type="text" data-optvals="${i}" placeholder="S, M, L, XL" value="${esc((o.values || []).join(', '))}" maxlength="120">
+      <input type="text" data-optvals="${i}" placeholder="${i === 0 ? 'S, M, L, XL' : 'Red, Blue, Green'}" value="${esc((o.values || []).join(', '))}" maxlength="120">
     </div>`;
   }).join('');
   $('#optRows').innerHTML = rows;
