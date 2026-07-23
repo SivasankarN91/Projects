@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generative Art Studio</title>
+<meta name="description" content="Make unique generative art in your browser — flow fields, orbits, circle packing and waves with curated palettes and seeds. Every piece is one-of-a-kind. Export high-res PNG.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0b0b10; --panel: #14141c; --panel-2: #1c1c27; --text: #f2f3f8; --muted: #9aa0b4; --line: #2a2a37;
+    --accent: #7c5cff; --accent-2: #ff5c8a; --shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #eef0f5; --panel: #ffffff; --panel-2: #f4f5fa; --text: #17181f; --muted: #5c6274; --line: #e2e4ec;
+    --shadow: 0 6px 24px rgba(20,22,40,0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+  header.topbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; z-index: 5; }
+  .brand { font-weight: 800; font-size: 1.05rem; display: flex; gap: 8px; align-items: center; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .brand .em { -webkit-text-fill-color: initial; }
+  .spacer { flex: 1; }
+  .btn { appearance: none; border: 1px solid var(--line); cursor: pointer; font: inherit; font-size: 0.85rem; font-weight: 700; background: var(--panel-2); color: var(--text); padding: 9px 14px; border-radius: 10px; display: inline-flex; align-items: center; gap: 7px; -webkit-tap-highlight-color: transparent; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: linear-gradient(90deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+  .btn.icon { padding: 9px 11px; }
+
+  .layout { flex: 1; display: flex; min-height: 0; }
+  .stage { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: repeating-conic-gradient(from 0deg, #00000010 0% 25%, transparent 0% 50%) 50% / 22px 22px, var(--bg); min-width: 0; }
+  #art { max-width: 100%; max-height: 100%; box-shadow: var(--shadow); border-radius: 6px; display: block; }
+
+  .panel { width: 300px; flex: none; background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 16px; }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    .panel { width: 100%; border-left: none; border-top: 1px solid var(--line); max-height: 46vh; }
+  }
+  .grp { margin-bottom: 18px; }
+  .grp h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 9px; font-weight: 800; }
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .mode { appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 0.85rem; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 10px; padding: 10px 8px; display: flex; align-items: center; gap: 7px; -webkit-tap-highlight-color: transparent; }
+  .mode.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+  .palettes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+  .pal { cursor: pointer; border: 2px solid transparent; border-radius: 10px; overflow: hidden; height: 34px; display: flex; }
+  .pal.active { border-color: var(--text); }
+  .pal span { flex: 1; }
+
+  .slider { margin-bottom: 13px; }
+  .slider label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  .slider label b { color: var(--text); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 0.8rem; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 9px; padding: 8px; -webkit-tap-highlight-color: transparent; }
+  .seg button.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+  .seedbar { display: flex; gap: 7px; }
+  .seedbar input { flex: 1; font: inherit; font-size: 0.85rem; background: var(--panel-2); border: 1px solid var(--line); color: var(--text); border-radius: 9px; padding: 9px 11px; font-variant-numeric: tabular-nums; }
+  .seedbar input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+  .big-actions { display: grid; gap: 8px; }
+
+  /* modal */
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .backdrop.open { display: flex; }
+  .modal { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; width: 100%; max-width: 440px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 6px; }
+  .modal .sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 14px; }
+  .guide-step { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .guide-step:last-of-type { border-bottom: none; }
+  .guide-step .g-em { font-size: 1.3rem; flex: none; width: 30px; text-align: center; }
+  .guide-step .g-title { font-weight: 700; font-size: 0.9rem; }
+  .guide-step .g-text { font-size: 0.84rem; color: var(--muted); line-height: 1.5; }
+  .modal .btn { width: 100%; justify-content: center; margin-top: 14px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(120px); background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-size: 0.88rem; font-weight: 700; transition: transform 0.25s; z-index: 300; pointer-events: none; max-width: 92vw; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="brand"><span class="em">🎨</span> Art Studio</span>
+  <span class="spacer"></span>
+  <button class="btn" id="playBtn" title="Play / pause">⏸ Pause</button>
+  <button class="btn primary" id="randomBtn">🎲 Randomise</button>
+  <button class="btn" id="exportBtn">⬇ Export PNG</button>
+  <button class="btn icon" id="themeToggle" title="Light / dark UI">🌗</button>
+  <button class="btn icon" id="guideBtn" title="Help">?</button>
+</header>
+
+<div class="layout">
+  <div class="stage"><canvas id="art"></canvas></div>
+  <aside class="panel">
+    <div class="grp"><h3>Style</h3>
+      <div class="modes" id="modes">
+        <button class="mode" data-mode="flow">🌊 Flow</button>
+        <button class="mode" data-mode="orbits">🪐 Orbits</button>
+        <button class="mode" data-mode="packing">⚪ Packing</button>
+        <button class="mode" data-mode="waves">〰️ Waves</button>
+      </div>
+    </div>
+    <div class="grp"><h3>Palette</h3><div class="palettes" id="palettes"></div></div>
+    <div class="grp"><h3>Controls</h3>
+      <div class="slider"><label>Density <b id="densityV"></b></label><input type="range" id="density" min="1" max="100" step="1"></div>
+      <div class="slider"><label>Detail <b id="detailV"></b></label><input type="range" id="detail" min="1" max="100" step="1"></div>
+      <div class="slider"><label>Motion <b id="motionV"></b></label><input type="range" id="motion" min="0" max="100" step="1"></div>
+    </div>
+    <div class="grp"><h3>Background</h3>
+      <div class="seg" id="bgSeg">
+        <button data-bg="palette" class="active">Palette</button>
+        <button data-bg="black">Black</button>
+        <button data-bg="white">White</button>
+      </div>
+    </div>
+    <div class="grp"><h3>Seed</h3>
+      <div class="seedbar"><input type="text" id="seedInput" inputmode="numeric"><button class="btn" id="seedGo">Set</button></div>
+    </div>
+    <div class="grp big-actions">
+      <button class="btn primary" id="randomBtn2">🎲 New artwork</button>
+    </div>
+  </aside>
+</div>
+
+<!-- Guide -->
+<div class="backdrop" id="guideModal"><div class="modal">
+  <h3>🎨 Welcome to the Art Studio</h3>
+  <div class="sub">Every artwork is generated from a seed — no two are the same.</div>
+  <div class="guide-step"><span class="g-em">🎲</span><div><div class="g-title">Make art instantly</div><div class="g-text">Hit <b>Randomise</b> for a brand-new piece. Each has a unique <b>seed</b> — type the same seed again to recreate it exactly.</div></div></div>
+  <div class="guide-step"><span class="g-em">🌊</span><div><div class="g-title">Four styles</div><div class="g-text">Flow, Orbits, Packing and Waves — each with a different feel. Try them all.</div></div></div>
+  <div class="guide-step"><span class="g-em">🎚️</span><div><div class="g-title">Tune it</div><div class="g-text">Pick a <b>palette</b> and adjust density, detail and motion until it feels right.</div></div></div>
+  <div class="guide-step"><span class="g-em">⬇</span><div><div class="g-title">Export</div><div class="g-text">Save your artwork as a PNG for wallpapers, prints or posts.</div></div></div>
+  <p style="font-size:0.8rem;color:var(--muted);margin-top:12px">Demo exports are 1280px with a small credit. Full version: 4K, watermark-free, and set up for you — <b>enquire on the homepage</b>.</p>
+  <button class="btn primary" id="guideClose">Start creating</button>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const STORE_KEY = 'artStudioData_v1';
+const DEMO_EXPORT_MAX = 1280;
+const $ = (s) => document.querySelector(s);
+const TAU = Math.PI * 2;
+
+/* ---------- palettes ---------- */
+const PALETTES = [
+  { name: 'Sunset', bg: '#1a1024', colors: ['#ff6b6b', '#ffa94d', '#ffd43b', '#f06595', '#845ef7'] },
+  { name: 'Ocean', bg: '#06171f', colors: ['#3bc9db', '#22b8cf', '#4dabf7', '#748ffc', '#a5d8ff'] },
+  { name: 'Forest', bg: '#0c1a12', colors: ['#69db7c', '#38d9a9', '#a9e34b', '#94d82d', '#0ca678'] },
+  { name: 'Neon', bg: '#0a0a12', colors: ['#f72585', '#b5179e', '#7209b7', '#4361ee', '#4cc9f0'] },
+  { name: 'Ember', bg: '#140a06', colors: ['#ff4800', '#ff6d00', '#ff8500', '#ff9e00', '#ffb703'] },
+  { name: 'Candy', bg: '#1c1122', colors: ['#ff8fab', '#ffc2d1', '#fb6f92', '#c77dff', '#9d4edd'] },
+  { name: 'Aurora', bg: '#04121a', colors: ['#64dfdf', '#80ffdb', '#48bfe3', '#5390d9', '#7400b8'] },
+  { name: 'Mono', bg: '#0d0d0d', colors: ['#ffffff', '#d4d4d4', '#a3a3a3', '#7a7a7a', '#ededed'] },
+];
+
+/* ---------- state ---------- */
+function freshState() {
+  return { mode: 'flow', pal: 0, density: 55, detail: 45, motion: 55, bg: 'palette', seed: 1234, settings: { theme: 'dark', guideSeen: false } };
+}
+function loadState() {
+  try { const d = JSON.parse(localStorage.getItem(STORE_KEY)); if (!d || !d.mode) return freshState(); return { ...freshState(), ...d, settings: { ...freshState().settings, ...(d.settings || {}) } }; }
+  catch { return freshState(); }
+}
+let S = loadState();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch {} }
+
+/* ---------- seeded RNG + value noise ---------- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function makeNoise(rng) {
+  const size = 256, mask = 255, vals = new Float32Array(size * size);
+  for (let i = 0; i < vals.length; i++) vals[i] = rng();
+  const fade = (t) => t * t * (3 - 2 * t);
+  return (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const x0 = xi & mask, y0 = yi & mask, x1 = (x0 + 1) & mask, y1 = (y0 + 1) & mask;
+    const fx = fade(x - xi), fy = fade(y - yi);
+    const v00 = vals[y0 * size + x0], v10 = vals[y0 * size + x1], v01 = vals[y1 * size + x0], v11 = vals[y1 * size + x1];
+    const a = v00 + (v10 - v00) * fx, b = v01 + (v11 - v01) * fx;
+    return a + (b - a) * fy;
+  };
+}
+
+/* ---------- canvas ---------- */
+const canvas = $('#art'), ctx = canvas.getContext('2d', { alpha: false });
+let W = 0, H = 0, DPR = 1;
+function fitCanvas() {
+  const stage = document.querySelector('.stage');
+  const pad = 24;
+  const availW = Math.max(200, stage.clientWidth - pad), availH = Math.max(200, stage.clientHeight - pad);
+  const aspect = 4 / 3;
+  let cw = availW, ch = cw / aspect;
+  if (ch > availH) { ch = availH; cw = ch * aspect; }
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = Math.round(cw); H = Math.round(ch);
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
+}
+
+/* ---------- generative engine ---------- */
+let anim = null, particles = [], noise = null, tframe = 0;
+function bgColor(pal) { return S.bg === 'black' ? '#000000' : S.bg === 'white' ? '#ffffff' : pal.bg; }
+function paintBg(c, w, h, pal) { c.fillStyle = bgColor(pal); c.fillRect(0, 0, w, h); }
+
+function regenerate() {
+  const pal = PALETTES[S.pal];
+  const rng = mulberry32((S.seed | 0) + 1);
+  noise = makeNoise(mulberry32((S.seed | 0) * 2654435761 >>> 0 || 1));
+  tframe = 0;
+  ctx.save(); ctx.scale(DPR, DPR);
+  paintBg(ctx, W, H, pal);
+  ctx.restore();
+  if (S.mode === 'flow') initFlow(rng);
+  else if (S.mode === 'orbits') initOrbits(rng);
+  else if (S.mode === 'packing') { renderPacking(rng); stopAnim(); return; }
+  else if (S.mode === 'waves') { initWaves(rng); }
+  startAnim();
+}
+
+/* Flow field */
+function initFlow(rng) {
+  const n = Math.round(120 + S.density * 12);
+  particles = [];
+  const pal = PALETTES[S.pal];
+  for (let i = 0; i < n; i++) particles.push({ x: rng() * W, y: rng() * H, c: pal.colors[Math.floor(rng() * pal.colors.length)], life: 40 + rng() * 120, px: 0, py: 0, r0: rng() });
+  particles.forEach(p => { p.px = p.x; p.py = p.y; });
+}
+function stepFlow() {
+  const scale = 0.0008 + (S.detail / 100) * 0.006;
+  const speed = 0.4 + (S.motion / 100) * 2.6;
+  ctx.save(); ctx.scale(DPR, DPR);
+  ctx.lineWidth = 1.1; ctx.lineCap = 'round';
+  for (const p of particles) {
+    const a = noise(p.x * scale, p.y * scale) * TAU * 2;
+    p.px = p.x; p.py = p.y;
+    p.x += Math.cos(a) * speed; p.y += Math.sin(a) * speed;
+    ctx.strokeStyle = p.c; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.moveTo(p.px, p.py); ctx.lineTo(p.x, p.y); ctx.stroke();
+    if (--p.life <= 0 || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+      p.x = Math.random() * W; p.y = Math.random() * H; p.px = p.x; p.py = p.y; p.life = 40 + Math.random() * 120;
+    }
+  }
+  ctx.restore();
+}
+
+/* Orbits */
+function initOrbits(rng) {
+  const pal = PALETTES[S.pal];
+  const n = Math.round(60 + S.density * 6);
+  const cx = W / 2, cy = H / 2;
+  particles = [];
+  for (let i = 0; i < n; i++) {
+    const r = 20 + rng() * Math.min(W, H) * 0.45;
+    particles.push({ r, a: rng() * TAU, spd: (rng() - 0.5) * 0.02 * (0.5 + S.motion / 100), c: pal.colors[Math.floor(rng() * pal.colors.length)], cx, cy, w: 0.6 + rng() * 1.8 });
+  }
+}
+function stepOrbits() {
+  ctx.save(); ctx.scale(DPR, DPR);
+  const wob = 0.4 + (S.detail / 100) * 2.4;
+  for (const p of particles) {
+    const px = p.cx + Math.cos(p.a) * p.r, py = p.cy + Math.sin(p.a) * p.r * 0.86;
+    p.a += p.spd + Math.sin(tframe * 0.01 + p.r) * 0.0006 * wob;
+    const nx = p.cx + Math.cos(p.a) * p.r, ny = p.cy + Math.sin(p.a) * p.r * 0.86;
+    ctx.strokeStyle = p.c; ctx.globalAlpha = 0.5; ctx.lineWidth = p.w;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(nx, ny); ctx.stroke();
+  }
+  ctx.restore(); tframe++;
+}
+
+/* Circle packing (static, deterministic) */
+function renderPacking(rng) {
+  const pal = PALETTES[S.pal];
+  ctx.save(); ctx.scale(DPR, DPR);
+  const circles = [];
+  const tries = Math.round(400 + S.density * 90);
+  const maxR = 6 + (S.detail / 100) * 60;
+  for (let t = 0; t < tries; t++) {
+    const x = rng() * W, y = rng() * H;
+    let r = 2;
+    let ok = true, grow = true;
+    while (grow && r < maxR) {
+      r += 1.5;
+      for (const c of circles) { if (Math.hypot(c.x - x, c.y - y) < c.r + r) { r -= 1.5; grow = false; break; } }
+      if (x - r < 0 || x + r > W || y - r < 0 || y + r > H) { r -= 1.5; grow = false; }
+    }
+    if (r >= 3) circles.push({ x, y, r, c: pal.colors[Math.floor(rng() * pal.colors.length)] });
+  }
+  for (const c of circles) {
+    ctx.globalAlpha = 0.92; ctx.fillStyle = c.c;
+    ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 0.5; ctx.lineWidth = 1.4; ctx.strokeStyle = bgColor(pal);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/* Waves (animated, layered) */
+let waveCfg = null;
+function initWaves(rng) {
+  const pal = PALETTES[S.pal];
+  const layers = Math.round(4 + (S.density / 100) * 12);
+  waveCfg = { layers, seedRng: rng, arr: [] };
+  for (let i = 0; i < layers; i++) {
+    waveCfg.arr.push({ amp: (0.04 + rng() * 0.12) * H, len: (0.4 + rng() * 1.6), ph: rng() * TAU, base: (i + 1) / (layers + 1), c: pal.colors[i % pal.colors.length], spd: (0.2 + rng() * 0.8) });
+  }
+}
+function stepWaves() {
+  const pal = PALETTES[S.pal];
+  ctx.save(); ctx.scale(DPR, DPR);
+  paintBg(ctx, W, H, pal);
+  const detail = 0.5 + (S.detail / 100) * 2.5;
+  const t = tframe * 0.01 * (S.motion / 100 + 0.05);
+  for (const L of waveCfg.arr) {
+    ctx.beginPath(); ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 6) {
+      const y = L.base * H + Math.sin(x * 0.008 * L.len * detail + L.ph + t * L.spd) * L.amp
+        + Math.sin(x * 0.02 * L.len + t * L.spd * 1.7) * L.amp * 0.35;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H); ctx.closePath();
+    ctx.globalAlpha = 0.45; ctx.fillStyle = L.c; ctx.fill();
+  }
+  ctx.restore(); tframe++;
+}
+
+function frame() {
+  if (S.mode === 'flow') stepFlow();
+  else if (S.mode === 'orbits') stepOrbits();
+  else if (S.mode === 'waves') stepWaves();
+  anim = requestAnimationFrame(frame);
+}
+function startAnim() { if (!anim && S.playing !== false && S.mode !== 'packing') anim = requestAnimationFrame(frame); }
+function stopAnim() { if (anim) { cancelAnimationFrame(anim); anim = null; } }
+
+/* ---------- export ---------- */
+function exportPNG(trigger = true) {
+  const targetW = Math.min(DEMO_EXPORT_MAX, canvas.width);
+  const scale = targetW / canvas.width;
+  const off = document.createElement('canvas');
+  off.width = Math.round(canvas.width * scale); off.height = Math.round(canvas.height * scale);
+  const octx = off.getContext('2d');
+  octx.drawImage(canvas, 0, 0, off.width, off.height);
+  // demo watermark
+  const fs = Math.max(12, Math.round(off.width * 0.018));
+  octx.font = `600 ${fs}px system-ui, sans-serif`;
+  const label = 'Made with Projects Art Studio';
+  const tw = octx.measureText(label).width;
+  octx.globalAlpha = 0.5; octx.fillStyle = '#000'; octx.fillRect(off.width - tw - fs * 1.4, off.height - fs * 2.2, tw + fs * 1.2, fs * 1.7);
+  octx.globalAlpha = 0.95; octx.fillStyle = '#fff'; octx.textBaseline = 'middle';
+  octx.fillText(label, off.width - tw - fs * 0.8, off.height - fs * 1.35);
+  const url = off.toDataURL('image/png');
+  if (trigger) {
+    const a = document.createElement('a'); a.href = url; a.download = `artwork-${S.mode}-${S.seed}.png`; a.click();
+    toast('Artwork exported');
+  }
+  return { url, width: off.width, height: off.height };
+}
+$('#exportBtn').addEventListener('click', () => exportPNG(true));
+
+/* ---------- UI wiring ---------- */
+function renderPalettes() {
+  $('#palettes').innerHTML = PALETTES.map((p, i) =>
+    `<div class="pal ${i === S.pal ? 'active' : ''}" data-pal="${i}" title="${p.name}">${p.colors.map(c => `<span style="background:${c}"></span>`).join('')}</div>`).join('');
+  document.querySelectorAll('[data-pal]').forEach(el => el.addEventListener('click', () => { S.pal = Number(el.dataset.pal); save(); renderPalettes(); regenerate(); }));
+}
+function syncControls() {
+  document.querySelectorAll('.mode').forEach(b => b.classList.toggle('active', b.dataset.mode === S.mode));
+  $('#density').value = S.density; $('#detail').value = S.detail; $('#motion').value = S.motion;
+  $('#densityV').textContent = S.density; $('#detailV').textContent = S.detail; $('#motionV').textContent = S.motion;
+  $('#seedInput').value = S.seed;
+  document.querySelectorAll('#bgSeg button').forEach(b => b.classList.toggle('active', b.dataset.bg === S.bg));
+  $('#playBtn').textContent = (S.playing === false) ? '▶ Play' : '⏸ Pause';
+}
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { S.mode = b.dataset.mode; save(); syncControls(); regenerate(); }));
+['density', 'detail', 'motion'].forEach(k => {
+  $('#' + k).addEventListener('input', e => { S[k] = Number(e.target.value); $('#' + k + 'V').textContent = S[k]; save(); regenerate(); });
+});
+document.querySelectorAll('#bgSeg button').forEach(b => b.addEventListener('click', () => { S.bg = b.dataset.bg; save(); syncControls(); regenerate(); }));
+function randomise() { S.seed = Math.floor(Math.random() * 1e9); save(); syncControls(); regenerate(); }
+$('#randomBtn').addEventListener('click', randomise);
+$('#randomBtn2').addEventListener('click', randomise);
+$('#seedGo').addEventListener('click', () => { const v = parseInt($('#seedInput').value, 10); if (!isNaN(v)) { S.seed = v; save(); regenerate(); } });
+$('#seedInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('#seedGo').click(); });
+$('#playBtn').addEventListener('click', () => { S.playing = !(S.playing !== false); save(); syncControls(); if (S.playing === false) stopAnim(); else startAnim(); });
+
+/* theme / guide / toast */
+function applyTheme() { document.documentElement.setAttribute('data-theme', S.settings.theme === 'light' ? 'light' : 'dark'); }
+$('#themeToggle').addEventListener('click', () => { S.settings.theme = S.settings.theme === 'light' ? 'dark' : 'light'; save(); applyTheme(); });
+function toast(m) { const el = $('#toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 2200); }
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() { $('#guideModal').classList.remove('open'); if (!S.settings.guideSeen) { S.settings.guideSeen = true; save(); } }
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', e => { if (e.target === $('#guideModal')) closeGuide(); });
+
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { fitCanvas(); regenerate(); }, 180); });
+
+/* boot */
+applyTheme();
+renderPalettes();
+syncControls();
+fitCanvas();
+regenerate();
+save();
+if (!S.settings.guideSeen) openGuide();
+
+/* expose for tests */
+window.__art = { exportPNG, regenerate, signature: () => canvas.toDataURL('image/png').slice(-96), state: () => S };
+</script>
+</body>
+</html>
