@@ -2,10 +2,11 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all eleven apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all twelve apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
+| 🎨 Generative Art Studio | https://sivasankarn91.github.io/Projects/art-studio.html |
 | 📅 Appointment Scheduler | https://sivasankarn91.github.io/Projects/appointment-scheduler.html |
 | 🌅 Daily Companion | https://sivasankarn91.github.io/Projects/daily-companion.html |
 | 🎉 Festival & Function Planner | https://sivasankarn91.github.io/Projects/festival-planner.html |
@@ -18,6 +19,21 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+
+## 🎨 Generative Art Studio — [`art-studio.html`](art-studio.html)
+
+Make one-of-a-kind generative art right in the browser — a visual, interactive canvas toy that turns simple controls into striking, exportable pieces. Every artwork is generated from a seed, so no two are ever the same.
+
+**Features**
+
+- **Four animated styles** — flow fields, orbiting particles, circle packing, and layered waves, each rendered live on `<canvas>`
+- **Curated palettes** — eight hand-picked colour schemes (Sunset, Ocean, Forest, Neon, Ember, Candy, Aurora, Mono)
+- **Seeded & reproducible** — each piece has a numeric seed; type the same seed, style and palette to recreate it exactly (a seeded PRNG + value-noise engine drives everything)
+- **Live controls** — density, detail and motion sliders, a background choice (palette / black / white), and play/pause for the animation
+- **Export** — save your artwork as a PNG for wallpapers, prints or social posts
+- **Extras** — first-run guide, light/dark UI theme, settings autosaved in `localStorage`, fully offline
+
+Freemium demo exports are 1280px with a small credit line; the full version exports 4K, watermark-free.
 
 ## 📅 Appointment Scheduler — [`appointment-scheduler.html`](appointment-scheduler.html)
 
