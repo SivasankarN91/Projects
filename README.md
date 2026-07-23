@@ -2,10 +2,11 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all ten apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all eleven apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
+| 📅 Appointment Scheduler | https://sivasankarn91.github.io/Projects/appointment-scheduler.html |
 | 🌅 Daily Companion | https://sivasankarn91.github.io/Projects/daily-companion.html |
 | 🎉 Festival & Function Planner | https://sivasankarn91.github.io/Projects/festival-planner.html |
 | 🛍️ Online Store Builder | https://sivasankarn91.github.io/Projects/store-builder.html |
@@ -17,6 +18,23 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+
+## 📅 Appointment Scheduler — [`appointment-scheduler.html`](appointment-scheduler.html)
+
+A simple appointment book for service businesses — clinics, salons, tutors, consultants. Manage bookings by day or week and send WhatsApp confirmations, all from one private, offline file. The first of a professional series.
+
+**Features**
+
+- **Day & week views** — see the day's appointments as a timeline or the whole week at a glance; jump between dates and back to today in one tap
+- **Services** — define what you offer with a duration and price; appointments auto-fill their length and fee from the chosen service
+- **Bookings** — client name, phone, service, date, time, notes and status (booked → confirmed → done / no-show / cancelled); end time is computed automatically
+- **WhatsApp confirmations & reminders** — one tap sends the client a ready-made confirmation with your business name, service, date, time and address; sending a booked appointment marks it confirmed
+- **At-a-glance totals** — appointment count, confirmed count, expected takings and collected (done) revenue for the day or week
+- **Business setup** — name, WhatsApp number, address, currency (₹/$/€/£) and working hours
+- **Backup** — export/import everything as a JSON file
+- **Extras** — first-run guide, sample data, light/dark theme, mobile-friendly, autosaved in `localStorage`
+
+Freemium demo caps at 3 services and 20 appointments; the full version is unlimited and branded for your business on enquiry.
 
 ## 🌅 Daily Companion — [`daily-companion.html`](daily-companion.html)
 
