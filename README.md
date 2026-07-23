@@ -2,10 +2,11 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all eight apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all nine apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
+| 🎉 Festival & Function Planner | https://sivasankarn91.github.io/Projects/festival-planner.html |
 | 🛍️ Online Store Builder | https://sivasankarn91.github.io/Projects/store-builder.html |
 | 🚦 TN Travel Assistant | https://sivasankarn91.github.io/Projects/travel-assistant.html |
 | 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/Projects/family-dates.html |
@@ -15,6 +16,23 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+
+## 🎉 Festival & Function Planner — [`festival-planner.html`](festival-planner.html)
+
+Plan any wedding, pooja, birthday or housewarming from start to finish — guests, gifts, budget, tasks and shopping — all in one private, offline app. Built for the way Indian families run a function.
+
+**Features**
+
+- **Multiple functions** — create and switch between events, each with its type, date (with a live countdown), venue, and budget; currency selector (₹/$/€/£)
+- **Overview** — an at-a-glance dashboard: confirmed headcount, invitations sent, cash gifts received, spend vs budget, and tasks done, with quick-add shortcuts
+- **Guest list** — add guests with how many people are coming, their group (bride's/groom's side, friends…), veg/non-veg, and status (to invite → invited → confirmed → declined); filter by status, and send a **ready-made WhatsApp invite** to any guest in one tap
+- **Gifts (moi) ledger** — record every cash gift or present with the giver's name, tick off **thank-you sent**, see your running cash total, and filter to "thank-you pending" so no one is missed — the register Indian households keep for every function
+- **Budget** — expenses by category (venue, catering, decoration, clothes, jewellery, invitations…) with planned vs spent, progress bars, and clear over-budget flags
+- **Tasks & shopping** — a to-do checklist with due dates, plus a shopping list you can **share to WhatsApp** in one tap
+- **Backups** — export/import a JSON backup, export the guest list as CSV, and add the function date to your phone calendar as an `.ics` reminder (alarm one week before)
+- **Extras** — first-run guide, sample function, light/dark theme, mobile-first, autosaved in `localStorage`
+
+No accounts, no servers, no tracking — everything stays in your browser.
 
 ## 🛍️ Online Store Builder — [`store-builder.html`](store-builder.html)
 
