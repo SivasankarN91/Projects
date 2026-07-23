@@ -2,10 +2,11 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all nine apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all ten apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
+| 🌅 Daily Companion | https://sivasankarn91.github.io/Projects/daily-companion.html |
 | 🎉 Festival & Function Planner | https://sivasankarn91.github.io/Projects/festival-planner.html |
 | 🛍️ Online Store Builder | https://sivasankarn91.github.io/Projects/store-builder.html |
 | 🚦 TN Travel Assistant | https://sivasankarn91.github.io/Projects/travel-assistant.html |
@@ -16,6 +17,23 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+
+## 🌅 Daily Companion — [`daily-companion.html`](daily-companion.html)
+
+A simple, big-text daily home screen for elders — everything for the day on one calm, accessible page. Designed for large touch targets, high contrast, and adjustable text size.
+
+**Features**
+
+- **At a glance** — a large live clock, day and date, a time-of-day greeting by name, and current weather for your city (free Open-Meteo, no API key; degrades gracefully offline)
+- **Today's medicines** — each with dose and time and a big checkbox to tick when taken; the ticks reset automatically every morning
+- **Things to do & prayer times** — a simple daily task checklist and a list of prayer/pooja times
+- **Call family in one tap** — big photo-style buttons that open a phone call (`tel:`) or a WhatsApp message to each family member
+- **SOS** — a large red **I need help** button that calls the emergency contact and can send them a prefilled "I need help" WhatsApp message
+- **Accessibility** — three text sizes (Normal / Large / Largest), light/dark theme, and a clean two-screen layout (Today / Setup)
+- **Setup once** — add the elder's name, city, medicines, tasks, prayers, family contacts and emergency contact; back up and restore everything as a JSON file
+- **Private & offline** — everything is stored in the browser (`localStorage`); no accounts, no servers
+
+Freemium demo caps at 4 medicines and 3 family contacts; the full version is unlimited and can be set up for your parents on enquiry.
 
 ## 🎉 Festival & Function Planner — [`festival-planner.html`](festival-planner.html)
 

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Companion</title>
+<meta name="description" content="A simple, big-text daily companion for elders — the time, weather, today's medicines and tasks, prayer times, one-tap calls to family, and an SOS button. Works offline.">
+<style>
+  :root {
+    color-scheme: light;
+    --scale: 1;
+    --page: #f4f6f9; --surface: #ffffff; --text: #14213d; --muted: #5a6478; --line: #dfe4ee;
+    --accent: #1f6feb; --accent-soft: #e7f0ff; --good: #148a3d; --good-soft: #e3f5e9;
+    --danger: #d1362f; --danger-soft: #fde4e2; --warn: #b8730a;
+    --shadow: 0 2px 8px rgba(20,33,61,0.07);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0f1420; --surface: #1a2130; --text: #f2f5fa; --muted: #9aa5bb; --line: #2b3446;
+    --accent: #5b9bff; --accent-soft: #1d2b46; --good: #46c46f; --good-soft: #16301f;
+    --danger: #ff6b63; --danger-soft: #3a1c1a; --warn: #e0a54a;
+    --shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: calc(18px * var(--scale)); }
+  html, body { height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--text); display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; line-height: 1.4; }
+
+  header.topbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); flex: none; }
+  .brand { font-weight: 800; font-size: 1.05rem; display: flex; gap: 7px; align-items: center; }
+  .spacer { flex: 1; }
+  .tbtn { appearance: none; border: 1px solid var(--line); cursor: pointer; font: inherit; font-weight: 700; background: var(--surface); color: var(--text); padding: 7px 11px; border-radius: 10px; box-shadow: var(--shadow); -webkit-tap-highlight-color: transparent; font-size: 0.85rem; }
+  .tbtn:hover { border-color: var(--accent); }
+  .tbtn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  main { flex: 1; overflow-y: auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 16px 16px 80px; }
+
+  /* clock header */
+  .clock-card { background: linear-gradient(135deg, var(--accent), #6f4ae0); color: #fff; border-radius: 20px; padding: 22px 22px; box-shadow: var(--shadow); margin-bottom: 16px; text-align: center; }
+  .greeting { font-size: 1.15rem; font-weight: 700; opacity: 0.95; }
+  .clock { font-size: 3.2rem; font-weight: 800; letter-spacing: 0.01em; line-height: 1.05; margin: 4px 0; font-variant-numeric: tabular-nums; }
+  .today-date { font-size: 1.05rem; opacity: 0.95; }
+  .weather-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; background: rgba(255,255,255,0.18); padding: 7px 14px; border-radius: 999px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+
+  /* big SOS */
+  .sos { width: 100%; appearance: none; border: none; cursor: pointer; font: inherit; font-weight: 800; font-size: 1.3rem; color: #fff; background: var(--danger); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); margin-bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 10px; -webkit-tap-highlight-color: transparent; }
+  .sos:active { transform: scale(0.99); }
+
+  .section { margin-bottom: 20px; }
+  .section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .section-head h2 { font-size: 1.25rem; font-weight: 800; }
+  .section-head .em { font-size: 1.4rem; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 4px 4px; }
+  .line { display: flex; align-items: center; gap: 14px; padding: 14px 14px; border-bottom: 1px solid var(--line); }
+  .line:last-child { border-bottom: none; }
+  .bigcheck { width: 34px; height: 34px; flex: none; accent-color: var(--good); cursor: pointer; }
+  .line .l-main { flex: 1; min-width: 0; }
+  .line .l-title { font-size: 1.12rem; font-weight: 700; }
+  .line .l-sub { font-size: 0.92rem; color: var(--muted); margin-top: 1px; }
+  .line .l-time { font-size: 1.05rem; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .line.done .l-title { text-decoration: line-through; color: var(--muted); }
+  .taken-tag { font-size: 0.82rem; font-weight: 700; color: var(--good); }
+
+  /* contacts big buttons */
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .contact-btn { appearance: none; cursor: pointer; font: inherit; background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 16px 10px; text-align: center; box-shadow: var(--shadow); -webkit-tap-highlight-color: transparent; }
+  .contact-btn:hover { border-color: var(--accent); }
+  .contact-btn .av { width: 56px; height: 56px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; }
+  .contact-btn .cn { font-size: 1.05rem; font-weight: 700; }
+  .contact-btn .cr { font-size: 0.82rem; color: var(--muted); }
+
+  .empty { text-align: center; color: var(--muted); font-size: 1rem; padding: 22px 12px; line-height: 1.6; }
+
+  /* setup */
+  .setup-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); padding: 16px; margin-bottom: 16px; }
+  .setup-card h3 { font-size: 1.1rem; margin-bottom: 12px; }
+  label.field { display: flex; flex-direction: column; gap: 5px; font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-bottom: 12px; }
+  input, select { font: inherit; font-size: 1rem; color: var(--text); background: var(--page); border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 12px; width: 100%; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 480px) { .form-2 { grid-template-columns: 1fr; } }
+  .btn { appearance: none; border: 1px solid var(--line); cursor: pointer; font: inherit; font-size: 0.95rem; font-weight: 700; background: var(--surface); color: var(--text); padding: 10px 15px; border-radius: 11px; box-shadow: var(--shadow); display: inline-flex; align-items: center; gap: 7px; -webkit-tap-highlight-color: transparent; }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.block { width: 100%; justify-content: center; }
+  .btn.danger { color: var(--danger); }
+  .edit-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .edit-row:last-child { border-bottom: none; }
+  .edit-row .er-main { flex: 1; min-width: 0; }
+  .edit-row .er-t { font-weight: 700; }
+  .edit-row .er-s { font-size: 0.85rem; color: var(--muted); }
+  .iconbtn { appearance: none; border: none; background: none; cursor: pointer; font-size: 1.1rem; padding: 6px; border-radius: 8px; color: var(--muted); -webkit-tap-highlight-color: transparent; }
+  .iconbtn:hover { background: var(--page); color: var(--text); }
+  .addbar { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .addbar input, .addbar select { flex: 1; min-width: 80px; }
+  .scale-row { display: flex; gap: 8px; }
+  .scale-row .tbtn { flex: 1; text-align: center; }
+
+  /* modal / sheet */
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: none; align-items: flex-end; justify-content: center; padding: 0; }
+  .backdrop.open { display: flex; }
+  @media (min-width: 560px) { .backdrop { align-items: center; padding: 16px; } }
+  .sheet { background: var(--surface); width: 100%; max-width: 460px; border-radius: 20px 20px 0 0; padding: 20px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; }
+  @media (min-width: 560px) { .sheet { border-radius: 20px; } }
+  .sheet h3 { font-size: 1.3rem; margin-bottom: 4px; }
+  .sheet .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 16px; }
+  .sheet-btn { width: 100%; appearance: none; border: none; cursor: pointer; font: inherit; font-weight: 800; font-size: 1.15rem; border-radius: 14px; padding: 16px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; -webkit-tap-highlight-color: transparent; }
+  .sheet-btn.call { background: var(--good); color: #fff; }
+  .sheet-btn.wa { background: #25d366; color: #fff; }
+  .sheet-btn.cancel { background: var(--page); color: var(--text); border: 1px solid var(--line); }
+
+  .guide-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .guide-step:last-of-type { border-bottom: none; }
+  .guide-step .g-em { font-size: 1.4rem; flex: none; width: 34px; text-align: center; }
+  .guide-step .g-title { font-weight: 800; font-size: 1rem; margin-bottom: 2px; }
+  .guide-step .g-text { font-size: 0.92rem; color: var(--muted); line-height: 1.5; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(140px); background: var(--text); color: var(--page); padding: 12px 20px; border-radius: 12px; font-size: 1rem; font-weight: 700; transition: transform 0.25s; z-index: 300; pointer-events: none; max-width: 92vw; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <span class="brand">🌅 Daily Companion</span>
+  <span class="spacer"></span>
+  <button class="tbtn" id="todayTab">Today</button>
+  <button class="tbtn" id="setupTab">Setup</button>
+  <button class="tbtn" id="themeToggle" title="Day / night">🌗</button>
+  <button class="tbtn" id="guideBtn" title="Help">?</button>
+</header>
+
+<main>
+  <!-- TODAY -->
+  <section class="view active" id="view-today"><div class="wrap">
+    <div class="clock-card">
+      <div class="greeting" id="greeting">Hello</div>
+      <div class="clock" id="clock">--:--</div>
+      <div class="today-date" id="todayDate"></div>
+      <div class="weather-chip" id="weatherChip" style="display:none"></div>
+    </div>
+
+    <button class="sos" id="sosBtn">🆘 &nbsp;I need help</button>
+
+    <div class="section">
+      <div class="section-head"><span class="em">💊</span><h2>Today's medicines</h2></div>
+      <div class="card" id="medList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="em">✅</span><h2>Things to do</h2></div>
+      <div class="card" id="taskList"></div>
+    </div>
+
+    <div class="section" id="prayerSection">
+      <div class="section-head"><span class="em">🙏</span><h2>Prayer times</h2></div>
+      <div class="card" id="prayerList"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><span class="em">📞</span><h2>Call family</h2></div>
+      <div class="contact-grid" id="contactGrid"></div>
+    </div>
+  </div></section>
+
+  <!-- SETUP -->
+  <section class="view" id="view-setup"><div class="wrap">
+    <div class="setup-card">
+      <h3>👤 About you</h3>
+      <label class="field">Your name <span style="font-weight:500">(for the greeting)</span><input type="text" id="pName" placeholder="e.g. Amma" maxlength="30"></label>
+      <label class="field">Your city <span style="font-weight:500">(for weather)</span>
+        <span style="display:flex;gap:8px"><input type="text" id="pCity" placeholder="e.g. Chennai" maxlength="40"><button class="btn" id="setCity">Update</button></span>
+      </label>
+      <div style="margin-top:6px">
+        <div style="font-size:0.85rem;font-weight:700;color:var(--muted);margin-bottom:6px">Text size</div>
+        <div class="scale-row">
+          <button class="tbtn" data-scale="1">A Normal</button>
+          <button class="tbtn" data-scale="1.15">A Large</button>
+          <button class="tbtn" data-scale="1.3">A Largest</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>🆘 Emergency contact</h3>
+      <div class="form-2">
+        <label class="field">Name<input type="text" id="emName" placeholder="e.g. Son – Ravi" maxlength="30"></label>
+        <label class="field">Phone<input type="text" id="emPhone" placeholder="919876543210"></label>
+      </div>
+      <p style="font-size:0.85rem;color:var(--muted)">The big <b>I need help</b> button calls this person and can send them a WhatsApp message.</p>
+    </div>
+
+    <div class="setup-card">
+      <h3>💊 Medicines</h3>
+      <div id="medEdit"></div>
+      <div class="addbar">
+        <input type="text" id="medName" placeholder="Medicine name" maxlength="40" style="flex:2">
+        <input type="text" id="medDose" placeholder="Dose (e.g. 1 tablet)" maxlength="30" style="flex:1.4">
+        <input type="time" id="medTime" style="flex:1">
+        <button class="btn primary" id="medAdd">Add</button>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>✅ Daily tasks</h3>
+      <div id="taskEdit"></div>
+      <div class="addbar">
+        <input type="text" id="taskText" placeholder="e.g. Morning walk" maxlength="50" style="flex:2">
+        <button class="btn primary" id="taskAdd">Add</button>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>🙏 Prayer times</h3>
+      <div id="prayerEdit"></div>
+      <div class="addbar">
+        <input type="text" id="prayerLabel" placeholder="e.g. Morning prayer" maxlength="40" style="flex:2">
+        <input type="time" id="prayerTime" style="flex:1">
+        <button class="btn primary" id="prayerAdd">Add</button>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>📞 Family contacts</h3>
+      <div id="contactEdit"></div>
+      <div class="addbar">
+        <input type="text" id="conName" placeholder="Name (e.g. Ravi)" maxlength="30" style="flex:2">
+        <input type="text" id="conRel" placeholder="Relation" maxlength="20" style="flex:1">
+        <input type="text" id="conPhone" placeholder="Phone" style="flex:1.4">
+        <button class="btn primary" id="conAdd">Add</button>
+      </div>
+    </div>
+
+    <div class="setup-card">
+      <h3>💾 Backup</h3>
+      <div style="display:grid;gap:9px">
+        <button class="btn block" id="expJson">⬇ Save a backup file</button>
+        <button class="btn block" id="impJson">⬆ Restore from backup</button>
+      </div>
+    </div>
+  </div></section>
+</main>
+
+<!-- Call sheet -->
+<div class="backdrop" id="callSheet"><div class="sheet">
+  <h3 id="callName">Call</h3>
+  <div class="sub" id="callSub"></div>
+  <a class="sheet-btn call" id="callDial" href="#">📞 Call now</a>
+  <a class="sheet-btn wa" id="callWa" href="#" target="_blank" rel="noopener">💬 WhatsApp message</a>
+  <button class="sheet-btn cancel" id="callCancel">Cancel</button>
+</div></div>
+
+<!-- SOS sheet -->
+<div class="backdrop" id="sosSheet"><div class="sheet">
+  <h3>🆘 Get help</h3>
+  <div class="sub" id="sosSub"></div>
+  <a class="sheet-btn call" id="sosDial" href="#">📞 Call for help</a>
+  <a class="sheet-btn wa" id="sosWa" href="#" target="_blank" rel="noopener">💬 Send "I need help"</a>
+  <button class="sheet-btn cancel" id="sosCancel">Cancel</button>
+</div></div>
+
+<!-- Guide -->
+<div class="backdrop" id="guideModal"><div class="sheet">
+  <h3>👋 Welcome to your Daily Companion</h3>
+  <div class="sub">Everything for your day on one simple screen.</div>
+  <div class="guide-step"><span class="g-em">🕐</span><div><div class="g-title">Your day at a glance</div><div class="g-text">The big clock, date and weather are always at the top of the <b>Today</b> screen.</div></div></div>
+  <div class="guide-step"><span class="g-em">💊</span><div><div class="g-title">Tick your medicines</div><div class="g-text">Tap the big box next to each medicine once you've taken it. It resets every morning.</div></div></div>
+  <div class="guide-step"><span class="g-em">📞</span><div><div class="g-title">Call family in one tap</div><div class="g-text">Tap a family member to call them or send a WhatsApp message.</div></div></div>
+  <div class="guide-step"><span class="g-em">🆘</span><div><div class="g-title">Help is one tap away</div><div class="g-text">The red <b>I need help</b> button calls your emergency contact right away.</div></div></div>
+  <div class="guide-step"><span class="g-em">⚙️</span><div><div class="g-title">Set it up once</div><div class="g-text">Use the <b>Setup</b> tab to add your name, medicines, tasks and family — and to make the text bigger.</div></div></div>
+  <p style="font-size:0.85rem;color:var(--muted);margin-top:10px">Demo: up to 4 medicines and 3 family contacts. Want it unlimited and set up for your parents? <b>Enquire on the homepage</b>.</p>
+  <button class="sheet-btn cancel" id="guideClose" style="background:var(--accent);color:#fff;border:none">Got it</button>
+</div></div>
+
+<input type="file" id="fileInput" accept="application/json" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+const STORE_KEY = 'dailyCompanionData_v1';
+const DEMO_MAX_MEDICINES = 4;
+const DEMO_MAX_CONTACTS = 3;
+const $ = (s) => document.querySelector(s);
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const digits = (s) => String(s || '').replace(/\D/g, '');
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+function freshState() {
+  return {
+    version: 1,
+    profile: { name: '', city: '', emName: '', emPhone: '' },
+    medicines: [
+      { id: uid(), name: 'BP tablet', dose: '1 tablet', time: '08:00', taken: false },
+      { id: uid(), name: 'Sugar tablet', dose: '1 tablet', time: '13:00', taken: false },
+    ],
+    tasks: [
+      { id: uid(), text: 'Morning walk', done: false },
+      { id: uid(), text: 'Drink water', done: false },
+    ],
+    prayers: [{ id: uid(), label: 'Morning prayer', time: '06:30' }],
+    contacts: [{ id: uid(), name: 'Ravi', rel: 'Son', phone: '919876543210' }],
+    weather: null,
+    settings: { theme: 'auto', scale: 1, guideSeen: false, lastReset: todayKey() },
+  };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return freshState();
+    const d = JSON.parse(raw);
+    if (!d || !Array.isArray(d.medicines)) return freshState();
+    const base = freshState();
+    const s = { ...base, ...d, profile: { ...base.profile, ...(d.profile || {}) }, settings: { ...base.settings, ...(d.settings || {}) } };
+    ['medicines', 'tasks', 'prayers', 'contacts'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
+    return s;
+  } catch { return freshState(); }
+}
+let state = loadState();
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { toast('Storage full'); } }
+
+/* daily reset of taken/done flags */
+function dailyReset() {
+  if (state.settings.lastReset !== todayKey()) {
+    state.medicines.forEach(m => m.taken = false);
+    state.tasks.forEach(t => t.done = false);
+    state.settings.lastReset = todayKey();
+    save();
+  }
+}
+
+/* ---------- Clock & greeting ---------- */
+function tick() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  const hr12 = ((h + 11) % 12) + 1;
+  $('#clock').textContent = `${hr12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+  $('#todayDate').textContent = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const part = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const name = state.profile.name ? ', ' + state.profile.name : '';
+  $('#greeting').textContent = part + name;
+}
+
+/* ---------- Weather (Open-Meteo, free, no key) ---------- */
+const WMO = (c) => {
+  if (c === 0) return ['☀️', 'Clear'];
+  if (c <= 2) return ['🌤️', 'Partly cloudy'];
+  if (c === 3) return ['☁️', 'Cloudy'];
+  if (c <= 48) return ['🌫️', 'Foggy'];
+  if (c <= 57) return ['🌦️', 'Drizzle'];
+  if (c <= 67) return ['🌧️', 'Rain'];
+  if (c <= 77) return ['🌨️', 'Snow'];
+  if (c <= 82) return ['🌦️', 'Showers'];
+  if (c <= 86) return ['🌨️', 'Snow showers'];
+  return ['⛈️', 'Thunderstorm'];
+};
+function renderWeather() {
+  const w = state.weather, chip = $('#weatherChip');
+  if (!w) { chip.style.display = 'none'; return; }
+  const [em, label] = WMO(w.code);
+  chip.style.display = 'inline-flex';
+  chip.innerHTML = `${em} ${Math.round(w.tempC)}° · ${esc(label)} · ${esc(w.city)}`;
+}
+async function fetchWeather(city) {
+  if (!city) return;
+  try {
+    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+    const gj = await g.json();
+    if (!gj.results || !gj.results.length) { toast('Could not find that city'); return; }
+    const { latitude, longitude, name } = gj.results[0];
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`);
+    const rj = await r.json();
+    state.weather = { city: name, tempC: rj.current.temperature_2m, code: rj.current.weather_code, updated: Date.now() };
+    save(); renderWeather();
+  } catch { toast('Weather needs internet — showing last update'); renderWeather(); }
+}
+
+/* ---------- Today lists ---------- */
+function renderMeds() {
+  const el = $('#medList');
+  if (!state.medicines.length) { el.innerHTML = `<div class="empty">No medicines added.<br>Add them in <b>Setup</b>.</div>`; return; }
+  const sorted = state.medicines.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  el.innerHTML = sorted.map(m => `
+    <div class="line ${m.taken ? 'done' : ''}">
+      <input type="checkbox" class="bigcheck" data-med="${m.id}" ${m.taken ? 'checked' : ''} aria-label="Taken">
+      <div class="l-main"><div class="l-title">${esc(m.name)}</div><div class="l-sub">${esc(m.dose || '')}${m.taken ? ' · <span class="taken-tag">Taken ✓</span>' : ''}</div></div>
+      <div class="l-time">${esc(fmtTime(m.time))}</div>
+    </div>`).join('');
+  el.querySelectorAll('[data-med]').forEach(b => b.addEventListener('change', () => { state.medicines.find(m => m.id === b.dataset.med).taken = b.checked; save(); renderMeds(); }));
+}
+function renderTasks() {
+  const el = $('#taskList');
+  if (!state.tasks.length) { el.innerHTML = `<div class="empty">No tasks yet.</div>`; return; }
+  el.innerHTML = state.tasks.map(t => `
+    <div class="line ${t.done ? 'done' : ''}">
+      <input type="checkbox" class="bigcheck" data-task="${t.id}" ${t.done ? 'checked' : ''} aria-label="Done">
+      <div class="l-main"><div class="l-title">${esc(t.text)}</div></div>
+    </div>`).join('');
+  el.querySelectorAll('[data-task]').forEach(b => b.addEventListener('change', () => { state.tasks.find(t => t.id === b.dataset.task).done = b.checked; save(); renderTasks(); }));
+}
+function renderPrayers() {
+  const sec = $('#prayerSection'), el = $('#prayerList');
+  if (!state.prayers.length) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  const sorted = state.prayers.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+  el.innerHTML = sorted.map(p => `<div class="line"><div class="l-main"><div class="l-title">${esc(p.label)}</div></div><div class="l-time">${esc(fmtTime(p.time))}</div></div>`).join('');
+}
+function renderContacts() {
+  const el = $('#contactGrid');
+  if (!state.contacts.length) { el.innerHTML = `<div class="empty" style="grid-column:1/-1">No family added yet.<br>Add them in <b>Setup</b>.</div>`; return; }
+  el.innerHTML = state.contacts.map(c => `
+    <button class="contact-btn" data-call="${c.id}">
+      <div class="av">${esc((c.name || '?').trim().charAt(0).toUpperCase())}</div>
+      <div class="cn">${esc(c.name)}</div>${c.rel ? `<div class="cr">${esc(c.rel)}</div>` : ''}
+    </button>`).join('');
+  el.querySelectorAll('[data-call]').forEach(b => b.addEventListener('click', () => openCall(state.contacts.find(c => c.id === b.dataset.call))));
+}
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const hr12 = ((h + 11) % 12) + 1;
+  return `${hr12}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/* ---------- Call / SOS sheets ---------- */
+function openCall(c) {
+  if (!c) return;
+  $('#callName').textContent = c.name;
+  $('#callSub').textContent = c.rel || c.phone;
+  $('#callDial').href = 'tel:' + digits(c.phone);
+  $('#callWa').href = 'https://wa.me/' + digits(c.phone);
+  $('#callSheet').classList.add('open');
+}
+$('#callCancel').addEventListener('click', () => $('#callSheet').classList.remove('open'));
+$('#callSheet').addEventListener('click', e => { if (e.target === $('#callSheet')) $('#callSheet').classList.remove('open'); });
+$('#callDial').addEventListener('click', () => setTimeout(() => $('#callSheet').classList.remove('open'), 100));
+$('#callWa').addEventListener('click', () => setTimeout(() => $('#callSheet').classList.remove('open'), 100));
+
+$('#sosBtn').addEventListener('click', () => {
+  const p = state.profile;
+  if (!p.emPhone) { toast('Add an emergency contact in Setup first'); switchView('setup'); return; }
+  $('#sosSub').textContent = p.emName ? 'Calling ' + p.emName : 'Calling your emergency contact';
+  const num = digits(p.emPhone);
+  $('#sosDial').href = 'tel:' + num;
+  const msg = `🆘 ${p.name || 'I'} need help. Please call me.`;
+  $('#sosWa').href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+  $('#sosSheet').classList.add('open');
+});
+$('#sosCancel').addEventListener('click', () => $('#sosSheet').classList.remove('open'));
+$('#sosSheet').addEventListener('click', e => { if (e.target === $('#sosSheet')) $('#sosSheet').classList.remove('open'); });
+
+/* ---------- Setup editors ---------- */
+function renderSetup() {
+  $('#pName').value = state.profile.name || '';
+  $('#pCity').value = state.profile.city || '';
+  $('#emName').value = state.profile.emName || '';
+  $('#emPhone').value = state.profile.emPhone || '';
+  document.querySelectorAll('[data-scale]').forEach(b => b.classList.toggle('active', Number(b.dataset.scale) === state.settings.scale));
+  renderEditList('#medEdit', state.medicines, m => ({ t: m.name, s: `${m.dose || ''}${m.time ? ' · ' + fmtTime(m.time) : ''}` }), 'med');
+  renderEditList('#taskEdit', state.tasks, t => ({ t: t.text, s: '' }), 'task');
+  renderEditList('#prayerEdit', state.prayers, p => ({ t: p.label, s: fmtTime(p.time) }), 'prayer');
+  renderEditList('#contactEdit', state.contacts, c => ({ t: c.name, s: `${c.rel ? c.rel + ' · ' : ''}${c.phone || ''}` }), 'con');
+}
+function renderEditList(sel, arr, fmt, kind) {
+  const el = $(sel);
+  if (!arr.length) { el.innerHTML = `<div class="empty" style="padding:10px">None yet.</div>`; return; }
+  el.innerHTML = arr.map(x => { const f = fmt(x); return `<div class="edit-row"><div class="er-main"><div class="er-t">${esc(f.t)}</div>${f.s ? `<div class="er-s">${esc(f.s)}</div>` : ''}</div><button class="iconbtn" data-del="${kind}:${x.id}" title="Remove">🗑</button></div>`; }).join('');
+  el.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const [k, id] = b.dataset.del.split(':');
+    const map = { med: 'medicines', task: 'tasks', prayer: 'prayers', con: 'contacts' };
+    state[map[k]] = state[map[k]].filter(x => x.id !== id);
+    save(); renderSetup(); renderAll();
+  }));
+}
+const bindProfile = (sel, key) => $(sel).addEventListener('input', e => { state.profile[key] = e.target.value; save(); if (key === 'name') tick(); });
+bindProfile('#pName', 'name'); bindProfile('#emName', 'emName'); bindProfile('#emPhone', 'emPhone');
+$('#pCity').addEventListener('input', e => { state.profile.city = e.target.value; save(); });
+$('#setCity').addEventListener('click', () => { const c = $('#pCity').value.trim(); if (c) { toast('Getting weather…'); fetchWeather(c); } });
+document.querySelectorAll('[data-scale]').forEach(b => b.addEventListener('click', () => { state.settings.scale = Number(b.dataset.scale); save(); applyScale(); renderSetup(); }));
+
+$('#medAdd').addEventListener('click', () => {
+  if (state.medicines.length >= DEMO_MAX_MEDICINES) { toast(`Demo: up to ${DEMO_MAX_MEDICINES} medicines. Full version is unlimited — enquire on the homepage.`); return; }
+  const name = $('#medName').value.trim(); if (!name) { toast('Enter a medicine name'); return; }
+  state.medicines.push({ id: uid(), name, dose: $('#medDose').value.trim(), time: $('#medTime').value || '', taken: false });
+  $('#medName').value = ''; $('#medDose').value = ''; $('#medTime').value = '';
+  save(); renderSetup(); renderMeds();
+});
+$('#taskAdd').addEventListener('click', () => {
+  const text = $('#taskText').value.trim(); if (!text) { toast('Enter a task'); return; }
+  state.tasks.push({ id: uid(), text, done: false }); $('#taskText').value = ''; save(); renderSetup(); renderTasks();
+});
+$('#prayerAdd').addEventListener('click', () => {
+  const label = $('#prayerLabel').value.trim(); if (!label) { toast('Enter a name'); return; }
+  state.prayers.push({ id: uid(), label, time: $('#prayerTime').value || '' }); $('#prayerLabel').value = ''; $('#prayerTime').value = ''; save(); renderSetup(); renderPrayers();
+});
+$('#conAdd').addEventListener('click', () => {
+  if (state.contacts.length >= DEMO_MAX_CONTACTS) { toast(`Demo: up to ${DEMO_MAX_CONTACTS} contacts. Full version is unlimited — enquire on the homepage.`); return; }
+  const name = $('#conName').value.trim(); if (!name) { toast('Enter a name'); return; }
+  state.contacts.push({ id: uid(), name, rel: $('#conRel').value.trim(), phone: $('#conPhone').value.trim() });
+  $('#conName').value = ''; $('#conRel').value = ''; $('#conPhone').value = '';
+  save(); renderSetup(); renderContacts();
+});
+
+/* ---------- Backup ---------- */
+function downloadFile(name, content, mime) {
+  const blob = new Blob([content], { type: mime }); const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+$('#expJson').addEventListener('click', () => { downloadFile('daily-companion-backup.json', JSON.stringify(state, null, 2), 'application/json'); toast('Backup saved'); });
+$('#impJson').addEventListener('click', () => $('#fileInput').click());
+$('#fileInput').addEventListener('change', () => {
+  const file = $('#fileInput').files[0]; $('#fileInput').value = ''; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => { try { const d = JSON.parse(r.result); if (!d || !Array.isArray(d.medicines)) throw 0; state = { ...freshState(), ...d }; save(); applyScale(); applyTheme(); renderAll(); renderSetup(); toast('Backup restored'); } catch { toast('Not a valid backup file'); } };
+  r.readAsText(file);
+});
+
+/* ---------- Views / theme / scale / guide ---------- */
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  $('#todayTab').classList.toggle('active', v === 'today');
+  $('#setupTab').classList.toggle('active', v === 'setup');
+  if (v === 'setup') renderSetup();
+  $('main').scrollTop = 0;
+}
+$('#todayTab').addEventListener('click', () => switchView('today'));
+$('#setupTab').addEventListener('click', () => switchView('setup'));
+
+function applyScale() { document.documentElement.style.setProperty('--scale', state.settings.scale || 1); }
+function applyTheme() {
+  const pref = state.settings.theme;
+  const dark = pref === 'dark' || (pref === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.settings.theme === 'auto') applyTheme(); });
+$('#themeToggle').addEventListener('click', () => { const dark = document.documentElement.getAttribute('data-theme') === 'dark'; state.settings.theme = dark ? 'light' : 'dark'; save(); applyTheme(); });
+
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 2600); }
+function openGuide() { $('#guideModal').classList.add('open'); }
+function closeGuide() { $('#guideModal').classList.remove('open'); if (!state.settings.guideSeen) { state.settings.guideSeen = true; save(); } }
+$('#guideBtn').addEventListener('click', openGuide);
+$('#guideClose').addEventListener('click', closeGuide);
+$('#guideModal').addEventListener('click', e => { if (e.target === $('#guideModal')) closeGuide(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.backdrop.open').forEach(m => { if (m.id === 'guideModal') closeGuide(); else m.classList.remove('open'); }); });
+
+/* ---------- Render all ---------- */
+function renderAll() { tick(); renderWeather(); renderMeds(); renderTasks(); renderPrayers(); renderContacts(); }
+
+/* ---------- Boot ---------- */
+dailyReset();
+applyScale();
+applyTheme();
+renderAll();
+save();
+tick();
+setInterval(tick, 15000);
+if (state.weather && state.profile.city) renderWeather();
+if (state.profile.city && navigator.onLine) fetchWeather(state.profile.city);
+if (!state.settings.guideSeen) openGuide();
+</script>
+</body>
+</html>
