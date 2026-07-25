@@ -93,7 +93,11 @@
     transition: border-color .2s, box-shadow .2s;
   }
   header.nav.stuck { border-bottom-color: var(--line); box-shadow: var(--shadow-s); }
-  .nav-in { display: flex; align-items: center; gap: 10px; padding: 13px 0; }
+  /* padding-block, not the shorthand: `padding: 13px 0` would reset the
+     22px horizontal padding .wrap provides, which let the nav run to the
+     screen edge on phones and left the brand misaligned with the sections
+     below it on desktop. */
+  .nav-in { display: flex; align-items: center; gap: 10px; padding-block: 13px; }
   .brand { font-weight: 900; font-size: 1.1rem; letter-spacing: -0.03em; display: flex; align-items: center; gap: 8px; }
   .brand .mark {
     width: 27px; height: 27px; border-radius: 8px; display: grid; place-items: center;
@@ -103,8 +107,21 @@
   .nav-links { display: flex; align-items: center; gap: 4px; }
   .nav-links a.lnk { padding: 8px 12px; border-radius: 8px; font-size: 0.92rem; font-weight: 650; color: var(--muted); text-decoration: none; }
   .nav-links a.lnk:hover { color: var(--text); background: var(--tint); }
-  #themeToggle { background: none; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; font-size: 0.95rem; padding: 7px 10px; color: inherit; }
+  /* min 40px square — at 7px padding this was a 34px target, too small to
+     hit reliably with a thumb. */
+  #themeToggle {
+    background: none; border: 1px solid var(--line); border-radius: 9px; cursor: pointer;
+    font-size: 0.95rem; color: inherit; min-width: 40px; min-height: 40px;
+    display: grid; place-items: center; padding: 0 8px;
+  }
   @media (max-width: 780px) { .nav-links a.lnk { display: none; } }
+  /* At 320px the brand and the call-to-action together are wider than the
+     content box, so both give up a little rather than spilling off-screen. */
+  @media (max-width: 370px) {
+    .brand { font-size: 0.98rem; }
+    .brand .mark { width: 24px; height: 24px; }
+    .nav-links .btn { padding: 10px 13px; font-size: 0.83rem; }
+  }
 
   /* ---------------- hero ---------------- */
   .hero {
@@ -233,7 +250,12 @@
     background: var(--paper); border: 1px solid var(--line); border-radius: 24px;
     padding: 40px; box-shadow: var(--shadow-m);
   }
-  @media (max-width: 900px) { .spot-in { grid-template-columns: 1fr; gap: 30px; padding: 26px; } }
+  @media (max-width: 900px) {
+    .spot-in { grid-template-columns: 1fr; gap: 26px; padding: 24px; }
+    /* Cover first once stacked — otherwise a phone scrolls past a badge, a
+       heading, a paragraph and five bullets before reaching the visual. */
+    .spot-in > div:last-child { order: -1; }
+  }
   .badge {
     display: inline-flex; align-items: center; gap: 7px; font-size: 0.74rem; font-weight: 850;
     text-transform: uppercase; letter-spacing: .06em; padding: 5px 11px; border-radius: 999px;
