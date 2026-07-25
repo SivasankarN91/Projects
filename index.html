@@ -200,6 +200,52 @@
   .mk-cal i { aspect-ratio: 1; border-radius: 3px; background: var(--tint); }
   .mk-cal i.on { background: var(--c); }
   .mk-cal i.soft { background: color-mix(in srgb, var(--c) 30%, var(--tint)); }
+  .mk-chip { display: block; height: 13px; border-radius: 7px; background: var(--c); }
+  /* day timeline — appointments sit at their own offsets against a rail */
+  .mk-tl { position: relative; padding-left: 24px; display: grid; gap: 6px; }
+  .mk-tl::before { content: ''; position: absolute; left: 11px; top: 3px; bottom: 3px; width: 1px; background: var(--line); }
+  .mk-tl div { height: 15px; border-radius: 4px; background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c); }
+  .mk-tl div:nth-child(2) { margin-left: 16%; opacity: .82; }
+  .mk-tl div:nth-child(3) { margin-left: 7%; opacity: .64; }
+  .mk-tl div:nth-child(4) { margin-left: 22%; opacity: .5; }
+  /* oversized rows — the elders' app is all big touch targets */
+  .mk-big { display: grid; gap: 9px; }
+  .mk-big .clock { height: 27px; border-radius: 6px; background: color-mix(in srgb, var(--c) 24%, var(--tint)); }
+  .mk-big .r { display: flex; align-items: center; gap: 9px; }
+  .mk-big .r b { width: 21px; height: 21px; border-radius: 6px; background: var(--tint); border: 2px solid var(--line); flex: none; }
+  .mk-big .r.on b { background: var(--c); border-color: var(--c); }
+  /* budget progress */
+  .mk-pg { display: grid; gap: 9px; }
+  .mk-pg .bar { height: 8px; border-radius: 5px; background: var(--tint); overflow: hidden; }
+  .mk-pg .bar i { display: block; height: 100%; border-radius: 5px; background: var(--c); }
+  .mk-pg .bar.over i { background: var(--accent); }
+  /* donut + legend */
+  .mk-dn { display: flex; align-items: center; gap: 13px; }
+  .mk-dn .d {
+    width: 62px; height: 62px; border-radius: 50%; flex: none;
+    background: conic-gradient(var(--c) 0 42%, color-mix(in srgb, var(--c) 42%, var(--tint)) 42% 66%, var(--accent) 66% 84%, var(--line) 84% 100%);
+    -webkit-mask: radial-gradient(circle, transparent 54%, #000 56%);
+    mask: radial-gradient(circle, transparent 54%, #000 56%);
+  }
+  .mk-dn .lg { display: grid; gap: 6px; flex: 1; }
+  /* a sheet of paper inside the window, for the invoice */
+  .mk-doc { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px; display: grid; gap: 6px; }
+  .mk-doc .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .mk-doc .tr { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+  /* spreadsheet rows */
+  .mk-tb { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
+  .mk-tb .tr { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 7px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  .mk-tb .tr:last-child { border-bottom: none; }
+  .mk-tb .tr.h { background: var(--tint); }
+  /* a route on a map */
+  .mk-map { position: relative; height: 46px; border-radius: 6px; background: var(--tint); overflow: hidden; }
+  .mk-map i { position: absolute; background: var(--c); }
+  .mk-map .r1 { width: 40%; height: 3px; border-radius: 2px; left: 8%; top: 30px; transform: rotate(-16deg); }
+  .mk-map .r2 { width: 36%; height: 3px; border-radius: 2px; left: 40%; top: 18px; transform: rotate(12deg); }
+  .mk-map .p1 { width: 9px; height: 9px; border-radius: 50%; left: 5%; top: 30px; }
+  .mk-map .p2 { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); right: 6%; top: 12px; }
+  /* connector arrow between sticky notes */
+  .mk-notes .ar { width: 32px; height: 2px; background: var(--muted); opacity: .45; left: 30%; top: 22px; border-radius: 0; }
 
   /* ---------------- proof strip ---------------- */
   .proof { padding: 34px 0; border-bottom: 1px solid var(--line); background: var(--paper); }
@@ -263,7 +309,7 @@
   .card-top .mk { border-radius: 10px 10px 0 0; border-bottom: none; }
   /* One height for every card mockup, so rows line up regardless of which
      mockup a card uses — a chat bubble list is naturally shorter than a chart. */
-  .card-top .mk-b { min-height: 108px; align-content: start; }
+  .card-top .mk-b { height: 116px; overflow: hidden; align-content: start; }
   .card-b { padding: 15px 16px 17px; display: flex; flex-direction: column; flex: 1; }
   .card-h { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
   .card-h .ico { font-size: 1.3rem; line-height: 1; }
@@ -507,7 +553,7 @@ const CATS = [
 ];
 
 const PRODUCTS = [
-  { emoji: '🧾', name: 'Billing & Stock (GST POS)', file: 'billing-pos.html', cat: 'business', mock: 'bill', c: '#0e7c6b', flag: 'New',
+  { emoji: '🧾', name: 'Billing & Stock (GST POS)', file: 'billing-pos.html', cat: 'business', mock: 'pos', c: '#0e7c6b', flag: 'New',
     pitch: 'GST billing and stock for a small shop — scan, bill, print a thermal receipt, and the stock looks after itself. No internet, no subscription.',
     points: ['Barcode scanning works with no setup', 'CGST/SGST or IGST worked out for you, HSN-wise', '58mm & 80mm receipts plus A4 tax invoices', 'Tamil product names on screen and on the bill', 'Stock ledger, low-stock alerts & one-tap backup'],
     demo: '<b>Demo:</b> try it with the built-in sample shop. <b>Full version:</b> set up with your products, GSTIN and printer.' },
@@ -515,15 +561,15 @@ const PRODUCTS = [
     pitch: 'Make one-of-a-kind generative art in your browser — flow fields, orbits, packing and waves. Every piece is unique.',
     points: ['Four animated styles + curated palettes', 'Seeds make each artwork reproducible', 'Tune density, detail & motion live', 'Export high-res PNG for wallpapers & prints'],
     demo: '<b>Demo:</b> exports are 1280px with a small credit. <b>Full version:</b> 4K, watermark-free.' },
-  { emoji: '📅', name: 'Appointment Scheduler', file: 'appointment-scheduler.html', cat: 'business', mock: 'agenda', c: '#2563c9',
+  { emoji: '📅', name: 'Appointment Scheduler', file: 'appointment-scheduler.html', cat: 'business', mock: 'timeline', c: '#2563c9',
     pitch: 'A simple appointment book for clinics, salons, tutors and consultants — with WhatsApp confirmations.',
     points: ['Day & week views of your bookings', 'Services with durations & prices', 'One-tap WhatsApp confirmations & reminders', 'Daily totals, no-show tracking, works offline'],
     demo: '<b>Demo:</b> up to 3 services & 20 appointments. <b>Full version:</b> unlimited, branded for your business.' },
-  { emoji: '🌅', name: 'Daily Companion', file: 'daily-companion.html', cat: 'family', mock: 'checklist', c: '#e0842a',
+  { emoji: '🌅', name: 'Daily Companion', file: 'daily-companion.html', cat: 'family', mock: 'big', c: '#e0842a',
     pitch: 'A simple, big-text home screen for elders — the day, medicines, family and help, all on one page.',
     points: ['Big clock, date & weather at a glance', "Today's medicines & tasks with one-tap ticking", 'One-tap WhatsApp or phone call to family', 'Large red SOS button + adjustable text size'],
     demo: '<b>Demo:</b> up to 4 medicines & 3 family contacts. <b>Full version:</b> unlimited, set up for your parents.' },
-  { emoji: '🎉', name: 'Festival & Function Planner', file: 'festival-planner.html', cat: 'family', mock: 'checklist', c: '#d1467f',
+  { emoji: '🎉', name: 'Festival & Function Planner', file: 'festival-planner.html', cat: 'family', mock: 'budget', c: '#d1467f',
     pitch: 'Plan any wedding, pooja or function end-to-end — guests, gifts, budget and tasks, all in one place.',
     points: ['Guest list with one-tap WhatsApp invites', '“Who gifted what” ledger with thank-you tracking', 'Budget by category + tasks & shopping list', 'Works offline — everything stays on your phone'],
     demo: '<b>Demo:</b> 1 function, up to 15 guests. <b>Full version:</b> unlimited functions & guests, branded & set up for you.' },
@@ -531,11 +577,11 @@ const PRODUCTS = [
     pitch: 'Build your own online shop and take orders on WhatsApp — no Shopify, no monthly fees, no code.',
     points: ['Photo galleries, variants & stock counts', 'Discount codes, delivery charges & free-delivery limit', 'Cart, wishlist & WhatsApp / UPI checkout', 'Export a storefront you host anywhere'],
     demo: '<b>Demo:</b> up to 6 products, exported shop carries a small credit. <b>Full version:</b> unlimited, branded & set up for you.' },
-  { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html', cat: 'business', mock: 'bill', c: '#4f46e5',
+  { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html', cat: 'business', mock: 'doc', c: '#4f46e5',
     pitch: 'Professional invoices with live totals, GST and print-ready PDF output.',
     points: ['Auto numbering & paid/sent tracking', 'Tax, discounts & amount-in-words', 'Clean print / save-as-PDF'],
     demo: '<b>Demo:</b> up to 3 invoices, printed output watermarked. <b>Full version:</b> unlimited & clean.' },
-  { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html', cat: 'business', mock: 'chart', c: '#0d7ea0',
+  { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html', cat: 'business', mock: 'table', c: '#0d7ea0',
     pitch: 'Drop in any CSV and explore it — sort, filter, summarise and chart instantly.',
     points: ['Auto-detects numbers, dates & text', 'Group by summaries with charts', 'Export filtered data & charts'],
     demo: '<b>Demo:</b> reads the first 200 rows of a file. <b>Full version:</b> no row limit.' },
@@ -547,11 +593,11 @@ const PRODUCTS = [
     pitch: 'An infinite canvas for ideas — sticky notes, shapes, arrows and sketches.',
     points: ['Pan & zoom infinite canvas', 'Connect ideas with live arrows', 'Multiple boards, PNG export'],
     demo: '<b>Demo:</b> up to 2 boards, exported images watermarked. <b>Full version:</b> unlimited & clean.' },
-  { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html', cat: 'family', mock: 'chart', c: '#15803d',
+  { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html', cat: 'family', mock: 'donut', c: '#15803d',
     pitch: 'Track income, expenses, budgets and savings goals with clear charts.',
     points: ['Monthly budgets with warnings', 'Spending charts & trends', 'CSV / JSON export & backup'],
     demo: '<b>Demo:</b> up to 40 transactions. <b>Full version:</b> unlimited.' },
-  { emoji: '🚦', name: 'TN Travel Assistant', file: 'travel-assistant.html', cat: 'family', mock: 'chat', c: '#b8730a',
+  { emoji: '🚦', name: 'TN Travel Assistant', file: 'travel-assistant.html', cat: 'family', mock: 'route', c: '#b8730a',
     pitch: 'Your Tamil Nadu & Pondicherry travel companion — ask about traffic in plain English and get live drive times, weather and nearby help.',
     points: ['Live traffic, arrival times & route map in chat', '“Leave by” planner — reach anywhere on time', 'Save frequent trips for one-tap checks', 'Weather en route + nearby petrol/food/hospitals'],
     demo: '<b>Demo:</b> weather is unlimited; live traffic needs your free TomTom key and is capped at 5 checks/day. <b>Full version:</b> unlimited, branded & set up for you.' },
@@ -570,12 +616,14 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<'
    loads over the network, and none of it can go stale like a screenshot.
 ===================================================================== */
 const MOCKS = {
-  bill: `<div class="mk-h"><i class="ln dark" style="width:34%"></i></div>
+  /* Billing & Stock — a till: scanned lines, a total, and a pay button */
+  pos: `<div class="mk-row"><i class="ln dark" style="width:30%"></i><i class="ln" style="width:20%"></i></div>
     <div class="mk-row"><i class="ln" style="width:44%"></i><i class="ln" style="width:15%"></i></div>
     <div class="mk-row"><i class="ln" style="width:54%"></i><i class="ln" style="width:12%"></i></div>
     <div class="mk-row"><i class="ln" style="width:38%"></i><i class="ln" style="width:17%"></i></div>
     <div class="mk-rule"></div>
-    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln c" style="width:22%"></i></div>`,
+    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln dark" style="width:22%"></i></div>
+    <i class="mk-chip" style="width:100%; margin-top:3px"></i>`,
   /* A fuller bill for the spotlight, where the window is rendered large and
      the short version left the panel looking empty. */
   spotbill: `<div class="mk-row"><i class="ln dark" style="width:30%"></i><i class="ln" style="width:18%"></i></div>
@@ -594,34 +642,69 @@ const MOCKS = {
   chart: `<div class="mk-h"><i class="ln dark" style="width:28%"></i></div>
     <div class="mk-bars"><i style="height:34%"></i><i style="height:62%"></i><i style="height:46%"></i><i style="height:88%"></i><i style="height:56%"></i><i style="height:72%"></i></div>
     <div class="mk-row"><i class="ln" style="width:22%"></i><i class="ln" style="width:30%"></i></div>`,
-  agenda: `<div class="mk-h"><i class="ln dark" style="width:32%"></i></div>
-    <div class="mk-ag"><span></span><i class="ln" style="width:56%"></i></div>
-    <div class="mk-ag"><span></span><i class="ln" style="width:44%"></i></div>
-    <div class="mk-ag"><span></span><i class="ln" style="width:62%"></i></div>
-    <div class="mk-ag"><span></span><i class="ln" style="width:38%"></i></div>`,
-  checklist: `<div class="mk-h"><i class="ln dark" style="width:30%"></i></div>
-    <div class="mk-ck on"><b>✓</b><i class="ln" style="width:56%"></i></div>
-    <div class="mk-ck on"><b>✓</b><i class="ln" style="width:44%"></i></div>
-    <div class="mk-ck"><b>✓</b><i class="ln" style="width:62%"></i></div>
-    <div class="mk-ck"><b>✓</b><i class="ln" style="width:48%"></i></div>`,
+  /* Appointment Scheduler — a day rail with bookings at their own times */
+  timeline: `<div class="mk-h"><i class="ln dark" style="width:32%"></i></div>
+    <div class="mk-tl"><div></div><div></div><div></div><div></div></div>`,
+  /* Daily Companion — a big clock and oversized tick rows */
+  big: `<div class="mk-big">
+      <div class="clock"></div>
+      <div class="r on"><b></b><i class="ln" style="width:54%"></i></div>
+      <div class="r on"><b></b><i class="ln" style="width:42%"></i></div>
+      <div class="r"><b></b><i class="ln" style="width:60%"></i></div>
+    </div>`,
+  /* Festival Planner — budget categories against their limits */
+  budget: `<div class="mk-h"><i class="ln dark" style="width:34%"></i></div>
+    <div class="mk-pg">
+      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:30%"></i><i class="ln" style="width:14%"></i></div><div class="bar"><i style="width:72%"></i></div></div>
+      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:38%"></i><i class="ln" style="width:12%"></i></div><div class="bar"><i style="width:45%"></i></div></div>
+      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:26%"></i><i class="ln" style="width:16%"></i></div><div class="bar over"><i style="width:96%"></i></div></div>
+    </div>`,
+  /* Store Builder — a product grid with prices and a cart total */
   tiles: `<div class="mk-tiles"><i></i><i></i><i></i><i></i></div>
-    <div class="mk-row"><i class="ln" style="width:40%"></i><i class="ln c" style="width:18%"></i></div>`,
+    <div class="mk-row" style="margin-top:2px"><i class="ln" style="width:40%"></i><i class="ln" style="width:16%"></i></div>
+    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln c" style="width:22%"></i></div>`,
+  /* Invoice Generator — an actual sheet of paper, not a till receipt */
+  doc: `<div class="mk-doc">
+      <div class="hd"><div style="display:grid;gap:4px;flex:1"><i class="ln dark" style="width:56%"></i><i class="ln" style="width:38%"></i></div><i class="ln c" style="width:24%"></i></div>
+      <div class="tr"><i class="ln" style="width:44%"></i><i class="ln" style="width:20%"></i></div>
+      <div class="tr"><i class="ln" style="width:52%"></i><i class="ln" style="width:16%"></i></div>
+      <div class="tr"><i class="ln" style="width:36%"></i><i class="ln" style="width:22%"></i></div>
+      <div class="mk-row"><i class="ln" style="width:22%"></i><i class="ln dark" style="width:26%"></i></div>
+    </div>`,
+  /* Data Analyzer — a table, then the chart it summarises into */
+  table: `<div class="mk-tb">
+      <div class="tr h"><i class="ln dark"></i><i class="ln dark"></i><i class="ln dark"></i></div>
+      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
+      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
+      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
+    </div>
+    <div class="mk-bars" style="height:34px"><i style="height:44%"></i><i style="height:76%"></i><i style="height:54%"></i><i style="height:94%"></i><i style="height:64%"></i></div>`,
+  /* Finance Tracker — spending split as a donut with a legend */
+  donut: `<div class="mk-dn">
+      <div class="d"></div>
+      <div class="lg"><i class="ln c" style="width:70%"></i><i class="ln" style="width:56%"></i><i class="ln" style="width:44%"></i><i class="ln" style="width:34%"></i></div>
+    </div>`,
+  /* Travel Assistant — a route on a map, then the chat about it */
+  route: `<div class="mk-map"><i class="r1"></i><i class="r2"></i><i class="p1"></i><i class="p2"></i></div>
+    <div class="mk-chat" style="margin-top:2px"><i class="you" style="width:60%"></i><i class="me short"></i></div>`,
   page: `<div class="mk-hero"></div>
     <div class="mk-cols"><i></i><i></i><i></i></div>
     <div class="mk-row"><i class="ln" style="width:30%"></i><i class="ln" style="width:16%"></i></div>`,
-  notes: `<div class="mk-notes"><i class="n1"></i><i class="n2"></i><i class="n3"></i></div>
-    <div class="mk-row"><i class="ln" style="width:34%"></i></div>`,
+  /* Whiteboard — sticky notes joined by a connector */
+  notes: `<div class="mk-notes"><i class="n1"></i><i class="ar"></i><i class="n2"></i><i class="n3"></i></div>
+    <div class="mk-row"><i class="ln" style="width:34%"></i><i class="ln" style="width:18%"></i></div>`,
   art: `<div class="mk-art"><i></i><i></i><i></i></div>
     <div class="mk-row"><i class="ln" style="width:26%"></i><i class="ln c" style="width:20%"></i></div>`,
   chat: `<div class="mk-chat"><i class="you"></i><i class="me"></i><i class="you" style="width:64%"></i><i class="me short"></i><i class="you" style="width:50%"></i></div>`,
-  cal: `<div class="mk-h"><i class="ln dark" style="width:26%"></i></div>
-    <div class="mk-cal">${Array.from({ length: 21 }, (_, i) =>
+  /* Dates & Gifts — a month with the next occasion marked, plus a countdown */
+  cal: `<div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="mk-chip" style="width:30%"></i></div>
+    <div class="mk-cal">${Array.from({ length: 14 }, (_, i) =>
       `<i class="${i === 9 ? 'on' : (i === 4 || i === 16 ? 'soft' : '')}"></i>`).join('')}</div>`
 };
 function mk(type, c, extraClass) {
   return `<div class="mk ${extraClass || ''}" style="--c:${c}">
     <div class="mk-bar"><i></i><i></i><i></i></div>
-    <div class="mk-b">${MOCKS[type] || MOCKS.bill}</div>
+    <div class="mk-b">${MOCKS[type] || MOCKS.pos}</div>
   </div>`;
 }
 
@@ -634,7 +717,7 @@ $('#statApps').textContent = nApps;   /* derived, so it cannot go stale again */
 
 /* hero — three overlapping windows */
 $('#heroStack').innerHTML = [
-  mk('chart', '#0d7ea0'), mk('agenda', '#2563c9'), mk('bill', '#0e7c6b')
+  mk('table', '#0d7ea0'), mk('timeline', '#2563c9'), mk('pos', '#0e7c6b')
 ].join('');
 
 /* spotlight — the flagship gets a section of its own */
