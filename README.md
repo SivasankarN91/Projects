@@ -237,6 +237,7 @@ A counter-side GST billing and stock app for small Indian shops — scan, bill, 
 
 **Limits, stated plainly**
 
+- **The hosted version is a demo** — it stops at 25 products and 30 bills, and printed bills carry a small "Demo version" line. The full version removes all three
 - **One device, one counter.** The data lives in this browser and cannot be shared between two machines
 - **e-Invoice and e-Way bills are not included.** Both apply above the turnover threshold and need a live connection to the government portal; this is built for shops below it
 - **GST rates are editable on purpose** and are not treated as fixed — slabs change, so check the current ones against CBIC guidance

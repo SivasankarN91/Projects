@@ -337,7 +337,8 @@
 
       <h3 class="sec">Limits worth knowing</h3>
       <div class="card sm muted">
-        <p><b>One device, one counter.</b> Data lives in this browser and cannot be shared between two machines. Use one device for billing.</p>
+        <p><b>This is the demo.</b> It stops at 25 products and 30 bills, and every printed bill carries a small “Demo version” line. The full version removes all three and is set up with your products, GSTIN and printer — enquire on the homepage.</p>
+        <p style="margin-top:6px"><b>One device, one counter.</b> Data lives in this browser and cannot be shared between two machines. Use one device for billing.</p>
         <p style="margin-top:6px"><b>e-Invoice and e-Way bills are not included.</b> Those apply above the turnover threshold and need a live connection to the government portal. This app is built for shops below that threshold.</p>
         <p style="margin-top:6px"><b>Best served from a folder or web address</b> rather than opened straight from a downloaded file — browsers treat file-opened pages inconsistently for storage.</p>
         <p style="margin-top:6px"><a href="?selftest=1" style="color:var(--accent)">Run the built-in calculation self-test →</a></p>
@@ -448,6 +449,15 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* Demo caps. Deliberately generous enough to bill real customers for a day
+   or two — a shopkeeper who never reaches the end of the flow never learns
+   whether it works. Both are plain constants, as in the other apps: this is
+   a nudge to enquire, not a security boundary. */
+const DEMO_MAX_PRODUCTS = 25;
+const DEMO_MAX_BILLS = 30;
+let billCount = 0;                       /* set at boot from the bills store */
+const demoMsg = (what, n) => `Demo limit: ${n} ${what}. The full version is unlimited — enquire on the homepage.`;
 
 /* =====================================================================
    Money — integer paise everywhere. Floats only at the display edge.
@@ -896,6 +906,7 @@ async function nextBillNo(now) {
 async function saveCurrentBill() {
   const t = Bill.totals();
   if (!Bill.lines.length) return;
+  if (billCount >= DEMO_MAX_BILLS) { toast(demoMsg('bills', DEMO_MAX_BILLS)); return; }
   const now = new Date();
   const { no, seq, fyLabel } = await nextBillNo(now);
   const billId = uid();
@@ -922,6 +933,7 @@ async function saveCurrentBill() {
   }));
 
   await DB.saveBill(bill, lines, moves);
+  billCount++;
   moves.forEach(m => Catalog.stock.set(m.productId, (Catalog.stock.get(m.productId) || 0) + m.qm));
 
   S.billsSinceBackup = (S.billsSinceBackup || 0) + 1;
@@ -1013,6 +1025,7 @@ const Print = {
       <div style="font-size:0.9em">${esc(rupeesInWords(b.totalPaise))}</div>
       ${b.composition ? `<div class="hr"></div><div class="c" style="font-size:0.85em">Composition taxable person — not eligible to collect tax on supplies</div>` : ''}
       <div class="hr"></div>
+      <div class="c" style="font-size:0.85em">Demo version</div>
       <div class="c">Thank you · நன்றி</div>
     </div>`;
   },
@@ -1071,6 +1084,7 @@ const Print = {
             ${b.interState ? '<th class="r">IGST</th>' : '<th class="r">CGST</th><th class="r">SGST</th>'}</tr></thead>
             <tbody>${hsnRows}</tbody></table>
           <div style="font-size:10pt; margin-top:6px"><b>In words:</b> ${esc(rupeesInWords(b.totalPaise))}</div>
+          <div style="font-size:8.5pt; margin-top:6px; color:#666">Demo version</div>
           ${b.composition ? '<div style="font-size:9.5pt; margin-top:6px"><i>Composition taxable person, not eligible to collect tax on supplies.</i></div>' : ''}
         </td>
         <td style="vertical-align:top">
@@ -1200,6 +1214,7 @@ function openProduct(p) {
   setTimeout(() => $('#pName').focus(), 40);
 }
 async function saveProduct() {
+  if (!editingProduct && Catalog.all.length >= DEMO_MAX_PRODUCTS) { toast(demoMsg('products', DEMO_MAX_PRODUCTS)); return; }
   const name = $('#pName').value.trim();
   if (!name) { toast('Product needs a name'); return; }
   const sell = P.parse($('#pSell').value);
@@ -1283,9 +1298,11 @@ async function runImport() {
   const res = parseImport($('#impText').value);
   if (res.error) { toast(res.error); return; }
   if (!res.items.length) { toast('Nothing to import'); return; }
-  let added = 0, updated = 0;
+  let added = 0, updated = 0, blocked = 0;
   for (const it of res.items) {
     const existing = it.barcode ? Catalog.byBarcode(it.barcode) : Catalog.all.find(p => p.name.toLowerCase() === it.name.toLowerCase());
+    /* Updating a product a shop already has does not count against the cap. */
+    if (!existing && Catalog.all.length + added >= DEMO_MAX_PRODUCTS) { blocked++; continue; }
     const p = existing ? Object.assign({}, existing) : { id: uid(), createdAt: new Date().toISOString() };
     Object.assign(p, {
       name: it.name, nameTa: it.nameTa, barcode: it.barcode, hsn: it.hsn, unit: it.unit,
@@ -1306,7 +1323,8 @@ async function runImport() {
   await Catalog.load();
   $('#importModal').classList.remove('show');
   renderProducts();
-  toast(`Imported — ${added} added, ${updated} updated${res.skipped.length ? ', ' + res.skipped.length + ' skipped' : ''}`);
+  toast(`Imported — ${added} added, ${updated} updated${res.skipped.length ? ', ' + res.skipped.length + ' skipped' : ''}`
+    + (blocked ? ` · ${blocked} left out, ${demoMsg('products', DEMO_MAX_PRODUCTS)}` : ''));
 }
 
 /* ---- sales ---- */
@@ -1444,6 +1462,7 @@ async function seedSample() {
   if (Catalog.all.length && !confirm('Add 12 sample products to your catalogue?')) return;
   for (const [name, nameTa, barcode, hsn, unit, gst, buy, sell, mrp, stock] of SAMPLE) {
     if (Catalog.byBarcode(barcode)) continue;
+    if (Catalog.all.length >= DEMO_MAX_PRODUCTS) { toast(demoMsg('products', DEMO_MAX_PRODUCTS)); break; }
     const p = {
       id: uid(), createdAt: new Date().toISOString(), name, nameTa, barcode, hsn, unit,
       gstRate: gst, purchasePaise: P.parse(buy), pricePaise: P.parse(sell), mrpPaise: P.parse(mrp),
@@ -1499,6 +1518,7 @@ function commitScan() {
 ===================================================================== */
 function openPay() {
   if (!Bill.lines.length) return;
+  if (billCount >= DEMO_MAX_BILLS) { toast(demoMsg('bills', DEMO_MAX_BILLS)); return; }
   const t = Bill.totals();
   Bill.payments = [];
   $('#payDue').textContent = P.rs(t.total);
@@ -1954,6 +1974,7 @@ function runSelfTest() {
   }
   await loadSettings();
   await Catalog.load();
+  billCount = (await DB.all('bills')).length;
   fillStates();
   bindTabs(); bindModals(); bindBilling(); bindProducts(); bindSales(); bindSettings(); bindKeys();
   const today = new Date().toISOString().slice(0, 10);
