@@ -132,120 +132,92 @@
   /* stacked app windows */
   /* A tight diagonal cascade — each window should overlap its neighbour,
      otherwise the third one reads as a stray box rather than a stack. */
-  .stack { position: relative; height: 330px; }
-  /* `width: 100%` is load-bearing: auto margins turn off a grid item's
-     stretch, and every window inside is absolutely positioned, so without an
-     explicit width the stack collapses to 0 and the windows become slivers. */
-  @media (max-width: 940px) { .stack { height: 300px; width: 100%; max-width: 440px; margin-inline: auto; } }
-  .stack .mk { position: absolute; box-shadow: var(--shadow-l); }
-  .stack .mk:nth-child(1) { width: 62%; left: 0;    top: 0;    animation: float 7s ease-in-out infinite; }
-  .stack .mk:nth-child(2) { width: 56%; right: 0;   top: 62px; animation: float 8s ease-in-out .6s infinite; z-index: 2; }
-  .stack .mk:nth-child(3) { width: 60%; left: 12%;  top: 148px; animation: float 9s ease-in-out 1.1s infinite; z-index: 3; }
+  /* A fanned cluster of covers — it says "many apps" at a glance, which a
+     single window never did. `width: 100%` is load-bearing on mobile: auto
+     margins turn off a grid item's stretch, and the tiles inside are
+     absolutely positioned, so without it the stack collapses to 0 wide. */
+  .stack { position: relative; height: 342px; }
+  @media (max-width: 940px) { .stack { height: 300px; width: 100%; max-width: 460px; margin-inline: auto; } }
+  .stack .tile {
+    position: absolute; box-shadow: var(--shadow-l); border-radius: 18px;
+    width: 35%; aspect-ratio: 1 / 0.84;
+  }
+  .stack .tile .glyph { font-size: clamp(1.9rem, 4vw, 2.5rem); }
+  /* A staggered mosaic. The earlier fan overlapped so hard that the sixth
+     tile was a sliver of colour behind the fifth. */
+  .stack .tile:nth-child(1) { left: 0;    top: 2%;   animation: float 7.0s ease-in-out      infinite; }
+  .stack .tile:nth-child(2) { left: 33%;  top: 0;    animation: float 8.2s ease-in-out .5s  infinite; z-index: 3; }
+  .stack .tile:nth-child(3) { right: 0;   top: 6%;   animation: float 7.6s ease-in-out .9s  infinite; }
+  .stack .tile:nth-child(4) { left: 5%;   bottom: 0; animation: float 8.8s ease-in-out 1.3s infinite; z-index: 2; }
+  .stack .tile:nth-child(5) { left: 37%;  bottom: 4%; animation: float 7.3s ease-in-out .2s infinite; z-index: 4; }
+  .stack .tile:nth-child(6) { right: 3%;  bottom: 1%; animation: float 9.2s ease-in-out 1.7s infinite; z-index: 2; }
   @keyframes float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-13px) } }
 
-  /* ---------------- CSS app mockups (no images anywhere) ---------------- */
-  .mk {
-    background: var(--paper); border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
-    --c: var(--primary);
+  /* ---------------- app cover art ----------------
+     Vivid gradient panels rather than wireframe skeletons: placeholder bars
+     and grids read as a page still loading, which is the opposite of
+     inviting. Each app gets its own gradient plus a decorative pattern, so
+     no two covers look alike. Still pure CSS — no image files. */
+  .cover {
+    position: relative; overflow: hidden; border-radius: 12px;
+    background: linear-gradient(135deg, var(--g1), var(--g2));
+    display: grid; place-items: center; isolation: isolate;
   }
-  .mk-bar { display: flex; gap: 5px; align-items: center; padding: 8px 10px; background: var(--tint); border-bottom: 1px solid var(--line); }
-  .mk-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
-  .mk-bar i:first-child { background: var(--c); }
-  .mk-b { padding: 12px; display: grid; gap: 7px; }
-  .ln { display: block; height: 7px; border-radius: 4px; background: var(--line); }
-  .ln.dark { background: color-mix(in srgb, var(--text) 55%, transparent); }
-  .ln.c { background: var(--c); }
-  .mk-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .mk-rule { height: 1px; background: var(--line); margin: 2px 0; }
-  .mk-h { margin-bottom: 3px; }
-  /* bars */
-  .mk-bars { display: flex; align-items: flex-end; gap: 5px; height: 74px; }
-  .mk-bars i { flex: 1; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--c) 40%, var(--line)); }
-  .mk-bars i:nth-child(2n) { background: var(--c); }
-  /* agenda */
-  .mk-ag { display: flex; align-items: center; gap: 8px; }
-  .mk-ag span { width: 26px; height: 16px; border-radius: 4px; background: color-mix(in srgb, var(--c) 22%, transparent); border-left: 3px solid var(--c); flex: none; }
-  /* checklist */
-  .mk-ck { display: flex; align-items: center; gap: 8px; }
-  .mk-ck b { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); flex: none; font-size: 9px; line-height: 12px; text-align: center; color: transparent; }
-  .mk-ck.on b { background: var(--c); border-color: var(--c); color: #fff; }
-  /* tiles */
-  .mk-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .mk-tiles i { aspect-ratio: 1; border-radius: 6px; background: color-mix(in srgb, var(--c) 22%, var(--tint)); }
-  .mk-tiles i:nth-child(3) { background: var(--c); }
-  /* landing page */
-  .mk-hero { height: 34px; border-radius: 6px; background: linear-gradient(120deg, var(--c), color-mix(in srgb, var(--c) 30%, var(--tint))); }
-  .mk-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .mk-cols i { height: 22px; border-radius: 5px; background: var(--tint); border: 1px solid var(--line); }
-  /* sticky notes */
-  .mk-notes { position: relative; height: 78px; }
-  .mk-notes i { position: absolute; width: 34px; height: 30px; border-radius: 4px; }
-  .mk-notes .n1 { left: 2%;  top: 6px;  background: color-mix(in srgb, var(--c) 55%, #fff); transform: rotate(-5deg); }
-  .mk-notes .n2 { left: 34%; top: 26px; background: var(--accent-2); transform: rotate(4deg); }
-  .mk-notes .n3 { left: 66%; top: 2px;  background: color-mix(in srgb, var(--c) 25%, var(--tint)); transform: rotate(-2deg); }
-  /* generative art */
-  .mk-art { position: relative; height: 78px; border-radius: 8px; overflow: hidden; background: var(--ink-2); }
-  .mk-art i { position: absolute; border-radius: 50%; mix-blend-mode: screen; }
-  .mk-art i:nth-child(1) { width: 54px; height: 54px; left: 8%;  top: 8px;  background: #7c5cff; }
-  .mk-art i:nth-child(2) { width: 46px; height: 46px; left: 34%; top: 22px; background: #ff5c8a; }
-  .mk-art i:nth-child(3) { width: 50px; height: 50px; left: 58%; top: 6px;  background: var(--accent); }
-  /* chat */
-  .mk-chat { display: grid; gap: 6px; }
-  .mk-chat i { height: 15px; border-radius: 8px; }
-  .mk-chat .you { width: 58%; background: var(--tint); border: 1px solid var(--line); }
-  .mk-chat .me { width: 46%; margin-left: auto; background: var(--c); }
-  .mk-chat .me.short { width: 32%; }
-  /* calendar */
-  .mk-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .mk-cal i { aspect-ratio: 1; border-radius: 3px; background: var(--tint); }
-  .mk-cal i.on { background: var(--c); }
-  .mk-cal i.soft { background: color-mix(in srgb, var(--c) 30%, var(--tint)); }
-  .mk-chip { display: block; height: 13px; border-radius: 7px; background: var(--c); }
-  /* day timeline — appointments sit at their own offsets against a rail */
-  .mk-tl { position: relative; padding-left: 24px; display: grid; gap: 6px; }
-  .mk-tl::before { content: ''; position: absolute; left: 11px; top: 3px; bottom: 3px; width: 1px; background: var(--line); }
-  .mk-tl div { height: 15px; border-radius: 4px; background: color-mix(in srgb, var(--c) 18%, transparent); border-left: 3px solid var(--c); }
-  .mk-tl div:nth-child(2) { margin-left: 16%; opacity: .82; }
-  .mk-tl div:nth-child(3) { margin-left: 7%; opacity: .64; }
-  .mk-tl div:nth-child(4) { margin-left: 22%; opacity: .5; }
-  /* oversized rows — the elders' app is all big touch targets */
-  .mk-big { display: grid; gap: 9px; }
-  .mk-big .clock { height: 27px; border-radius: 6px; background: color-mix(in srgb, var(--c) 24%, var(--tint)); }
-  .mk-big .r { display: flex; align-items: center; gap: 9px; }
-  .mk-big .r b { width: 21px; height: 21px; border-radius: 6px; background: var(--tint); border: 2px solid var(--line); flex: none; }
-  .mk-big .r.on b { background: var(--c); border-color: var(--c); }
-  /* budget progress */
-  .mk-pg { display: grid; gap: 9px; }
-  .mk-pg .bar { height: 8px; border-radius: 5px; background: var(--tint); overflow: hidden; }
-  .mk-pg .bar i { display: block; height: 100%; border-radius: 5px; background: var(--c); }
-  .mk-pg .bar.over i { background: var(--accent); }
-  /* donut + legend */
-  .mk-dn { display: flex; align-items: center; gap: 13px; }
-  .mk-dn .d {
-    width: 62px; height: 62px; border-radius: 50%; flex: none;
-    background: conic-gradient(var(--c) 0 42%, color-mix(in srgb, var(--c) 42%, var(--tint)) 42% 66%, var(--accent) 66% 84%, var(--line) 84% 100%);
-    -webkit-mask: radial-gradient(circle, transparent 54%, #000 56%);
-    mask: radial-gradient(circle, transparent 54%, #000 56%);
+  .cover .glyph {
+    font-size: clamp(2.4rem, 5vw, 3rem); line-height: 1; position: relative; z-index: 3;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,.34));
+    transition: transform .3s ease;
   }
-  .mk-dn .lg { display: grid; gap: 6px; flex: 1; }
-  /* a sheet of paper inside the window, for the invoice */
-  .mk-doc { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 9px; display: grid; gap: 6px; }
-  .mk-doc .hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-  .mk-doc .tr { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
-  /* spreadsheet rows */
-  .mk-tb { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; }
-  .mk-tb .tr { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 7px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
-  .mk-tb .tr:last-child { border-bottom: none; }
-  .mk-tb .tr.h { background: var(--tint); }
-  /* a route on a map */
-  .mk-map { position: relative; height: 46px; border-radius: 6px; background: var(--tint); overflow: hidden; }
-  .mk-map i { position: absolute; background: var(--c); }
-  .mk-map .r1 { width: 40%; height: 3px; border-radius: 2px; left: 8%; top: 30px; transform: rotate(-16deg); }
-  .mk-map .r2 { width: 36%; height: 3px; border-radius: 2px; left: 40%; top: 18px; transform: rotate(12deg); }
-  .mk-map .p1 { width: 9px; height: 9px; border-radius: 50%; left: 5%; top: 30px; }
-  .mk-map .p2 { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); right: 6%; top: 12px; }
-  /* connector arrow between sticky notes */
-  .mk-notes .ar { width: 32px; height: 2px; background: var(--muted); opacity: .45; left: 30%; top: 22px; border-radius: 0; }
+  .card:hover .cover .glyph { transform: scale(1.09) rotate(-4deg); }
+  .cover .d { position: absolute; z-index: 1; pointer-events: none; }
+  /* a soft sheen over every cover, so the gradients read as lit surfaces */
+  .cover::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(120% 80% at 12% 0%, rgba(255,255,255,.32), transparent 58%);
+  }
+  /* rings */
+  .cover.p-rings .d { border-radius: 50%; border: 2px solid rgba(255,255,255,.3); }
+  .cover.p-rings .d:nth-of-type(1) { width: 130px; height: 130px; top: -46px; left: -34px; }
+  .cover.p-rings .d:nth-of-type(2) { width: 92px;  height: 92px;  bottom: -34px; right: -22px; border-color: rgba(255,255,255,.22); }
+  /* bubbles */
+  .cover.p-bubbles .d { border-radius: 50%; background: rgba(255,255,255,.2); }
+  .cover.p-bubbles .d:nth-of-type(1) { width: 74px; height: 74px; top: -22px; right: -16px; }
+  .cover.p-bubbles .d:nth-of-type(2) { width: 44px; height: 44px; bottom: 8px; left: 12px; background: rgba(255,255,255,.15); }
+  .cover.p-bubbles .d:nth-of-type(3) { width: 22px; height: 22px; top: 22px; left: 34%; background: rgba(255,255,255,.26); }
+  /* diagonal bands */
+  .cover.p-diag .d:nth-of-type(1) {
+    inset: -30%; background: repeating-linear-gradient(58deg, rgba(255,255,255,.16) 0 12px, transparent 12px 34px);
+  }
+  /* corner arcs */
+  .cover.p-arc .d { border-radius: 50%; background: rgba(255,255,255,.17); }
+  .cover.p-arc .d:nth-of-type(1) { width: 150px; height: 150px; bottom: -78px; left: -46px; }
+  .cover.p-arc .d:nth-of-type(2) { width: 80px;  height: 80px;  top: -34px;   right: -20px; background: rgba(255,255,255,.13); }
+  /* concentric glow */
+  .cover.p-glow .d:nth-of-type(1) {
+    inset: 0; background: radial-gradient(circle at 78% 82%, rgba(255,255,255,.3), transparent 46%);
+  }
+  .cover.p-glow .d:nth-of-type(2) {
+    width: 116px; height: 116px; border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    background: rgba(255,255,255,.12);
+  }
+  /* soft waves at the base */
+  .cover.p-wave .d { border-radius: 50% 50% 0 0; background: rgba(255,255,255,.18); }
+  .cover.p-wave .d:nth-of-type(1) { width: 150%; height: 66px; bottom: -32px; left: -25%; }
+  .cover.p-wave .d:nth-of-type(2) { width: 110%; height: 46px; bottom: -26px; left: 6%;  background: rgba(255,255,255,.13); }
+  /* scattered dots */
+  .cover.p-dots .d:nth-of-type(1) {
+    inset: 0; background-image: radial-gradient(rgba(255,255,255,.3) 2.2px, transparent 2.6px);
+    background-size: 20px 20px;
+  }
+  /* a tilted square */
+  .cover.p-tilt .d:nth-of-type(1) {
+    width: 118px; height: 118px; border-radius: 22px; border: 2px solid rgba(255,255,255,.26);
+    top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(24deg);
+  }
+  .cover.p-tilt .d:nth-of-type(2) {
+    width: 74px; height: 74px; border-radius: 16px; background: rgba(255,255,255,.14);
+    top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-14deg);
+  }
 
   /* ---------------- proof strip ---------------- */
   .proof { padding: 34px 0; border-bottom: 1px solid var(--line); background: var(--paper); }
@@ -271,8 +243,9 @@
   .spot ul { list-style: none; display: grid; gap: 9px; margin: 20px 0 26px; }
   .spot li { display: flex; gap: 10px; font-size: 0.94rem; }
   .spot li::before { content: '✓'; color: var(--primary); font-weight: 900; flex: none; }
-  .spot .mk { --c: var(--primary); box-shadow: var(--shadow-m); }
-  .spot .mk .mk-b { padding: 16px; gap: 9px; }
+  .spot .spot-cover { min-height: 268px; border-radius: 18px; box-shadow: var(--shadow-m); }
+  .spot .spot-cover .glyph { font-size: clamp(3.4rem, 7vw, 5.2rem); }
+  @media (max-width: 900px) { .spot .spot-cover { min-height: 190px; } }
 
   /* ---------------- filters + grid ---------------- */
   .filters { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 34px; }
@@ -305,14 +278,12 @@
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   }
   .card:hover { transform: translateY(-5px); box-shadow: var(--shadow-m); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); }
-  .card-top { padding: 16px 16px 0; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 9%, transparent), transparent); }
-  .card-top .mk { border-radius: 10px 10px 0 0; border-bottom: none; }
-  /* One height for every card mockup, so rows line up regardless of which
-     mockup a card uses — a chat bubble list is naturally shorter than a chart. */
-  .card-top .mk-b { height: 116px; overflow: hidden; align-content: start; }
+  /* The cover bleeds to the card's top edge — a framed panel inside a
+     framed card was two borders doing one job. */
+  .card-top { padding: 0; }
+  .card-top .cover { height: 132px; border-radius: 0; }
   .card-b { padding: 15px 16px 17px; display: flex; flex-direction: column; flex: 1; }
-  .card-h { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
-  .card-h .ico { font-size: 1.3rem; line-height: 1; }
+  .card-h { margin-bottom: 7px; }
   .card .pitch { font-size: 0.9rem; color: var(--muted); }
   .card ul { list-style: none; display: grid; gap: 5px; margin: 12px 0; font-size: 0.855rem; }
   .card li { display: flex; gap: 8px; }
@@ -333,10 +304,8 @@
     .grid { gap: 14px; }
     .grid.collapse .card.more { display: none; }
     .grid.collapse .more-btn { display: block; }
-    .card-top { padding: 12px 12px 0; }
+    .card-top .cover { height: 116px; }
     .card-b { padding: 13px 14px 15px; }
-    .mk-b { padding: 10px; gap: 5px; }
-    .mk-bars { height: 56px; }
     .card .pitch { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .card ul { margin: 10px 0; gap: 4px; }
     .limit { padding: 7px 9px; }
@@ -398,7 +367,7 @@
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     html.anim .reveal { opacity: 1; transform: none; transition: none; }
-    .stack .mk { animation: none !important; }
+    .stack .tile { animation: none !important; }
     .btn, .card { transition: none; }
   }
 </style>
@@ -553,55 +522,55 @@ const CATS = [
 ];
 
 const PRODUCTS = [
-  { emoji: '🧾', name: 'Billing & Stock (GST POS)', file: 'billing-pos.html', cat: 'business', mock: 'pos', c: '#0e7c6b', flag: 'New',
+  { emoji: '🧾', name: 'Billing & Stock (GST POS)', file: 'billing-pos.html', cat: 'business', g1: '#14b8a6', g2: '#0f766e', pat: 'p-rings', c: '#0e7c6b', flag: 'New',
     pitch: 'GST billing and stock for a small shop — scan, bill, print a thermal receipt, and the stock looks after itself. No internet, no subscription.',
     points: ['Barcode scanning works with no setup', 'CGST/SGST or IGST worked out for you, HSN-wise', '58mm & 80mm receipts plus A4 tax invoices', 'Tamil product names on screen and on the bill', 'Stock ledger, low-stock alerts & one-tap backup'],
     demo: '<b>Demo:</b> try it with the built-in sample shop. <b>Full version:</b> set up with your products, GSTIN and printer.' },
-  { emoji: '🎨', name: 'Generative Art Studio', file: 'art-studio.html', cat: 'create', mock: 'art', c: '#7c5cff',
+  { emoji: '🎨', name: 'Generative Art Studio', file: 'art-studio.html', cat: 'create', g1: '#8b5cf6', g2: '#ec4899', pat: 'p-arc', c: '#7c5cff',
     pitch: 'Make one-of-a-kind generative art in your browser — flow fields, orbits, packing and waves. Every piece is unique.',
     points: ['Four animated styles + curated palettes', 'Seeds make each artwork reproducible', 'Tune density, detail & motion live', 'Export high-res PNG for wallpapers & prints'],
     demo: '<b>Demo:</b> exports are 1280px with a small credit. <b>Full version:</b> 4K, watermark-free.' },
-  { emoji: '📅', name: 'Appointment Scheduler', file: 'appointment-scheduler.html', cat: 'business', mock: 'timeline', c: '#2563c9',
+  { emoji: '📅', name: 'Appointment Scheduler', file: 'appointment-scheduler.html', cat: 'business', g1: '#3b82f6', g2: '#4f46e5', pat: 'p-diag', c: '#2563c9',
     pitch: 'A simple appointment book for clinics, salons, tutors and consultants — with WhatsApp confirmations.',
     points: ['Day & week views of your bookings', 'Services with durations & prices', 'One-tap WhatsApp confirmations & reminders', 'Daily totals, no-show tracking, works offline'],
     demo: '<b>Demo:</b> up to 3 services & 20 appointments. <b>Full version:</b> unlimited, branded for your business.' },
-  { emoji: '🌅', name: 'Daily Companion', file: 'daily-companion.html', cat: 'family', mock: 'big', c: '#e0842a',
+  { emoji: '🌅', name: 'Daily Companion', file: 'daily-companion.html', cat: 'family', g1: '#fbbf24', g2: '#f97316', pat: 'p-wave', c: '#e0842a',
     pitch: 'A simple, big-text home screen for elders — the day, medicines, family and help, all on one page.',
     points: ['Big clock, date & weather at a glance', "Today's medicines & tasks with one-tap ticking", 'One-tap WhatsApp or phone call to family', 'Large red SOS button + adjustable text size'],
     demo: '<b>Demo:</b> up to 4 medicines & 3 family contacts. <b>Full version:</b> unlimited, set up for your parents.' },
-  { emoji: '🎉', name: 'Festival & Function Planner', file: 'festival-planner.html', cat: 'family', mock: 'budget', c: '#d1467f',
+  { emoji: '🎉', name: 'Festival & Function Planner', file: 'festival-planner.html', cat: 'family', g1: '#f472b6', g2: '#be123c', pat: 'p-bubbles', c: '#d1467f',
     pitch: 'Plan any wedding, pooja or function end-to-end — guests, gifts, budget and tasks, all in one place.',
     points: ['Guest list with one-tap WhatsApp invites', '“Who gifted what” ledger with thank-you tracking', 'Budget by category + tasks & shopping list', 'Works offline — everything stays on your phone'],
     demo: '<b>Demo:</b> 1 function, up to 15 guests. <b>Full version:</b> unlimited functions & guests, branded & set up for you.' },
-  { emoji: '🛍️', name: 'Online Store Builder', file: 'store-builder.html', cat: 'business', mock: 'tiles', c: '#0f9d76',
+  { emoji: '🛍️', name: 'Online Store Builder', file: 'store-builder.html', cat: 'business', g1: '#a3e635', g2: '#16a34a', pat: 'p-tilt', c: '#0f9d76',
     pitch: 'Build your own online shop and take orders on WhatsApp — no Shopify, no monthly fees, no code.',
     points: ['Photo galleries, variants & stock counts', 'Discount codes, delivery charges & free-delivery limit', 'Cart, wishlist & WhatsApp / UPI checkout', 'Export a storefront you host anywhere'],
     demo: '<b>Demo:</b> up to 6 products, exported shop carries a small credit. <b>Full version:</b> unlimited, branded & set up for you.' },
-  { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html', cat: 'business', mock: 'doc', c: '#4f46e5',
+  { emoji: '🧾', name: 'Invoice Generator', file: 'invoice-generator.html', cat: 'business', g1: '#818cf8', g2: '#6d28d9', pat: 'p-dots', c: '#4f46e5',
     pitch: 'Professional invoices with live totals, GST and print-ready PDF output.',
     points: ['Auto numbering & paid/sent tracking', 'Tax, discounts & amount-in-words', 'Clean print / save-as-PDF'],
     demo: '<b>Demo:</b> up to 3 invoices, printed output watermarked. <b>Full version:</b> unlimited & clean.' },
-  { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html', cat: 'business', mock: 'table', c: '#0d7ea0',
+  { emoji: '📊', name: 'Data Analyzer', file: 'data-analyzer.html', cat: 'business', g1: '#22d3ee', g2: '#0369a1', pat: 'p-arc', c: '#0d7ea0',
     pitch: 'Drop in any CSV and explore it — sort, filter, summarise and chart instantly.',
     points: ['Auto-detects numbers, dates & text', 'Group by summaries with charts', 'Export filtered data & charts'],
     demo: '<b>Demo:</b> reads the first 200 rows of a file. <b>Full version:</b> no row limit.' },
-  { emoji: '🏗️', name: 'Landing Site Builder', file: 'pagebuilder.html', cat: 'business', mock: 'page', c: '#c2410c',
+  { emoji: '🏗️', name: 'Landing Site Builder', file: 'pagebuilder.html', cat: 'business', g1: '#fb923c', g2: '#dc2626', pat: 'p-rings', c: '#c2410c',
     pitch: 'Build multi-page landing sites visually and export ready-to-host HTML.',
     points: ['Drag-and-drop sections, live editing', 'WhatsApp contact form & payment links', 'Exports a complete site as a ZIP'],
     demo: '<b>Demo:</b> up to 2 pages, exports carry a small demo credit. <b>Full version:</b> unlimited pages, no credit.' },
-  { emoji: '🗺️', name: 'Whiteboard', file: 'whiteboard.html', cat: 'create', mock: 'notes', c: '#0891b2',
+  { emoji: '🗺️', name: 'Whiteboard', file: 'whiteboard.html', cat: 'create', g1: '#38bdf8', g2: '#0891b2', pat: 'p-bubbles', c: '#0891b2',
     pitch: 'An infinite canvas for ideas — sticky notes, shapes, arrows and sketches.',
     points: ['Pan & zoom infinite canvas', 'Connect ideas with live arrows', 'Multiple boards, PNG export'],
     demo: '<b>Demo:</b> up to 2 boards, exported images watermarked. <b>Full version:</b> unlimited & clean.' },
-  { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html', cat: 'family', mock: 'donut', c: '#15803d',
+  { emoji: '💰', name: 'Finance Tracker', file: 'finance-tracker.html', cat: 'family', g1: '#4ade80', g2: '#15803d', pat: 'p-wave', c: '#15803d',
     pitch: 'Track income, expenses, budgets and savings goals with clear charts.',
     points: ['Monthly budgets with warnings', 'Spending charts & trends', 'CSV / JSON export & backup'],
     demo: '<b>Demo:</b> up to 40 transactions. <b>Full version:</b> unlimited.' },
-  { emoji: '🚦', name: 'TN Travel Assistant', file: 'travel-assistant.html', cat: 'family', mock: 'route', c: '#b8730a',
+  { emoji: '🚦', name: 'TN Travel Assistant', file: 'travel-assistant.html', cat: 'family', g1: '#facc15', g2: '#c2410c', pat: 'p-diag', c: '#b8730a',
     pitch: 'Your Tamil Nadu & Pondicherry travel companion — ask about traffic in plain English and get live drive times, weather and nearby help.',
     points: ['Live traffic, arrival times & route map in chat', '“Leave by” planner — reach anywhere on time', 'Save frequent trips for one-tap checks', 'Weather en route + nearby petrol/food/hospitals'],
     demo: '<b>Demo:</b> weather is unlimited; live traffic needs your free TomTom key and is capped at 5 checks/day. <b>Full version:</b> unlimited, branded & set up for you.' },
-  { emoji: '💝', name: 'Dates & Gifts Reminder', file: 'family-dates.html', cat: 'family', mock: 'cal', c: '#be185d',
+  { emoji: '💝', name: 'Dates & Gifts Reminder', file: 'family-dates.html', cat: 'family', g1: '#e879f9', g2: '#7e22ce', pat: 'p-glow', c: '#be185d',
     pitch: 'Never forget a birthday or anniversary again — the family peace-keeper.',
     points: ['Countdowns & phone-calendar reminders', 'Gift ideas & budgets per occasion', 'Year-at-a-glance planner'],
     demo: '<b>Demo:</b> up to 8 dates. <b>Full version:</b> unlimited.' },
@@ -615,96 +584,16 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<'
    CSS mockups — abstract app previews assembled from divs. Nothing here
    loads over the network, and none of it can go stale like a screenshot.
 ===================================================================== */
-const MOCKS = {
-  /* Billing & Stock — a till: scanned lines, a total, and a pay button */
-  pos: `<div class="mk-row"><i class="ln dark" style="width:30%"></i><i class="ln" style="width:20%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:44%"></i><i class="ln" style="width:15%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:54%"></i><i class="ln" style="width:12%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:38%"></i><i class="ln" style="width:17%"></i></div>
-    <div class="mk-rule"></div>
-    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln dark" style="width:22%"></i></div>
-    <i class="mk-chip" style="width:100%; margin-top:3px"></i>`,
-  /* A fuller bill for the spotlight, where the window is rendered large and
-     the short version left the panel looking empty. */
-  spotbill: `<div class="mk-row"><i class="ln dark" style="width:30%"></i><i class="ln" style="width:18%"></i></div>
-    <div class="mk-rule"></div>
-    <div class="mk-row"><i class="ln" style="width:46%"></i><i class="ln" style="width:14%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:56%"></i><i class="ln" style="width:11%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:40%"></i><i class="ln" style="width:16%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:50%"></i><i class="ln" style="width:13%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:34%"></i><i class="ln" style="width:15%"></i></div>
-    <div class="mk-rule"></div>
-    <div class="mk-row"><i class="ln" style="width:22%"></i><i class="ln" style="width:12%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:20%"></i><i class="ln" style="width:12%"></i></div>
-    <div class="mk-rule"></div>
-    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln c" style="width:26%"></i></div>
-    <div class="mk-row" style="margin-top:4px"><i class="ln c" style="width:32%;height:14px;border-radius:6px"></i><i class="ln" style="width:24%;height:14px;border-radius:6px"></i></div>`,
-  chart: `<div class="mk-h"><i class="ln dark" style="width:28%"></i></div>
-    <div class="mk-bars"><i style="height:34%"></i><i style="height:62%"></i><i style="height:46%"></i><i style="height:88%"></i><i style="height:56%"></i><i style="height:72%"></i></div>
-    <div class="mk-row"><i class="ln" style="width:22%"></i><i class="ln" style="width:30%"></i></div>`,
-  /* Appointment Scheduler — a day rail with bookings at their own times */
-  timeline: `<div class="mk-h"><i class="ln dark" style="width:32%"></i></div>
-    <div class="mk-tl"><div></div><div></div><div></div><div></div></div>`,
-  /* Daily Companion — a big clock and oversized tick rows */
-  big: `<div class="mk-big">
-      <div class="clock"></div>
-      <div class="r on"><b></b><i class="ln" style="width:54%"></i></div>
-      <div class="r on"><b></b><i class="ln" style="width:42%"></i></div>
-      <div class="r"><b></b><i class="ln" style="width:60%"></i></div>
-    </div>`,
-  /* Festival Planner — budget categories against their limits */
-  budget: `<div class="mk-h"><i class="ln dark" style="width:34%"></i></div>
-    <div class="mk-pg">
-      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:30%"></i><i class="ln" style="width:14%"></i></div><div class="bar"><i style="width:72%"></i></div></div>
-      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:38%"></i><i class="ln" style="width:12%"></i></div><div class="bar"><i style="width:45%"></i></div></div>
-      <div><div class="mk-row" style="margin-bottom:4px"><i class="ln" style="width:26%"></i><i class="ln" style="width:16%"></i></div><div class="bar over"><i style="width:96%"></i></div></div>
-    </div>`,
-  /* Store Builder — a product grid with prices and a cart total */
-  tiles: `<div class="mk-tiles"><i></i><i></i><i></i><i></i></div>
-    <div class="mk-row" style="margin-top:2px"><i class="ln" style="width:40%"></i><i class="ln" style="width:16%"></i></div>
-    <div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="ln c" style="width:22%"></i></div>`,
-  /* Invoice Generator — an actual sheet of paper, not a till receipt */
-  doc: `<div class="mk-doc">
-      <div class="hd"><div style="display:grid;gap:4px;flex:1"><i class="ln dark" style="width:56%"></i><i class="ln" style="width:38%"></i></div><i class="ln c" style="width:24%"></i></div>
-      <div class="tr"><i class="ln" style="width:44%"></i><i class="ln" style="width:20%"></i></div>
-      <div class="tr"><i class="ln" style="width:52%"></i><i class="ln" style="width:16%"></i></div>
-      <div class="tr"><i class="ln" style="width:36%"></i><i class="ln" style="width:22%"></i></div>
-      <div class="mk-row"><i class="ln" style="width:22%"></i><i class="ln dark" style="width:26%"></i></div>
-    </div>`,
-  /* Data Analyzer — a table, then the chart it summarises into */
-  table: `<div class="mk-tb">
-      <div class="tr h"><i class="ln dark"></i><i class="ln dark"></i><i class="ln dark"></i></div>
-      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
-      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
-      <div class="tr"><i class="ln"></i><i class="ln"></i><i class="ln"></i></div>
-    </div>
-    <div class="mk-bars" style="height:34px"><i style="height:44%"></i><i style="height:76%"></i><i style="height:54%"></i><i style="height:94%"></i><i style="height:64%"></i></div>`,
-  /* Finance Tracker — spending split as a donut with a legend */
-  donut: `<div class="mk-dn">
-      <div class="d"></div>
-      <div class="lg"><i class="ln c" style="width:70%"></i><i class="ln" style="width:56%"></i><i class="ln" style="width:44%"></i><i class="ln" style="width:34%"></i></div>
-    </div>`,
-  /* Travel Assistant — a route on a map, then the chat about it */
-  route: `<div class="mk-map"><i class="r1"></i><i class="r2"></i><i class="p1"></i><i class="p2"></i></div>
-    <div class="mk-chat" style="margin-top:2px"><i class="you" style="width:60%"></i><i class="me short"></i></div>`,
-  page: `<div class="mk-hero"></div>
-    <div class="mk-cols"><i></i><i></i><i></i></div>
-    <div class="mk-row"><i class="ln" style="width:30%"></i><i class="ln" style="width:16%"></i></div>`,
-  /* Whiteboard — sticky notes joined by a connector */
-  notes: `<div class="mk-notes"><i class="n1"></i><i class="ar"></i><i class="n2"></i><i class="n3"></i></div>
-    <div class="mk-row"><i class="ln" style="width:34%"></i><i class="ln" style="width:18%"></i></div>`,
-  art: `<div class="mk-art"><i></i><i></i><i></i></div>
-    <div class="mk-row"><i class="ln" style="width:26%"></i><i class="ln c" style="width:20%"></i></div>`,
-  chat: `<div class="mk-chat"><i class="you"></i><i class="me"></i><i class="you" style="width:64%"></i><i class="me short"></i><i class="you" style="width:50%"></i></div>`,
-  /* Dates & Gifts — a month with the next occasion marked, plus a countdown */
-  cal: `<div class="mk-row"><i class="ln dark" style="width:26%"></i><i class="mk-chip" style="width:30%"></i></div>
-    <div class="mk-cal">${Array.from({ length: 14 }, (_, i) =>
-      `<i class="${i === 9 ? 'on' : (i === 4 || i === 16 ? 'soft' : '')}"></i>`).join('')}</div>`
-};
-function mk(type, c, extraClass) {
-  return `<div class="mk ${extraClass || ''}" style="--c:${c}">
-    <div class="mk-bar"><i></i><i></i><i></i></div>
-    <div class="mk-b">${MOCKS[type] || MOCKS.pos}</div>
+/* =====================================================================
+   Cover art — a gradient panel, a decorative pattern and the app's glyph.
+   Wireframe previews looked like a page mid-load; these are meant to be
+   worth looking at. Still no image files anywhere on the page.
+===================================================================== */
+const PATTERNS = ['p-rings', 'p-bubbles', 'p-diag', 'p-arc', 'p-glow', 'p-wave', 'p-dots', 'p-tilt'];
+function cover(p, cls) {
+  return `<div class="cover ${p.pat} ${cls || ''}" style="--g1:${p.g1};--g2:${p.g2}" aria-hidden="true">
+    <span class="d"></span><span class="d"></span><span class="d"></span>
+    <span class="glyph">${p.emoji}</span>
   </div>`;
 }
 
@@ -716,9 +605,10 @@ $('#chipCount').textContent = nApps;
 $('#statApps').textContent = nApps;   /* derived, so it cannot go stale again */
 
 /* hero — three overlapping windows */
-$('#heroStack').innerHTML = [
-  mk('table', '#0d7ea0'), mk('timeline', '#2563c9'), mk('pos', '#0e7c6b')
-].join('');
+/* Six apps chosen for colour spread, not order: teal, amber, violet-pink,
+   cyan, rose and green. Three greens next to each other read as one app. */
+$('#heroStack').innerHTML = [0, 3, 1, 7, 4, 10]
+  .map(i => cover(PRODUCTS[i], 'tile')).join('');
 
 /* spotlight — the flagship gets a section of its own */
 const hero = PRODUCTS[0];
@@ -733,7 +623,7 @@ $('#spotlight').innerHTML = `
       <button class="btn ghost" data-enquire="0">Ask about it</button>
     </div>
   </div>
-  <div>${mk('spotbill', hero.c)}</div>`;
+  <div>${cover(hero, 'spot-cover')}</div>`;
 
 /* filter chips */
 $('#filters').innerHTML = [
@@ -748,9 +638,9 @@ $('#filters').innerHTML = [
 const COLLAPSE_AFTER = 3;
 function card(p, i, nth) {
   return `<article class="card reveal${nth >= COLLAPSE_AFTER ? ' more' : ''}" data-cat="${p.cat}" style="--c:${p.c}">
-    <div class="card-top">${mk(p.mock, p.c)}</div>
+    <div class="card-top">${cover(p)}</div>
     <div class="card-b">
-      <div class="card-h"><span class="ico" aria-hidden="true">${p.emoji}</span><h3>${esc(p.name)}</h3></div>
+      <div class="card-h"><h3>${esc(p.name)}</h3></div>
       <p class="pitch">${esc(p.pitch)}</p>
       <ul>${p.points.slice(0, 3).map(pt => `<li>${esc(pt)}</li>`).join('')}</ul>
       <p class="limit">${p.demo}</p>
