@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing &amp; Stock — GST POS</title>
+<meta name="description" content="Offline GST billing and stock software for small Indian shops — barcode billing, thermal receipts, A4 tax invoices, stock ledger and day-close. Works with no internet, nothing leaves the device.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%F0%9F%A7%BE%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f7fa; --surface: #ffffff; --text: #16202e; --muted: #5c6675; --line: #e2e7ee;
+    --accent: #0f7a6c; --accent-soft: #e4f3f0; --danger: #d1362f; --warn: #b8730a; --info: #2563c9;
+    --shadow: 0 1px 3px rgba(22,32,46,0.07);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0e131a; --surface: #171e28; --text: #eef2f7; --muted: #97a2b2; --line: #28313d;
+    --accent: #2bb3a0; --accent-soft: #123029; --danger: #ff6b63; --warn: #e0a54a; --info: #5b9bff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--text);
+         display: flex; flex-direction: column; overflow: hidden; -webkit-font-smoothing: antialiased; line-height: 1.4; }
+
+  header.topbar { display: flex; align-items: center; gap: 8px; padding: 9px 13px; background: var(--surface);
+                  border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; }
+  .brand { font-weight: 800; font-size: 1.02rem; display: flex; gap: 7px; align-items: center; }
+  .brand .shop { color: var(--muted); font-weight: 600; font-size: 0.86rem; }
+  .spacer { flex: 1; }
+  .btn { appearance: none; border: 1px solid var(--line); cursor: pointer; font: inherit; font-size: 0.85rem; font-weight: 600;
+         background: var(--surface); color: var(--text); padding: 8px 13px; border-radius: 9px; box-shadow: var(--shadow);
+         display: inline-flex; align-items: center; gap: 6px; -webkit-tap-highlight-color: transparent; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  .btn.small { padding: 5px 9px; font-size: 0.78rem; }
+  .btn.icon { padding: 8px 10px; }
+  .btn.danger { color: var(--danger); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn.big { font-size: 1rem; padding: 12px 20px; }
+
+  nav.tabs { display: flex; gap: 2px; padding: 6px 10px 0; background: var(--surface); border-bottom: 1px solid var(--line); flex: none; overflow-x: auto; }
+  .tab-btn { appearance: none; background: none; border: none; cursor: pointer; font: inherit; font-weight: 600; font-size: 0.9rem;
+             color: var(--muted); padding: 9px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { flex: 1; overflow-y: auto; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 13px 13px 80px; }
+
+  label.f { display: block; font-size: 0.76rem; font-weight: 700; color: var(--muted); margin-bottom: 3px; }
+  input, select, textarea { font: inherit; font-size: 0.9rem; color: var(--text); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 9px; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 13px; }
+  .muted { color: var(--muted); }
+  .sm { font-size: 0.8rem; }
+  .xs { font-size: 0.72rem; }
+  h3.sec { font-size: 0.95rem; margin: 16px 0 8px; }
+  h3.sec:first-child { margin-top: 0; }
+
+  /* ---------- billing ---------- */
+  .bill-layout { display: grid; grid-template-columns: 1fr 330px; gap: 13px; align-items: start; }
+  @media (max-width: 880px) { .bill-layout { grid-template-columns: 1fr; } }
+
+  .scanrow { display: flex; gap: 8px; margin-bottom: 10px; }
+  #scanInput { font-size: 1.05rem; font-weight: 600; padding: 12px 13px; }
+  .results { position: relative; }
+  .reslist { position: absolute; z-index: 30; left: 0; right: 0; top: 2px; background: var(--surface); border: 1px solid var(--line);
+             border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.16); max-height: 320px; overflow-y: auto; }
+  .resitem { padding: 9px 11px; cursor: pointer; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+  .resitem:last-child { border-bottom: none; }
+  .resitem.on, .resitem:hover { background: var(--accent-soft); }
+  .resitem .rn { flex: 1; min-width: 0; }
+  .resitem .rn b { display: block; font-size: 0.9rem; }
+  .resitem .rp { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  table.lines { width: 100%; border-collapse: collapse; }
+  table.lines th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted);
+                   text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); }
+  table.lines td { padding: 5px 6px; border-bottom: 1px solid var(--line); font-size: 0.88rem; vertical-align: middle; }
+  table.lines td.num, table.lines th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.lines input { padding: 5px 7px; font-size: 0.86rem; }
+  table.lines .iqty { width: 76px; }
+  table.lines .idisc { width: 58px; }
+  .lname { font-weight: 600; }
+  .lmeta { font-size: 0.7rem; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); padding: 34px 10px; font-size: 0.9rem; }
+
+  .totals .tr { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.88rem; }
+  .totals .tr.grand { border-top: 2px solid var(--line); margin-top: 6px; padding-top: 8px; font-size: 1.3rem; font-weight: 800; }
+  .totals .tr span:last-child { font-variant-numeric: tabular-nums; }
+  .stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 9px; margin-bottom: 13px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); }
+  .stat .v { font-size: 1.2rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 0.74rem; color: var(--muted); }
+
+  .pill { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 999px; }
+  .pill.low { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+  .pill.out { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+  .pill.ok  { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+  .pill.cancelled { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+
+  /* ---------- modal ---------- */
+  .backdrop { position: fixed; inset: 0; background: rgba(8,12,18,0.55); display: none; align-items: center; justify-content: center;
+              z-index: 60; padding: 14px; }
+  .backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: 15px; box-shadow: 0 18px 50px rgba(0,0,0,0.32); width: 100%; max-width: 560px;
+           max-height: 92vh; overflow-y: auto; padding: 17px; }
+  .modal.wide { max-width: 760px; }
+  .modal h2 { font-size: 1.08rem; margin-bottom: 12px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 15px; flex-wrap: wrap; }
+
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(70px); background: #16202e; color: #fff;
+           padding: 11px 17px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; opacity: 0; transition: 0.24s; z-index: 90;
+           max-width: 90vw; text-align: center; }
+  .toast.show { transform: translateX(-50%); opacity: 1; }
+
+  .keys { font-size: 0.72rem; color: var(--muted); }
+  kbd { font-family: ui-monospace, monospace; background: var(--page); border: 1px solid var(--line); border-radius: 4px;
+        padding: 1px 5px; font-size: 0.7rem; }
+  .warnbar { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+             border-radius: 10px; padding: 9px 12px; font-size: 0.83rem; font-weight: 600; margin-bottom: 11px; display: flex; gap: 8px; align-items: center; }
+
+  /* ---------- print ---------- */
+  #printArea { display: none; }
+  .rcpt { font-family: ui-monospace, "Courier New", monospace; color: #000; background: #fff; }
+  .rcpt .c { text-align: center; }
+  .rcpt .r { text-align: right; }
+  .rcpt .hr { border-top: 1px dashed #000; margin: 3px 0; }
+  .rcpt table { width: 100%; border-collapse: collapse; }
+  .rcpt td { vertical-align: top; padding: 0; }
+  .rcpt .big { font-size: 1.15em; font-weight: bold; }
+  .a4 { color: #000; background: #fff; font-family: system-ui, sans-serif; }
+  .a4 table { width: 100%; border-collapse: collapse; }
+  .a4 .items th, .a4 .items td { border: 1px solid #000; padding: 4px 6px; font-size: 10pt; }
+  .a4 .items th { background: #eee; }
+  .a4 .r { text-align: right; }
+  .a4 .c { text-align: center; }
+
+  @media print {
+    body { overflow: visible; background: #fff; display: block; }
+    header.topbar, nav.tabs, main, .toast, .backdrop { display: none !important; }
+    #printArea { display: block !important; }
+  }
+  #selftest { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; padding: 16px; }
+  .pass { color: #0a7d38; } .fail { color: #d1362f; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">🧾 <span>Billing &amp; Stock</span><span class="shop" id="shopLabel"></span></div>
+  <div class="spacer"></div>
+  <button class="btn small" id="backupBtn" title="Download a backup file">💾 Backup</button>
+  <button class="btn icon small" id="themeBtn" title="Light / dark">🌗</button>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="bill">🧾 Billing</button>
+  <button class="tab-btn" data-tab="products">📦 Products</button>
+  <button class="tab-btn" data-tab="sales">📈 Sales</button>
+  <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+</nav>
+
+<main>
+  <!-- ============ BILLING ============ -->
+  <section class="view active" id="view-bill">
+    <div class="wrap">
+      <div id="backupNag" class="warnbar" style="display:none">
+        <span>⚠️</span><span id="backupNagText"></span>
+        <span class="spacer"></span>
+        <button class="btn small" id="nagBackup">Back up now</button>
+      </div>
+      <div class="bill-layout">
+        <div>
+          <div class="card">
+            <div class="scanrow">
+              <div class="results" style="flex:1">
+                <input id="scanInput" placeholder="Scan barcode or type product name…" autocomplete="off" spellcheck="false">
+                <div class="reslist" id="resList" style="display:none"></div>
+              </div>
+              <button class="btn" id="newBillBtn" title="Clear and start a new bill">✚ New</button>
+            </div>
+            <div class="keys"><kbd>F2</kbd> scan box · <kbd>↑↓</kbd> pick · <kbd>Enter</kbd> add · <kbd>F4</kbd> payment · <kbd>Esc</kbd> close</div>
+          </div>
+
+          <div class="card" style="margin-top:11px; padding-top:8px">
+            <table class="lines">
+              <thead><tr>
+                <th style="width:44%">Item</th><th class="num">Qty</th><th class="num">Rate</th>
+                <th class="num">Disc %</th><th class="num">Amount</th><th></th>
+              </tr></thead>
+              <tbody id="lineBody"></tbody>
+            </table>
+            <div class="empty" id="lineEmpty">No items yet — scan a barcode or search above.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="grid2">
+              <div><label class="f">Customer name</label><input id="cName" placeholder="Optional"></div>
+              <div><label class="f">Phone</label><input id="cPhone" inputmode="tel" placeholder="Optional"></div>
+            </div>
+            <div style="margin-top:8px"><label class="f">GSTIN (for B2B bills)</label><input id="cGstin" placeholder="Optional" spellcheck="false" style="text-transform:uppercase"></div>
+            <div id="gstinMsg" class="xs" style="margin-top:3px"></div>
+            <div style="margin-top:8px"><label class="f">Place of supply</label><select id="cState"></select></div>
+          </div>
+
+          <div class="card" style="margin-top:11px">
+            <label class="f">Bill discount</label>
+            <div style="display:flex; gap:8px">
+              <input id="billDisc" class="num" inputmode="decimal" value="0" style="flex:1">
+              <select id="billDiscMode" style="width:96px"><option value="pct">%</option><option value="amt">₹</option></select>
+            </div>
+            <div class="totals" style="margin-top:10px" id="totalsBox"></div>
+            <button class="btn primary big" id="payBtn" style="width:100%; margin-top:11px; justify-content:center" disabled>Take payment (F4)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCTS ============ -->
+  <section class="view" id="view-products">
+    <div class="wrap">
+      <div class="stat-strip" id="prodStats"></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:11px">
+        <input id="prodSearch" placeholder="Search products…" style="flex:1; min-width:180px">
+        <select id="prodFilter" style="width:150px">
+          <option value="all">All products</option>
+          <option value="low">Low stock</option>
+          <option value="out">Out of stock</option>
+        </select>
+        <button class="btn primary" id="addProdBtn">✚ Add product</button>
+        <button class="btn" id="importBtn">📥 Import</button>
+      </div>
+      <div class="card" style="padding-top:8px">
+        <table class="lines">
+          <thead><tr>
+            <th style="width:34%">Product</th><th>HSN</th><th class="num">Sale ₹</th><th class="num">GST</th>
+            <th class="num">Stock</th><th></th>
+          </tr></thead>
+          <tbody id="prodBody"></tbody>
+        </table>
+        <div class="empty" id="prodEmpty">No products yet. Add one, import a CSV, or load sample data from Settings.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SALES ============ -->
+  <section class="view" id="view-sales">
+    <div class="wrap">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-bottom:11px">
+        <div><label class="f">From</label><input type="date" id="sFrom" style="width:150px"></div>
+        <div><label class="f">To</label><input type="date" id="sTo" style="width:150px"></div>
+        <button class="btn" id="sToday">Today</button>
+        <button class="btn" id="sMonth">This month</button>
+        <span class="spacer"></span>
+        <button class="btn" id="sCsv">⬇ CSV</button>
+      </div>
+      <div class="stat-strip" id="salesStats"></div>
+      <div class="card" style="padding-top:8px">
+        <table class="lines">
+          <thead><tr>
+            <th>Bill no</th><th>Date</th><th style="width:26%">Customer</th><th class="num">Items</th>
+            <th class="num">Total</th><th></th>
+          </tr></thead>
+          <tbody id="salesBody"></tbody>
+        </table>
+        <div class="empty" id="salesEmpty">No bills in this period.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="view" id="view-settings">
+    <div class="wrap" style="max-width:720px">
+      <h3 class="sec">Shop details — these print on every bill</h3>
+      <div class="card">
+        <div class="grid2">
+          <div><label class="f">Shop name</label><input id="sName"></div>
+          <div><label class="f">Phone</label><input id="sPhone"></div>
+        </div>
+        <div style="margin-top:8px"><label class="f">Address</label><textarea id="sAddr" rows="2"></textarea></div>
+        <div class="grid2" style="margin-top:8px">
+          <div><label class="f">GSTIN</label><input id="sGstin" spellcheck="false" style="text-transform:uppercase"></div>
+          <div><label class="f">State (place of supply)</label><select id="sState"></select></div>
+        </div>
+        <div id="sGstinMsg" class="xs" style="margin-top:3px"></div>
+      </div>
+
+      <h3 class="sec">Tax &amp; billing</h3>
+      <div class="card">
+        <div class="grid3">
+          <div><label class="f">GST scheme</label>
+            <select id="sScheme">
+              <option value="regular">Regular — collects GST</option>
+              <option value="composition">Composition — cannot collect GST</option>
+            </select></div>
+          <div><label class="f">Selling prices are</label>
+            <select id="sIncl">
+              <option value="1">Inclusive of GST (MRP style)</option>
+              <option value="0">Exclusive of GST</option>
+            </select></div>
+          <div><label class="f">Bill number prefix</label><input id="sPrefix" maxlength="6"></div>
+        </div>
+        <div style="margin-top:9px"><label class="f">GST rates offered (%) — comma separated</label>
+          <input id="sSlabs" spellcheck="false">
+          <div class="xs muted" style="margin-top:4px">Editable on purpose. GST slabs change — check the current rates against CBIC guidance rather than trusting a default.</div>
+        </div>
+        <div style="margin-top:9px"><label class="f">Receipt size</label>
+          <select id="sPaper" style="max-width:240px">
+            <option value="58">58 mm thermal</option>
+            <option value="80">80 mm thermal</option>
+            <option value="a4">A4 tax invoice</option>
+          </select></div>
+      </div>
+
+      <h3 class="sec">Backup — read this</h3>
+      <div class="card">
+        <p class="sm muted">Everything is stored in this browser only. Clearing browsing data, or a browser reinstall, will delete it.
+          <b>Download a backup regularly</b> and keep it somewhere else. Backups restore the whole shop — products, bills and stock.</p>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
+          <button class="btn primary" id="expBtn">💾 Download backup</button>
+          <button class="btn" id="impBtn">📤 Restore from backup</button>
+          <button class="btn" id="seedBtn">🧪 Load sample shop</button>
+        </div>
+        <p class="sm muted" style="margin-top:9px" id="lastBackup"></p>
+      </div>
+
+      <h3 class="sec">Limits worth knowing</h3>
+      <div class="card sm muted">
+        <p><b>One device, one counter.</b> Data lives in this browser and cannot be shared between two machines. Use one device for billing.</p>
+        <p style="margin-top:6px"><b>e-Invoice and e-Way bills are not included.</b> Those apply above the turnover threshold and need a live connection to the government portal. This app is built for shops below that threshold.</p>
+        <p style="margin-top:6px"><b>Best served from a folder or web address</b> rather than opened straight from a downloaded file — browsers treat file-opened pages inconsistently for storage.</p>
+        <p style="margin-top:6px"><a href="?selftest=1" style="color:var(--accent)">Run the built-in calculation self-test →</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ MODALS ============ -->
+<div class="backdrop" id="payModal"><div class="modal">
+  <h2>Payment</h2>
+  <div class="card" style="background:var(--page); text-align:center; padding:15px">
+    <div class="xs muted">AMOUNT DUE</div>
+    <div id="payDue" style="font-size:2.1rem; font-weight:800; font-variant-numeric:tabular-nums"></div>
+  </div>
+  <div class="grid2" style="margin-top:11px">
+    <div><label class="f">Mode</label><select id="payMode">
+      <option value="Cash">Cash</option><option value="UPI">UPI</option><option value="Card">Card</option><option value="Credit">Credit (khata)</option>
+    </select></div>
+    <div><label class="f">Amount received</label><input id="payAmt" class="num" inputmode="decimal"></div>
+  </div>
+  <div id="paySplitList" class="sm" style="margin-top:9px"></div>
+  <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+    <button class="btn small" id="payExact">Exact</button>
+    <button class="btn small" id="paySplit">+ Split payment</button>
+  </div>
+  <div id="payChange" class="card" style="margin-top:11px; display:none; text-align:center">
+    <div class="xs muted">RETURN CHANGE</div><div id="payChangeVal" style="font-size:1.6rem; font-weight:800"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="payDone">Save &amp; print</button>
+  </div>
+</div></div>
+
+<div class="backdrop" id="prodModal"><div class="modal wide">
+  <h2 id="prodModalTitle">Add product</h2>
+  <div class="grid2">
+    <div><label class="f">Name *</label><input id="pName"></div>
+    <div><label class="f">Name in Tamil</label><input id="pNameTa" placeholder="Optional — prints on the bill"></div>
+  </div>
+  <div class="grid3" style="margin-top:8px">
+    <div><label class="f">Barcode</label><input id="pBarcode" spellcheck="false"></div>
+    <div><label class="f">HSN code</label><input id="pHsn" spellcheck="false"></div>
+    <div><label class="f">Category</label><input id="pCat"></div>
+  </div>
+  <div class="grid3" style="margin-top:8px">
+    <div><label class="f">Unit</label><select id="pUnit">
+      <option>pcs</option><option>kg</option><option>g</option><option>litre</option><option>ml</option><option>box</option><option>packet</option><option>metre</option>
+    </select></div>
+    <div><label class="f">GST %</label><select id="pGst"></select></div>
+    <div><label class="f">Purchase price ₹</label><input id="pBuy" class="num" inputmode="decimal"></div>
+  </div>
+  <div class="grid3" style="margin-top:8px">
+    <div><label class="f">Selling price ₹ *</label><input id="pSell" class="num" inputmode="decimal"></div>
+    <div><label class="f">MRP ₹</label><input id="pMrp" class="num" inputmode="decimal"></div>
+    <div><label class="f">Low-stock alert below</label><input id="pLow" class="num" inputmode="decimal" value="5"></div>
+  </div>
+  <div class="grid2" style="margin-top:8px">
+    <div><label class="f" id="pStockLabel">Opening stock</label><input id="pStock" class="num" inputmode="decimal" value="0"></div>
+    <div id="pStockNow" class="sm muted" style="align-self:end"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn danger" id="pDelete" style="margin-right:auto; display:none">Delete</button>
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="pSave">Save product</button>
+  </div>
+</div></div>
+
+<div class="backdrop" id="importModal"><div class="modal wide">
+  <h2>Import products</h2>
+  <p class="sm muted">Paste from Excel, or drop a CSV. First row must be headers. Recognised columns:
+    <b>name, tamil, barcode, hsn, unit, gst, purchase, price, mrp, stock, low, category</b> — extra columns are ignored.</p>
+  <textarea id="impText" rows="9" style="margin-top:9px; font-family:ui-monospace,monospace; font-size:0.8rem"
+    placeholder="name,barcode,price,gst,stock&#10;Sugar 1kg,8901234567890,52,5,40"></textarea>
+  <div style="margin-top:8px"><input type="file" id="impFile" accept=".csv,.tsv,.txt"></div>
+  <div id="impPreview" class="sm" style="margin-top:9px"></div>
+  <div class="modal-actions">
+    <button class="btn" data-close>Cancel</button>
+    <button class="btn primary" id="impRun">Import</button>
+  </div>
+</div></div>
+
+<div class="backdrop" id="billModal"><div class="modal wide">
+  <h2 id="billModalTitle">Bill</h2>
+  <div id="billDetail"></div>
+  <div class="modal-actions">
+    <button class="btn danger" id="billCancel" style="margin-right:auto">Cancel this bill</button>
+    <button class="btn" data-close>Close</button>
+    <button class="btn primary" id="billReprint">🖨 Reprint</button>
+  </div>
+</div></div>
+
+<div id="printArea"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Small helpers
+===================================================================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* =====================================================================
+   Money — integer paise everywhere. Floats only at the display edge.
+   A bill total that is off by a paisa destroys a shopkeeper's trust,
+   so rupees exist only in the input and print layers.
+===================================================================== */
+const P = {
+  parse(v) {                                   // "12.5" | 12.5 -> 1250
+    if (typeof v === 'number') return Math.round(v * 100);
+    const s = String(v == null ? '' : v).replace(/[₹,\s]/g, '');
+    if (!s || isNaN(Number(s))) return 0;
+    return Math.round(Number(s) * 100);
+  },
+  fmt(p) {                                     // 1250 -> "12.50"
+    const neg = p < 0; p = Math.abs(Math.round(p));
+    const s = (p / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (neg ? '−' : '') + s;
+  },
+  rs(p) { return '₹' + P.fmt(p); },
+  plain(p) { return (Math.round(p) / 100).toFixed(2); }
+};
+/* Quantity in thousandths of a unit, for the same reason (0.750 kg must be exact). */
+const Q = {
+  parse(v) {
+    const s = String(v == null ? '' : v).replace(/[,\s]/g, '');
+    if (!s || isNaN(Number(s))) return 0;
+    return Math.round(Number(s) * 1000);
+  },
+  fmt(qm) {
+    const n = qm / 1000;
+    return Number.isInteger(n) ? String(n) : n.toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+  }
+};
+
+/* ---- amount in words (reused from invoice-generator.html) ---- */
+const ONES = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+  'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function twoDigits(n) { return n < 20 ? ONES[n] : (TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '')); }
+function threeDigits(n) {
+  return (n >= 100 ? ONES[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' ' : '') : '') + (n % 100 ? twoDigits(n % 100) : '');
+}
+function numToWords(n) {                        // Indian crore / lakh system
+  n = Math.floor(Math.abs(n));
+  if (n === 0) return 'zero';
+  const parts = [];
+  const crore = Math.floor(n / 10000000); n %= 10000000;
+  const lakh = Math.floor(n / 100000); n %= 100000;
+  const thousand = Math.floor(n / 1000); n %= 1000;
+  if (crore) parts.push(numToWords(crore) + ' crore');
+  if (lakh) parts.push(twoDigits(lakh) + ' lakh');
+  if (thousand) parts.push(twoDigits(thousand) + ' thousand');
+  if (n) parts.push(threeDigits(n));
+  return parts.join(' ');
+}
+function rupeesInWords(paise) {
+  const r = Math.floor(Math.abs(paise) / 100), p = Math.abs(paise) % 100;
+  let s = 'rupees ' + numToWords(r);
+  if (p) s += ' and ' + twoDigits(p) + ' paise';
+  return (s + ' only').replace(/^./, c => c.toUpperCase());
+}
+
+/* ---- CSV (reused from data-analyzer.html) ---- */
+function detectDelimiter(text) {
+  const lines = text.slice(0, 8000).split(/\r?\n/).filter(l => l.trim()).slice(0, 6);
+  let best = ',', bestMin = 0;
+  for (const d of [',', ';', '\t', '|']) {
+    const counts = lines.map(l => {
+      let n = 0, inQ = false;
+      for (const c of l) { if (c === '"') inQ = !inQ; else if (c === d && !inQ) n++; }
+      return n;
+    });
+    const min = Math.min(...counts);
+    if (min > bestMin) { bestMin = min; best = d; }
+  }
+  return best;
+}
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const delim = detectDelimiter(text);
+  const rows = []; let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQ = false; }
+      else field += c;
+    } else if (c === '"') inQ = true;
+    else if (c === delim) { row.push(field); field = ''; }
+    else if (c === '\n') { row.push(field); field = ''; if (row.some(f => f.trim() !== '')) rows.push(row); row = []; }
+    else if (c !== '\r') field += c;
+  }
+  row.push(field);
+  if (row.some(f => f.trim() !== '')) rows.push(row);
+  return rows;
+}
+
+/* =====================================================================
+   Indian state codes — the first two digits of a GSTIN, and what
+   decides CGST+SGST versus IGST on every bill.
+===================================================================== */
+const STATES = [
+  ['01', 'Jammu & Kashmir'], ['02', 'Himachal Pradesh'], ['03', 'Punjab'], ['04', 'Chandigarh'], ['05', 'Uttarakhand'],
+  ['06', 'Haryana'], ['07', 'Delhi'], ['08', 'Rajasthan'], ['09', 'Uttar Pradesh'], ['10', 'Bihar'], ['11', 'Sikkim'],
+  ['12', 'Arunachal Pradesh'], ['13', 'Nagaland'], ['14', 'Manipur'], ['15', 'Mizoram'], ['16', 'Tripura'],
+  ['17', 'Meghalaya'], ['18', 'Assam'], ['19', 'West Bengal'], ['20', 'Jharkhand'], ['21', 'Odisha'],
+  ['22', 'Chhattisgarh'], ['23', 'Madhya Pradesh'], ['24', 'Gujarat'], ['26', 'Dadra & Nagar Haveli and Daman & Diu'],
+  ['27', 'Maharashtra'], ['29', 'Karnataka'], ['30', 'Goa'], ['31', 'Lakshadweep'], ['32', 'Kerala'],
+  ['33', 'Tamil Nadu'], ['34', 'Puducherry'], ['35', 'Andaman & Nicobar Islands'], ['36', 'Telangana'],
+  ['37', 'Andhra Pradesh'], ['38', 'Ladakh'], ['97', 'Other Territory']
+];
+const stateName = c => (STATES.find(s => s[0] === c) || [, ''])[1];
+
+const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+const GST_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function gstinCheckDigit(first14) {
+  let sum = 0;
+  for (let i = 0; i < 14; i++) {
+    const v = GST_CHARS.indexOf(first14[i]);
+    if (v < 0) return null;
+    const prod = v * (i % 2 === 0 ? 1 : 2);
+    sum += Math.floor(prod / GST_CHARS.length) + (prod % GST_CHARS.length);
+  }
+  return GST_CHARS[(GST_CHARS.length - (sum % GST_CHARS.length)) % GST_CHARS.length];
+}
+function validateGstin(g) {
+  g = String(g || '').toUpperCase().trim();
+  if (!g) return { ok: true, empty: true, msg: '' };
+  if (g.length !== 15) return { ok: false, msg: 'GSTIN must be 15 characters' };
+  if (!GSTIN_RE.test(g)) return { ok: false, msg: 'Not a valid GSTIN format' };
+  if (!stateName(g.slice(0, 2))) return { ok: false, msg: 'Unknown state code ' + g.slice(0, 2) };
+  if (gstinCheckDigit(g.slice(0, 14)) !== g[14]) return { ok: false, msg: 'GSTIN check digit does not match — typo?' };
+  return { ok: true, msg: stateName(g.slice(0, 2)), state: g.slice(0, 2) };
+}
+
+/* =====================================================================
+   Financial year — India runs 1 April to 31 March, and the bill serial
+   restarts each year. Getting this wrong makes the whole book non-compliant.
+===================================================================== */
+function fyOf(d) {
+  const y = d.getFullYear();
+  const startYear = d.getMonth() >= 3 ? y : y - 1;     // month 3 === April
+  return { startYear, label: startYear + '-' + String(startYear + 1).slice(2), short: String(startYear).slice(2) + String(startYear + 1).slice(2) };
+}
+
+/* =====================================================================
+   GST engine — the part that must be right.
+
+   Every amount is paise. Bill-level discount is spread across lines in
+   proportion to their value, because GST is charged per line: subtracting
+   a discount from the grand total would report the wrong taxable value.
+   The largest line absorbs the rounding remainder so the parts always
+   sum back to the whole.
+===================================================================== */
+const GST = {
+  /*  lines: [{ qm, ratePaise, discPct, gstRate }]
+      opts:  { inclusive, interState, billDiscPaise, composition }  */
+  compute(lines, opts) {
+    const o = Object.assign({ inclusive: true, interState: false, billDiscPaise: 0, composition: false }, opts || {});
+    const rows = lines.map(l => {
+      const gross = Math.round((l.qm || 0) * (l.ratePaise || 0) / 1000);
+      const lineDisc = Math.round(gross * (Number(l.discPct) || 0) / 100);
+      return { src: l, gross, lineDisc, afterLine: gross - lineDisc };
+    });
+
+    // Spread the bill discount proportionally, capped at the bill value.
+    const base = rows.reduce((s, r) => s + r.afterLine, 0);
+    let billDisc = Math.max(0, Math.min(Math.round(o.billDiscPaise || 0), base));
+    if (billDisc > 0 && base > 0) {
+      let given = 0, biggest = 0;
+      rows.forEach((r, i) => {
+        r.billDisc = Math.round(billDisc * r.afterLine / base);
+        given += r.billDisc;
+        if (r.afterLine > rows[biggest].afterLine) biggest = i;
+      });
+      rows[biggest].billDisc += billDisc - given;          // remainder lands on the biggest line
+    } else {
+      rows.forEach(r => { r.billDisc = 0; });
+      billDisc = 0;
+    }
+
+    let taxable = 0, cgst = 0, sgst = 0, igst = 0, grossSum = 0, discSum = 0;
+    /* A line whose tax is an odd number of paise cannot split into two equal
+       halves. Always favouring one side makes the bill's CGST and SGST columns
+       drift apart by a paisa per odd line, which an accountant reads as an
+       error. Alternating keeps the two totals within a single paisa. */
+    let oddToSgst = true;
+    const out = rows.map(r => {
+      const net = r.afterLine - r.billDisc;
+      const rate = o.composition ? 0 : (Number(r.src.gstRate) || 0);
+      let lineTaxable, tax;
+      if (o.inclusive && rate > 0) {
+        lineTaxable = Math.round(net * 100 / (100 + rate));
+        tax = net - lineTaxable;                            // exact by construction
+      } else {
+        lineTaxable = net;
+        tax = Math.round(net * rate / 100);
+      }
+      let c = 0, s = 0, ig = 0;
+      if (o.interState) ig = tax;
+      else {
+        const half = Math.floor(tax / 2);
+        if (tax % 2 === 0) { c = half; s = half; }
+        else if (oddToSgst) { c = half; s = tax - half; oddToSgst = false; }
+        else { s = half; c = tax - half; oddToSgst = true; }
+      }
+      taxable += lineTaxable; cgst += c; sgst += s; igst += ig;
+      grossSum += r.gross; discSum += r.lineDisc + r.billDisc;
+      return Object.assign({}, r.src, {
+        gross: r.gross, discount: r.lineDisc + r.billDisc, taxable: lineTaxable,
+        gstRate: rate, cgst: c, sgst: s, igst: ig, tax, total: lineTaxable + tax
+      });
+    });
+
+    const beforeRound = taxable + cgst + sgst + igst;
+    const grand = Math.round(beforeRound / 100) * 100;      // nearest rupee
+    return {
+      lines: out, gross: grossSum, discount: discSum, taxable,
+      cgst, sgst, igst, tax: cgst + sgst + igst,
+      beforeRound, roundOff: grand - beforeRound, total: grand,
+      interState: o.interState, composition: o.composition,
+      /* HSN-wise summary — what the shop's accountant needs for GSTR-1 */
+      hsn: (() => {
+        const m = new Map();
+        out.forEach(l => {
+          const k = (l.hsn || '-') + '|' + l.gstRate;
+          const e = m.get(k) || { hsn: l.hsn || '-', gstRate: l.gstRate, qm: 0, taxable: 0, cgst: 0, sgst: 0, igst: 0 };
+          e.qm += l.qm; e.taxable += l.taxable; e.cgst += l.cgst; e.sgst += l.sgst; e.igst += l.igst;
+          m.set(k, e);
+        });
+        return Array.from(m.values());
+      })()
+    };
+  }
+};
+
+/* =====================================================================
+   IndexedDB — localStorage would cap out in weeks at 100 bills a day,
+   and being synchronous it would freeze the counter. Still zero
+   dependencies, just a promise wrapper written once.
+===================================================================== */
+const DB = {
+  db: null,
+  NAME: 'billing-pos', VER: 1,
+  STORES: {
+    products: { key: 'id', idx: [['barcode', 'barcode', false], ['name', 'name', false]] },
+    bills: { key: 'id', idx: [['ts', 'ts', false], ['no', 'no', false]] },
+    billLines: { key: 'id', idx: [['billId', 'billId', false], ['productId', 'productId', false]] },
+    stockLedger: { key: 'id', idx: [['productId', 'productId', false]] },
+    customers: { key: 'id', idx: [['phone', 'phone', false]] },
+    settings: { key: 'key' },
+    counters: { key: 'key' }
+  },
+  open() {
+    if (DB.db) return Promise.resolve(DB.db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB.NAME, DB.VER);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        for (const [name, cfg] of Object.entries(DB.STORES)) {
+          if (db.objectStoreNames.contains(name)) continue;
+          const os = db.createObjectStore(name, { keyPath: cfg.key });
+          (cfg.idx || []).forEach(([n, path, uniq]) => os.createIndex(n, path, { unique: !!uniq }));
+        }
+      };
+      req.onsuccess = () => { DB.db = req.result; res(DB.db); };
+      req.onerror = () => rej(req.error);
+    });
+  },
+  tx(names, mode) { return DB.db.transaction(names, mode || 'readonly'); },
+  _wrap(r) { return new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  all(store) { return DB._wrap(DB.tx([store]).objectStore(store).getAll()); },
+  get(store, key) { return DB._wrap(DB.tx([store]).objectStore(store).get(key)); },
+  put(store, val) {
+    const t = DB.tx([store], 'readwrite');
+    const p = DB._wrap(t.objectStore(store).put(val));
+    return new Promise((res, rej) => { t.oncomplete = () => p.then(res); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+  },
+  del(store, key) {
+    const t = DB.tx([store], 'readwrite');
+    DB._wrap(t.objectStore(store).delete(key));
+    return new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+  },
+  byIndex(store, index, value) { return DB._wrap(DB.tx([store]).objectStore(store).index(index).getAll(value)); },
+  clearAll() {
+    const names = Object.keys(DB.STORES);
+    const t = DB.tx(names, 'readwrite');
+    names.forEach(n => t.objectStore(n).clear());
+    return new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+  },
+  /* Bill + lines + stock movements commit together, or not at all. */
+  saveBill(bill, lines, moves) {
+    const t = DB.tx(['bills', 'billLines', 'stockLedger', 'counters', 'customers'], 'readwrite');
+    t.objectStore('bills').put(bill);
+    lines.forEach(l => t.objectStore('billLines').put(l));
+    moves.forEach(m => t.objectStore('stockLedger').put(m));
+    return new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); });
+  }
+};
+
+/* =====================================================================
+   Settings
+===================================================================== */
+const DEFAULT_SETTINGS = {
+  key: 'shop', name: '', phone: '', address: '', gstin: '', stateCode: '33',
+  scheme: 'regular', inclusive: 1, prefix: 'INV', paper: '58',
+  slabs: [0, 5, 12, 18, 28], theme: 'light', lastBackup: 0, billsSinceBackup: 0
+};
+let S = Object.assign({}, DEFAULT_SETTINGS);
+async function loadSettings() {
+  const s = await DB.get('settings', 'shop');
+  S = Object.assign({}, DEFAULT_SETTINGS, s || {});
+  if (!Array.isArray(S.slabs) || !S.slabs.length) S.slabs = DEFAULT_SETTINGS.slabs.slice();
+  document.documentElement.dataset.theme = S.theme === 'dark' ? 'dark' : 'light';
+}
+const saveSettings = () => DB.put('settings', S);
+
+/* =====================================================================
+   Catalogue — held in memory so search at the counter is instant.
+   Stock is derived from the ledger, never a mutable counter that drifts.
+===================================================================== */
+const Catalog = {
+  all: [], stock: new Map(),
+  async load() {
+    Catalog.all = (await DB.all('products')).filter(p => !p.deleted);
+    Catalog.all.sort((a, b) => a.name.localeCompare(b.name));
+    const led = await DB.all('stockLedger');
+    const m = new Map();
+    led.forEach(mv => m.set(mv.productId, (m.get(mv.productId) || 0) + mv.qm));
+    Catalog.stock = m;
+  },
+  onHand(id) { return Catalog.stock.get(id) || 0; },
+  byId(id) { return Catalog.all.find(p => p.id === id); },
+  byBarcode(code) {
+    const c = String(code || '').trim();
+    return c ? Catalog.all.find(p => (p.barcode || '').trim() === c) : null;
+  },
+  /* Ranked search over name, Tamil name and barcode. Prefix beats substring
+     so typing "su" puts "Sugar" above "Basumathi". */
+  search(q, limit) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) return [];
+    const out = [];
+    for (const p of Catalog.all) {
+      const n = p.name.toLowerCase(), ta = (p.nameTa || '').toLowerCase(), bc = (p.barcode || '').toLowerCase();
+      let score = -1;
+      if (bc && bc === q) score = 0;
+      else if (n.startsWith(q)) score = 1;
+      else if (ta && ta.startsWith(q)) score = 2;
+      else if (n.includes(q)) score = 3;
+      else if (ta && ta.includes(q)) score = 4;
+      else if (bc && bc.includes(q)) score = 5;
+      if (score >= 0) out.push({ p, score });
+    }
+    out.sort((a, b) => a.score - b.score || a.p.name.localeCompare(b.p.name));
+    return out.slice(0, limit || 8).map(x => x.p);
+  }
+};
+
+/* =====================================================================
+   The current bill
+===================================================================== */
+const Bill = {
+  lines: [], customer: { name: '', phone: '', gstin: '', stateCode: '' },
+  billDisc: 0, billDiscMode: 'pct', payments: [],
+  reset() {
+    Bill.lines = []; Bill.payments = [];
+    Bill.customer = { name: '', phone: '', gstin: '', stateCode: S.stateCode };
+    Bill.billDisc = 0; Bill.billDiscMode = 'pct';
+    $('#cName').value = ''; $('#cPhone').value = ''; $('#cGstin').value = '';
+    $('#billDisc').value = '0'; $('#billDiscMode').value = 'pct';
+    $('#cState').value = S.stateCode; $('#gstinMsg').textContent = '';
+    Bill.render();
+  },
+  add(product, qm) {
+    const existing = Bill.lines.find(l => l.productId === product.id && l.discPct === 0);
+    if (existing) existing.qm += (qm || 1000);
+    else Bill.lines.push({
+      id: uid(), productId: product.id, name: product.name, nameTa: product.nameTa || '',
+      hsn: product.hsn || '', unit: product.unit || 'pcs',
+      qm: qm || 1000, ratePaise: product.pricePaise, discPct: 0, gstRate: Number(product.gstRate) || 0
+    });
+    Bill.render();
+  },
+  remove(id) { Bill.lines = Bill.lines.filter(l => l.id !== id); Bill.render(); },
+  discPaise(afterLines) {
+    if (Bill.billDiscMode === 'amt') return P.parse(Bill.billDisc);
+    return Math.round(afterLines * (Number(Bill.billDisc) || 0) / 100);
+  },
+  totals() {
+    const interState = !!(Bill.customer.stateCode && Bill.customer.stateCode !== S.stateCode);
+    const afterLines = Bill.lines.reduce((s, l) => {
+      const g = Math.round(l.qm * l.ratePaise / 1000);
+      return s + g - Math.round(g * (l.discPct || 0) / 100);
+    }, 0);
+    return GST.compute(Bill.lines, {
+      inclusive: !!Number(S.inclusive), interState,
+      billDiscPaise: Bill.discPaise(afterLines),
+      composition: S.scheme === 'composition'
+    });
+  },
+  render() {
+    const body = $('#lineBody'), t = Bill.totals();
+    $('#lineEmpty').style.display = Bill.lines.length ? 'none' : '';
+    body.innerHTML = Bill.lines.map((l, i) => {
+      const c = t.lines[i], p = Catalog.byId(l.productId);
+      const short = p ? Catalog.onHand(p.id) - l.qm : 0;
+      return `<tr data-id="${l.id}">
+        <td><div class="lname">${esc(l.name)}</div>
+            <div class="lmeta">${esc(l.unit)}${l.hsn ? ' · HSN ' + esc(l.hsn) : ''} · GST ${c.gstRate}%${short < 0 ? ' · <span style="color:var(--danger)">short ' + Q.fmt(-short) + '</span>' : ''}</div></td>
+        <td class="num"><input class="iqty num" inputmode="decimal" value="${Q.fmt(l.qm)}" data-k="qm"></td>
+        <td class="num">${P.fmt(l.ratePaise)}</td>
+        <td class="num"><input class="idisc num" inputmode="decimal" value="${l.discPct || 0}" data-k="discPct"></td>
+        <td class="num">${P.fmt(c.total)}</td>
+        <td class="num"><button class="btn small danger" data-del="${l.id}">✕</button></td>
+      </tr>`;
+    }).join('');
+
+    const rows = [];
+    rows.push(['Items', String(Bill.lines.length)]);
+    rows.push(['Gross', P.fmt(t.gross)]);
+    if (t.discount) rows.push(['Discount', '−' + P.fmt(t.discount)]);
+    rows.push(['Taxable', P.fmt(t.taxable)]);
+    if (S.scheme === 'composition') rows.push(['GST', 'not applicable']);
+    else if (t.interState) rows.push(['IGST', P.fmt(t.igst)]);
+    else { rows.push(['CGST', P.fmt(t.cgst)]); rows.push(['SGST', P.fmt(t.sgst)]); }
+    if (t.roundOff) rows.push(['Round off', (t.roundOff > 0 ? '+' : '−') + P.fmt(Math.abs(t.roundOff))]);
+    $('#totalsBox').innerHTML = rows.map(r => `<div class="tr"><span class="muted">${r[0]}</span><span>${r[1]}</span></div>`).join('')
+      + `<div class="tr grand"><span>Total</span><span>${P.rs(t.total)}</span></div>`;
+    $('#payBtn').disabled = Bill.lines.length === 0;
+  }
+};
+
+/* =====================================================================
+   Saving a bill
+===================================================================== */
+async function nextBillNo(now) {
+  const fy = fyOf(now);
+  const key = 'bill:' + fy.label;
+  const cur = await DB.get('counters', key);
+  const n = ((cur && cur.value) || 0) + 1;
+  await DB.put('counters', { key, value: n });
+  const no = `${S.prefix || 'INV'}/${fy.short}/${String(n).padStart(4, '0')}`;
+  return { no, seq: n, fyLabel: fy.label };
+}
+
+async function saveCurrentBill() {
+  const t = Bill.totals();
+  if (!Bill.lines.length) return;
+  const now = new Date();
+  const { no, seq, fyLabel } = await nextBillNo(now);
+  const billId = uid();
+
+  const bill = {
+    id: billId, no, seq, fyLabel, ts: now.toISOString(),
+    customerName: Bill.customer.name, customerPhone: Bill.customer.phone,
+    customerGstin: Bill.customer.gstin, placeOfSupply: Bill.customer.stateCode || S.stateCode,
+    interState: t.interState, composition: t.composition,
+    grossPaise: t.gross, discountPaise: t.discount, taxablePaise: t.taxable,
+    cgstPaise: t.cgst, sgstPaise: t.sgst, igstPaise: t.igst,
+    roundOffPaise: t.roundOff, totalPaise: t.total,
+    payments: Bill.payments.slice(), itemCount: Bill.lines.length, status: 'active',
+    shopSnapshot: { name: S.name, address: S.address, phone: S.phone, gstin: S.gstin, stateCode: S.stateCode, scheme: S.scheme }
+  };
+  const lines = t.lines.map(l => ({
+    id: uid(), billId, productId: l.productId, name: l.name, nameTa: l.nameTa || '', hsn: l.hsn || '',
+    unit: l.unit, qm: l.qm, ratePaise: l.ratePaise, discPct: l.discPct || 0,
+    grossPaise: l.gross, discountPaise: l.discount, taxablePaise: l.taxable, gstRate: l.gstRate,
+    cgstPaise: l.cgst, sgstPaise: l.sgst, igstPaise: l.igst, totalPaise: l.total
+  }));
+  const moves = lines.map(l => ({
+    id: uid(), productId: l.productId, qm: -l.qm, type: 'sale', ref: no, ts: bill.ts
+  }));
+
+  await DB.saveBill(bill, lines, moves);
+  moves.forEach(m => Catalog.stock.set(m.productId, (Catalog.stock.get(m.productId) || 0) + m.qm));
+
+  S.billsSinceBackup = (S.billsSinceBackup || 0) + 1;
+  await saveSettings();
+
+  Print.bill(bill, lines);
+  toast('Bill ' + no + ' saved');
+  Bill.reset();
+  refreshBackupNag();
+  return bill;
+}
+
+/* =====================================================================
+   Printing — 58 mm and 80 mm thermal, or an A4 tax invoice.
+   @page size cannot come from a CSS variable, so it is injected per print.
+===================================================================== */
+const Print = {
+  setPage(paper) {
+    let st = $('#pageStyle');
+    if (!st) { st = document.createElement('style'); st.id = 'pageStyle'; document.head.appendChild(st); }
+    if (paper === 'a4') st.textContent = '@page { size: A4; margin: 12mm 10mm; }';
+    else st.textContent = `@page { size: ${paper}mm auto; margin: 2mm; }`;
+  },
+  bill(bill, lines) {
+    const paper = S.paper || '58';
+    Print.setPage(paper);
+    $('#printArea').innerHTML = paper === 'a4' ? Print.a4(bill, lines) : Print.thermal(bill, lines, Number(paper));
+    window.print();
+  },
+  /* Laid out with tables, not padded monospace text. Character counting
+     looks tidy in source but depends on the printer's font metrics being
+     exactly what you guessed — get it wrong and every amount wraps onto
+     its own line. A two-column table is right at any width or font size. */
+  thermal(b, lines, mm) {
+    const wide = mm === 80;
+    const sh = b.shopSnapshot || {};
+    const row = (label, value, cls) =>
+      `<tr class="${cls || ''}"><td>${label}</td><td class="r">${value}</td></tr>`;
+
+    const items = lines.map(l => `
+      <tr><td colspan="2" class="nm">${esc(l.name)}</td></tr>
+      ${l.nameTa ? `<tr><td colspan="2" class="ta">${esc(l.nameTa)}</td></tr>` : ''}
+      <tr><td class="qt">${Q.fmt(l.qm)}${esc(l.unit)}${wide ? ' × ' : '×'}${P.fmt(l.ratePaise)}${l.discountPaise ? ' −' + P.fmt(l.discountPaise) : ''}</td>
+          <td class="r">${P.fmt(l.totalPaise)}</td></tr>`).join('');
+
+    const tot = [['Gross', P.fmt(b.grossPaise)]];
+    if (b.discountPaise) tot.push(['Discount', '−' + P.fmt(b.discountPaise)]);
+    tot.push(['Taxable', P.fmt(b.taxablePaise)]);
+    if (b.composition) tot.push(['GST', 'n/a']);
+    else if (b.interState) tot.push(['IGST', P.fmt(b.igstPaise)]);
+    else { tot.push(['CGST', P.fmt(b.cgstPaise)]); tot.push(['SGST', P.fmt(b.sgstPaise)]); }
+    if (b.roundOffPaise) tot.push(['Round off', (b.roundOffPaise > 0 ? '+' : '−') + P.fmt(Math.abs(b.roundOffPaise))]);
+
+    const paid = (b.payments || []).reduce((s, p) => s + (p.mode === 'Credit' ? 0 : p.amountPaise), 0);
+    const change = paid - b.totalPaise;
+    const d = new Date(b.ts);
+    const when = d.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })
+      + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    return `<div class="rcpt" style="width:${wide ? 72 : 48}mm; font-size:${wide ? 9 : 7.6}pt; line-height:1.3">
+      <style>
+        .rcpt table { width: 100%; table-layout: fixed; }
+        .rcpt td { word-break: break-word; }
+        .rcpt td.r { text-align: right; white-space: nowrap; width: ${wide ? 19 : 15}mm; }
+        .rcpt td.nm { font-weight: bold; padding-top: 1px; }
+        .rcpt td.ta, .rcpt td.qt { font-size: 0.9em; }
+        .rcpt tr.tot-grand td { font-size: 1.25em; font-weight: bold; padding: 2px 0; }
+      </style>
+      <div class="c big">${esc(sh.name || 'Shop')}</div>
+      ${sh.address ? `<div class="c" style="font-size:0.9em">${esc(sh.address)}</div>` : ''}
+      ${sh.phone ? `<div class="c" style="font-size:0.9em">Ph: ${esc(sh.phone)}</div>` : ''}
+      ${sh.gstin ? `<div class="c" style="font-size:0.9em">GSTIN: ${esc(sh.gstin)}</div>` : ''}
+      <div class="hr"></div>
+      <div style="font-size:0.9em">Bill: ${esc(b.no)}<br>Date: ${esc(when)}
+        ${b.customerName ? '<br>To: ' + esc(b.customerName) : ''}
+        ${b.customerGstin ? '<br>GSTIN: ' + esc(b.customerGstin) : ''}</div>
+      <div class="hr"></div>
+      <table>${items}</table>
+      <div class="hr"></div>
+      <table>${tot.map(t => row(esc(t[0]), esc(t[1]))).join('')}</table>
+      <div class="hr"></div>
+      <table>${row('TOTAL', P.fmt(b.totalPaise), 'tot-grand')}</table>
+      <div class="hr"></div>
+      <table>
+        ${(b.payments || []).map(p => row(esc(p.mode), P.fmt(p.amountPaise))).join('')}
+        ${change > 0 ? row('Change', P.fmt(change)) : ''}
+      </table>
+      <div class="hr"></div>
+      <div style="font-size:0.9em">${esc(rupeesInWords(b.totalPaise))}</div>
+      ${b.composition ? `<div class="hr"></div><div class="c" style="font-size:0.85em">Composition taxable person — not eligible to collect tax on supplies</div>` : ''}
+      <div class="hr"></div>
+      <div class="c">Thank you · நன்றி</div>
+    </div>`;
+  },
+  a4(b, lines) {
+    const sh = b.shopSnapshot || {};
+    const itemRows = lines.map((l, i) => `<tr>
+      <td class="c">${i + 1}</td>
+      <td>${esc(l.name)}${l.nameTa ? '<br><span style="font-size:9pt">' + esc(l.nameTa) + '</span>' : ''}</td>
+      <td class="c">${esc(l.hsn || '-')}</td>
+      <td class="r">${Q.fmt(l.qm)} ${esc(l.unit)}</td>
+      <td class="r">${P.fmt(l.ratePaise)}</td>
+      <td class="r">${l.discountPaise ? P.fmt(l.discountPaise) : '-'}</td>
+      <td class="r">${P.fmt(l.taxablePaise)}</td>
+      <td class="c">${l.gstRate}%</td>
+      <td class="r">${P.fmt(b.interState ? l.igstPaise : l.cgstPaise + l.sgstPaise)}</td>
+      <td class="r">${P.fmt(l.totalPaise)}</td></tr>`).join('');
+    const hsnRows = (() => {
+      const m = new Map();
+      lines.forEach(l => {
+        const k = (l.hsn || '-') + '|' + l.gstRate;
+        const e = m.get(k) || { hsn: l.hsn || '-', rate: l.gstRate, taxable: 0, cgst: 0, sgst: 0, igst: 0 };
+        e.taxable += l.taxablePaise; e.cgst += l.cgstPaise; e.sgst += l.sgstPaise; e.igst += l.igstPaise;
+        m.set(k, e);
+      });
+      return Array.from(m.values()).map(e => `<tr><td class="c">${esc(e.hsn)}</td><td class="c">${e.rate}%</td>
+        <td class="r">${P.fmt(e.taxable)}</td>
+        ${b.interState ? `<td class="r">${P.fmt(e.igst)}</td>` : `<td class="r">${P.fmt(e.cgst)}</td><td class="r">${P.fmt(e.sgst)}</td>`}
+        </tr>`).join('');
+    })();
+    return `<div class="a4">
+      <table><tr>
+        <td><div style="font-size:16pt; font-weight:800">${esc(sh.name || 'Shop')}</div>
+          <div style="font-size:10pt; white-space:pre-line">${esc(sh.address || '')}</div>
+          <div style="font-size:10pt">${sh.phone ? 'Ph: ' + esc(sh.phone) : ''}${sh.gstin ? ' · GSTIN: ' + esc(sh.gstin) : ''}</div>
+          <div style="font-size:10pt">State: ${esc(stateName(sh.stateCode) || '')}</div></td>
+        <td class="r" style="vertical-align:top">
+          <div style="font-size:13pt; font-weight:700">${b.composition ? 'BILL OF SUPPLY' : 'TAX INVOICE'}</div>
+          <div style="font-size:10pt">No: <b>${esc(b.no)}</b></div>
+          <div style="font-size:10pt">Date: ${new Date(b.ts).toLocaleDateString('en-IN')}</div>
+          ${b.status === 'cancelled' ? '<div style="color:#c00; font-weight:700">CANCELLED</div>' : ''}</td>
+      </tr></table>
+      <div style="border:1px solid #000; margin-top:8px; padding:5px; font-size:10pt">
+        <b>Billed to:</b> ${esc(b.customerName || 'Walk-in customer')}
+        ${b.customerPhone ? ' · ' + esc(b.customerPhone) : ''}
+        ${b.customerGstin ? '<br>GSTIN: ' + esc(b.customerGstin) : ''}
+        <br>Place of supply: ${esc(stateName(b.placeOfSupply) || '-')} (${b.interState ? 'inter-state — IGST' : 'intra-state — CGST + SGST'})
+      </div>
+      <table class="items" style="margin-top:8px">
+        <thead><tr><th>#</th><th>Item</th><th>HSN</th><th class="r">Qty</th><th class="r">Rate</th>
+          <th class="r">Disc</th><th class="r">Taxable</th><th>GST</th><th class="r">Tax</th><th class="r">Amount</th></tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      <table style="margin-top:8px"><tr>
+        <td style="vertical-align:top; width:55%">
+          <table class="items"><thead><tr><th>HSN</th><th>Rate</th><th class="r">Taxable</th>
+            ${b.interState ? '<th class="r">IGST</th>' : '<th class="r">CGST</th><th class="r">SGST</th>'}</tr></thead>
+            <tbody>${hsnRows}</tbody></table>
+          <div style="font-size:10pt; margin-top:6px"><b>In words:</b> ${esc(rupeesInWords(b.totalPaise))}</div>
+          ${b.composition ? '<div style="font-size:9.5pt; margin-top:6px"><i>Composition taxable person, not eligible to collect tax on supplies.</i></div>' : ''}
+        </td>
+        <td style="vertical-align:top">
+          <table class="items">
+            <tr><td>Gross</td><td class="r">${P.fmt(b.grossPaise)}</td></tr>
+            ${b.discountPaise ? `<tr><td>Discount</td><td class="r">−${P.fmt(b.discountPaise)}</td></tr>` : ''}
+            <tr><td>Taxable</td><td class="r">${P.fmt(b.taxablePaise)}</td></tr>
+            ${b.composition ? '<tr><td>GST</td><td class="r">n/a</td></tr>'
+              : b.interState ? `<tr><td>IGST</td><td class="r">${P.fmt(b.igstPaise)}</td></tr>`
+              : `<tr><td>CGST</td><td class="r">${P.fmt(b.cgstPaise)}</td></tr><tr><td>SGST</td><td class="r">${P.fmt(b.sgstPaise)}</td></tr>`}
+            ${b.roundOffPaise ? `<tr><td>Round off</td><td class="r">${b.roundOffPaise > 0 ? '+' : '−'}${P.fmt(Math.abs(b.roundOffPaise))}</td></tr>` : ''}
+            <tr><td><b>TOTAL</b></td><td class="r"><b>${P.fmt(b.totalPaise)}</b></td></tr>
+          </table>
+          <div style="margin-top:34px; font-size:10pt; text-align:center; border-top:1px solid #000">For ${esc(sh.name || '')}</div>
+        </td>
+      </tr></table>
+    </div>`;
+  }
+};
+
+/* =====================================================================
+   Backup
+===================================================================== */
+const Backup = {
+  async export() {
+    const data = { app: 'billing-pos', version: 1, exportedAt: new Date().toISOString(), settings: S };
+    for (const name of Object.keys(DB.STORES)) if (name !== 'settings') data[name] = await DB.all(name);
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `billing-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    S.lastBackup = Date.now(); S.billsSinceBackup = 0;
+    await saveSettings();
+    refreshBackupNag(); renderSettings();
+    toast('Backup downloaded — keep it somewhere safe');
+  },
+  async import(text) {
+    let d;
+    try { d = JSON.parse(text); } catch { toast('That file is not a valid backup'); return; }
+    if (d.app !== 'billing-pos') { toast('That backup is from a different app'); return; }
+    if (!confirm('Restoring replaces everything currently in this browser. Continue?')) return;
+    await DB.clearAll();
+    for (const name of Object.keys(DB.STORES)) {
+      if (name === 'settings' || !Array.isArray(d[name])) continue;
+      const t = DB.tx([name], 'readwrite');
+      d[name].forEach(r => t.objectStore(name).put(r));
+      await new Promise((res, rej) => { t.oncomplete = res; t.onerror = () => rej(t.error); });
+    }
+    if (d.settings) { S = Object.assign({}, DEFAULT_SETTINGS, d.settings, { key: 'shop' }); await saveSettings(); }
+    await loadSettings(); await Catalog.load();
+    renderAll();
+    toast('Backup restored');
+  }
+};
+function refreshBackupNag() {
+  const n = S.billsSinceBackup || 0;
+  const days = S.lastBackup ? (Date.now() - S.lastBackup) / 86400000 : 999;
+  const show = n >= 25 || (n > 0 && days >= 3);
+  $('#backupNag').style.display = show ? '' : 'none';
+  if (show) $('#backupNagText').textContent =
+    `${n} bill${n === 1 ? '' : 's'} since your last backup${S.lastBackup ? ' (' + Math.floor(days) + ' days ago)' : ' — you have never backed up'}.`;
+}
+
+/* =====================================================================
+   Views
+===================================================================== */
+function renderAll() { Bill.render(); renderProducts(); renderSales(); renderSettings(); refreshBackupNag(); paintShopLabel(); }
+function paintShopLabel() { $('#shopLabel').textContent = S.name ? '· ' + S.name : '· set your shop name in Settings'; }
+
+/* ---- products ---- */
+function stockPill(p) {
+  const on = Catalog.onHand(p.id), low = p.lowStockMilli || 0;
+  if (on <= 0) return '<span class="pill out">out</span>';
+  if (low && on <= low) return '<span class="pill low">low</span>';
+  return '';
+}
+function renderProducts() {
+  const q = $('#prodSearch').value.trim().toLowerCase(), f = $('#prodFilter').value;
+  let list = Catalog.all;
+  if (q) list = list.filter(p => (p.name + ' ' + (p.nameTa || '') + ' ' + (p.barcode || '') + ' ' + (p.category || '')).toLowerCase().includes(q));
+  if (f === 'low') list = list.filter(p => { const on = Catalog.onHand(p.id); return on > 0 && p.lowStockMilli && on <= p.lowStockMilli; });
+  if (f === 'out') list = list.filter(p => Catalog.onHand(p.id) <= 0);
+
+  const totalStockValue = Catalog.all.reduce((s, p) => s + Math.round(Catalog.onHand(p.id) * (p.purchasePaise || 0) / 1000), 0);
+  const lowCount = Catalog.all.filter(p => { const on = Catalog.onHand(p.id); return on > 0 && p.lowStockMilli && on <= p.lowStockMilli; }).length;
+  const outCount = Catalog.all.filter(p => Catalog.onHand(p.id) <= 0).length;
+  $('#prodStats').innerHTML = [
+    ['Products', Catalog.all.length], ['Low stock', lowCount], ['Out of stock', outCount],
+    ['Stock value (cost)', P.rs(totalStockValue)]
+  ].map(s => `<div class="stat"><div class="v">${s[1]}</div><div class="l">${s[0]}</div></div>`).join('');
+
+  $('#prodEmpty').style.display = list.length ? 'none' : '';
+  $('#prodBody').innerHTML = list.map(p => `<tr>
+    <td><div class="lname">${esc(p.name)} ${stockPill(p)}</div>
+        <div class="lmeta">${p.nameTa ? esc(p.nameTa) + ' · ' : ''}${p.barcode ? esc(p.barcode) : 'no barcode'}${p.category ? ' · ' + esc(p.category) : ''}</div></td>
+    <td class="sm">${esc(p.hsn || '-')}</td>
+    <td class="num">${P.fmt(p.pricePaise)}</td>
+    <td class="num">${p.gstRate}%</td>
+    <td class="num">${Q.fmt(Catalog.onHand(p.id))} <span class="xs muted">${esc(p.unit)}</span></td>
+    <td class="num"><button class="btn small" data-edit="${p.id}">Edit</button></td>
+  </tr>`).join('');
+}
+
+let editingProduct = null;
+function openProduct(p) {
+  editingProduct = p || null;
+  $('#prodModalTitle').textContent = p ? 'Edit product' : 'Add product';
+  $('#pGst').innerHTML = S.slabs.map(r => `<option value="${r}">${r}%</option>`).join('');
+  $('#pName').value = p ? p.name : '';
+  $('#pNameTa').value = p ? (p.nameTa || '') : '';
+  $('#pBarcode').value = p ? (p.barcode || '') : '';
+  $('#pHsn').value = p ? (p.hsn || '') : '';
+  $('#pCat').value = p ? (p.category || '') : '';
+  $('#pUnit').value = p ? (p.unit || 'pcs') : 'pcs';
+  $('#pGst').value = p ? String(p.gstRate) : String(S.slabs.includes(5) ? 5 : S.slabs[0]);
+  $('#pBuy').value = p ? P.plain(p.purchasePaise || 0) : '';
+  $('#pSell').value = p ? P.plain(p.pricePaise || 0) : '';
+  $('#pMrp').value = p && p.mrpPaise ? P.plain(p.mrpPaise) : '';
+  $('#pLow').value = p ? Q.fmt(p.lowStockMilli || 0) : '5';
+  $('#pStockLabel').textContent = p ? 'Adjust stock to' : 'Opening stock';
+  $('#pStock').value = p ? Q.fmt(Catalog.onHand(p.id)) : '0';
+  $('#pStockNow').textContent = p ? `Currently ${Q.fmt(Catalog.onHand(p.id))} ${p.unit}. Saving a different number records a stock adjustment.` : '';
+  $('#pDelete').style.display = p ? '' : 'none';
+  $('#prodModal').classList.add('show');
+  setTimeout(() => $('#pName').focus(), 40);
+}
+async function saveProduct() {
+  const name = $('#pName').value.trim();
+  if (!name) { toast('Product needs a name'); return; }
+  const sell = P.parse($('#pSell').value);
+  if (sell <= 0) { toast('Selling price must be more than zero'); return; }
+  const barcode = $('#pBarcode').value.trim();
+  const clash = barcode ? Catalog.all.find(p => (p.barcode || '') === barcode && (!editingProduct || p.id !== editingProduct.id)) : null;
+  if (clash) { toast('Barcode already used by ' + clash.name); return; }
+
+  const p = editingProduct ? Object.assign({}, editingProduct) : { id: uid(), createdAt: new Date().toISOString() };
+  p.name = name;
+  p.nameTa = $('#pNameTa').value.trim();
+  p.barcode = barcode;
+  p.hsn = $('#pHsn').value.trim();
+  p.category = $('#pCat').value.trim();
+  p.unit = $('#pUnit').value;
+  p.gstRate = Number($('#pGst').value) || 0;
+  p.purchasePaise = P.parse($('#pBuy').value);
+  p.pricePaise = sell;
+  p.mrpPaise = P.parse($('#pMrp').value);
+  p.lowStockMilli = Q.parse($('#pLow').value);
+  await DB.put('products', p);
+
+  const wantQm = Q.parse($('#pStock').value);
+  const haveQm = editingProduct ? Catalog.onHand(p.id) : 0;
+  if (wantQm !== haveQm) {
+    await DB.put('stockLedger', {
+      id: uid(), productId: p.id, qm: wantQm - haveQm,
+      type: editingProduct ? 'adjustment' : 'opening', ref: '', ts: new Date().toISOString()
+    });
+  }
+  await Catalog.load();
+  $('#prodModal').classList.remove('show');
+  renderProducts(); Bill.render();
+  toast(editingProduct ? 'Product updated' : 'Product added');
+}
+
+/* ---- import ---- */
+const IMPORT_COLS = {
+  name: ['name', 'product', 'item', 'itemname', 'productname'], tamil: ['tamil', 'nameta', 'tamilname'],
+  barcode: ['barcode', 'code', 'ean', 'sku'], hsn: ['hsn', 'hsncode'], unit: ['unit', 'uom'],
+  gst: ['gst', 'gstrate', 'tax', 'taxrate', 'gstpercent'], purchase: ['purchase', 'cost', 'buy', 'purchaseprice'],
+  price: ['price', 'sale', 'saleprice', 'sellingprice', 'rate', 'mrpprice'], mrp: ['mrp'],
+  stock: ['stock', 'qty', 'quantity', 'opening', 'openingstock'], low: ['low', 'lowstock', 'reorder', 'minstock'],
+  category: ['category', 'cat', 'group']
+};
+function mapHeaders(head) {
+  const norm = h => String(h || '').toLowerCase().replace(/[^a-z]/g, '');
+  const idx = {};
+  head.forEach((h, i) => {
+    const n = norm(h);
+    for (const [key, aliases] of Object.entries(IMPORT_COLS)) {
+      if (idx[key] === undefined && aliases.includes(n)) idx[key] = i;
+    }
+  });
+  return idx;
+}
+function parseImport(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) return { error: 'Need a header row and at least one product row.' };
+  const idx = mapHeaders(rows[0]);
+  if (idx.name === undefined) return { error: 'No "name" column found in the header row.' };
+  if (idx.price === undefined) return { error: 'No "price" column found in the header row.' };
+  const items = [], skipped = [];
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const cell = k => idx[k] === undefined ? '' : (r[idx[k]] || '').trim();
+    const name = cell('name');
+    if (!name) { skipped.push(`Row ${i + 1}: no name`); continue; }
+    const price = P.parse(cell('price'));
+    if (price <= 0) { skipped.push(`Row ${i + 1}: ${name} — price missing or zero`); continue; }
+    items.push({
+      name, nameTa: cell('tamil'), barcode: cell('barcode'), hsn: cell('hsn'),
+      unit: cell('unit') || 'pcs', gstRate: idx.gst === undefined ? 0 : (Number(String(cell('gst')).replace('%', '')) || 0),
+      purchasePaise: P.parse(cell('purchase')), pricePaise: price, mrpPaise: P.parse(cell('mrp')),
+      stockMilli: Q.parse(cell('stock')), lowStockMilli: Q.parse(cell('low')), category: cell('category')
+    });
+  }
+  return { items, skipped };
+}
+async function runImport() {
+  const res = parseImport($('#impText').value);
+  if (res.error) { toast(res.error); return; }
+  if (!res.items.length) { toast('Nothing to import'); return; }
+  let added = 0, updated = 0;
+  for (const it of res.items) {
+    const existing = it.barcode ? Catalog.byBarcode(it.barcode) : Catalog.all.find(p => p.name.toLowerCase() === it.name.toLowerCase());
+    const p = existing ? Object.assign({}, existing) : { id: uid(), createdAt: new Date().toISOString() };
+    Object.assign(p, {
+      name: it.name, nameTa: it.nameTa, barcode: it.barcode, hsn: it.hsn, unit: it.unit,
+      gstRate: it.gstRate, purchasePaise: it.purchasePaise, pricePaise: it.pricePaise,
+      mrpPaise: it.mrpPaise, lowStockMilli: it.lowStockMilli, category: it.category
+    });
+    await DB.put('products', p);
+    if (existing) updated++; else added++;
+    if (it.stockMilli) {
+      const have = existing ? Catalog.onHand(p.id) : 0;
+      if (it.stockMilli !== have) await DB.put('stockLedger', {
+        id: uid(), productId: p.id, qm: it.stockMilli - have,
+        type: existing ? 'adjustment' : 'opening', ref: 'import', ts: new Date().toISOString()
+      });
+    }
+    if (!existing) Catalog.all.push(p);
+  }
+  await Catalog.load();
+  $('#importModal').classList.remove('show');
+  renderProducts();
+  toast(`Imported — ${added} added, ${updated} updated${res.skipped.length ? ', ' + res.skipped.length + ' skipped' : ''}`);
+}
+
+/* ---- sales ---- */
+let salesCache = [];
+function dateRange() {
+  const f = $('#sFrom').value, t = $('#sTo').value;
+  return {
+    from: f ? new Date(f + 'T00:00:00') : new Date(0),
+    to: t ? new Date(t + 'T23:59:59.999') : new Date(8640000000000)
+  };
+}
+async function renderSales() {
+  const { from, to } = dateRange();
+  const all = await DB.all('bills');
+  salesCache = all.filter(b => { const d = new Date(b.ts); return d >= from && d <= to; })
+    .sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  const active = salesCache.filter(b => b.status !== 'cancelled');
+  const sum = k => active.reduce((s, b) => s + (b[k] || 0), 0);
+  const byMode = {};
+  active.forEach(b => (b.payments || []).forEach(p => { byMode[p.mode] = (byMode[p.mode] || 0) + p.amountPaise; }));
+  $('#salesStats').innerHTML = [
+    ['Bills', active.length], ['Sales', P.rs(sum('totalPaise'))], ['Taxable', P.rs(sum('taxablePaise'))],
+    ['GST collected', P.rs(sum('cgstPaise') + sum('sgstPaise') + sum('igstPaise'))],
+    ...Object.entries(byMode).map(([m, v]) => [m, P.rs(v)])
+  ].map(s => `<div class="stat"><div class="v">${s[1]}</div><div class="l">${s[0]}</div></div>`).join('');
+
+  $('#salesEmpty').style.display = salesCache.length ? 'none' : '';
+  $('#salesBody').innerHTML = salesCache.map(b => `<tr>
+    <td class="sm"><b>${esc(b.no)}</b>${b.status === 'cancelled' ? ' <span class="pill cancelled">cancelled</span>' : ''}</td>
+    <td class="sm">${new Date(b.ts).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+    <td class="sm">${esc(b.customerName || 'Walk-in')}${b.customerGstin ? '<div class="xs muted">' + esc(b.customerGstin) + '</div>' : ''}</td>
+    <td class="num">${b.itemCount || 0}</td>
+    <td class="num">${P.fmt(b.totalPaise)}</td>
+    <td class="num"><button class="btn small" data-bill="${b.id}">View</button></td>
+  </tr>`).join('');
+}
+let viewingBill = null;
+async function openBill(id) {
+  const b = await DB.get('bills', id);
+  const lines = await DB.byIndex('billLines', 'billId', id);
+  viewingBill = { bill: b, lines };
+  $('#billModalTitle').textContent = 'Bill ' + b.no + (b.status === 'cancelled' ? ' (cancelled)' : '');
+  $('#billCancel').style.display = b.status === 'cancelled' ? 'none' : '';
+  $('#billDetail').innerHTML = `
+    <div class="sm muted">${new Date(b.ts).toLocaleString('en-IN')} · ${esc(b.customerName || 'Walk-in customer')}
+      ${b.customerGstin ? ' · ' + esc(b.customerGstin) : ''} · ${b.interState ? 'IGST' : 'CGST + SGST'}</div>
+    <table class="lines" style="margin-top:9px"><thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Rate</th>
+      <th class="num">Taxable</th><th class="num">GST</th><th class="num">Total</th></tr></thead>
+      <tbody>${lines.map(l => `<tr><td>${esc(l.name)}<div class="lmeta">HSN ${esc(l.hsn || '-')}</div></td>
+        <td class="num">${Q.fmt(l.qm)}</td><td class="num">${P.fmt(l.ratePaise)}</td>
+        <td class="num">${P.fmt(l.taxablePaise)}</td>
+        <td class="num">${l.gstRate}%<div class="xs muted">${P.fmt(l.cgstPaise + l.sgstPaise + l.igstPaise)}</div></td>
+        <td class="num">${P.fmt(l.totalPaise)}</td></tr>`).join('')}</tbody></table>
+    <div class="totals" style="margin-top:9px">
+      <div class="tr"><span class="muted">Taxable</span><span>${P.fmt(b.taxablePaise)}</span></div>
+      ${b.interState ? `<div class="tr"><span class="muted">IGST</span><span>${P.fmt(b.igstPaise)}</span></div>`
+        : `<div class="tr"><span class="muted">CGST</span><span>${P.fmt(b.cgstPaise)}</span></div>
+           <div class="tr"><span class="muted">SGST</span><span>${P.fmt(b.sgstPaise)}</span></div>`}
+      ${b.roundOffPaise ? `<div class="tr"><span class="muted">Round off</span><span>${b.roundOffPaise > 0 ? '+' : '−'}${P.fmt(Math.abs(b.roundOffPaise))}</span></div>` : ''}
+      <div class="tr grand"><span>Total</span><span>${P.rs(b.totalPaise)}</span></div>
+    </div>
+    <div class="sm muted" style="margin-top:7px">Paid: ${(b.payments || []).map(p => esc(p.mode) + ' ' + P.fmt(p.amountPaise)).join(' · ') || '—'}</div>`;
+  $('#billModal').classList.add('show');
+}
+async function cancelViewedBill() {
+  if (!viewingBill) return;
+  const { bill, lines } = viewingBill;
+  if (!confirm(`Cancel bill ${bill.no}? Stock goes back in and the bill stays in the book, marked cancelled.`)) return;
+  const b = Object.assign({}, bill, { status: 'cancelled', cancelledAt: new Date().toISOString() });
+  const moves = lines.map(l => ({ id: uid(), productId: l.productId, qm: l.qm, type: 'cancel', ref: bill.no, ts: b.cancelledAt }));
+  await DB.put('bills', b);
+  for (const m of moves) await DB.put('stockLedger', m);
+  await Catalog.load();
+  $('#billModal').classList.remove('show');
+  renderSales(); renderProducts();
+  toast('Bill ' + bill.no + ' cancelled');
+}
+function salesCsv() {
+  const head = ['Bill no', 'Date', 'Customer', 'GSTIN', 'Place of supply', 'Items', 'Gross', 'Discount', 'Taxable', 'CGST', 'SGST', 'IGST', 'Round off', 'Total', 'Status'];
+  const rows = salesCache.map(b => [b.no, new Date(b.ts).toLocaleString('en-IN'), b.customerName || 'Walk-in', b.customerGstin || '',
+    stateName(b.placeOfSupply) || '', b.itemCount || 0, P.plain(b.grossPaise), P.plain(b.discountPaise), P.plain(b.taxablePaise),
+    P.plain(b.cgstPaise), P.plain(b.sgstPaise), P.plain(b.igstPaise), P.plain(b.roundOffPaise), P.plain(b.totalPaise), b.status]);
+  const csv = [head, ...rows].map(r => r.map(c => {
+    const s = String(c == null ? '' : c);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'sales.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+/* ---- settings ---- */
+function renderSettings() {
+  $('#sName').value = S.name; $('#sPhone').value = S.phone; $('#sAddr').value = S.address;
+  $('#sGstin').value = S.gstin; $('#sScheme').value = S.scheme;
+  $('#sIncl').value = String(S.inclusive); $('#sPrefix').value = S.prefix;
+  $('#sSlabs').value = S.slabs.join(', '); $('#sPaper').value = S.paper;
+  $('#sState').value = S.stateCode;
+  $('#lastBackup').textContent = S.lastBackup
+    ? `Last backup: ${new Date(S.lastBackup).toLocaleString('en-IN')} · ${S.billsSinceBackup || 0} bills since.`
+    : 'You have never backed up. Do it now — it takes one tap.';
+  const v = validateGstin(S.gstin);
+  $('#sGstinMsg').innerHTML = S.gstin ? (v.ok ? `<span style="color:var(--accent)">✓ ${esc(v.msg)}</span>` : `<span style="color:var(--danger)">${esc(v.msg)}</span>`) : '';
+}
+async function commitSettings() {
+  S.name = $('#sName').value.trim(); S.phone = $('#sPhone').value.trim();
+  S.address = $('#sAddr').value.trim(); S.gstin = $('#sGstin').value.trim().toUpperCase();
+  S.stateCode = $('#sState').value; S.scheme = $('#sScheme').value;
+  S.inclusive = Number($('#sIncl').value); S.prefix = ($('#sPrefix').value.trim() || 'INV').toUpperCase();
+  S.paper = $('#sPaper').value;
+  const slabs = $('#sSlabs').value.split(',').map(s => Number(String(s).replace('%', '').trim()))
+    .filter(n => !isNaN(n) && n >= 0 && n <= 100);
+  if (slabs.length) S.slabs = Array.from(new Set(slabs)).sort((a, b) => a - b);
+  await saveSettings();
+  renderSettings(); paintShopLabel(); Bill.render();
+}
+
+/* ---- sample shop ---- */
+const SAMPLE = [
+  ['Sugar 1 kg', 'சர்க்கரை', '8901001000017', '1701', 'kg', 5, 44, 52, 55, 40],
+  ['Toor Dal 1 kg', 'துவரம் பருப்பு', '8901001000024', '0713', 'kg', 0, 122, 148, 155, 25],
+  ['Idli Rice 5 kg', 'இட்லி அரிசி', '8901001000031', '1006', 'box', 5, 265, 310, 320, 12],
+  ['Sunflower Oil 1 L', 'சூரியகாந்தி எண்ணெய்', '8901001000048', '1512', 'litre', 5, 118, 139, 145, 18],
+  ['Tea Powder 250 g', 'தேயிலை', '8901001000055', '0902', 'packet', 5, 96, 118, 125, 30],
+  ['Toothpaste 100 g', 'பற்பசை', '8901001000062', '3306', 'pcs', 18, 52, 72, 75, 22],
+  ['Bath Soap', 'குளியல் சோப்பு', '8901001000079', '3401', 'pcs', 18, 27, 38, 40, 60],
+  ['Detergent 1 kg', 'சவர்க்காரம்', '8901001000086', '3402', 'kg', 18, 84, 112, 120, 15],
+  ['Biscuits Pack', 'பிஸ்கட்', '8901001000093', '1905', 'packet', 18, 18, 25, 25, 80],
+  ['Coconut Oil 500 ml', 'தேங்காய் எண்ணெய்', '8901001000109', '1513', 'ml', 5, 132, 165, 170, 14],
+  ['Wheat Flour 1 kg', 'கோதுமை மாவு', '8901001000116', '1101', 'kg', 5, 38, 47, 50, 26],
+  ['Salt 1 kg', 'உப்பு', '8901001000123', '2501', 'kg', 0, 14, 20, 22, 45]
+];
+async function seedSample() {
+  if (Catalog.all.length && !confirm('Add 12 sample products to your catalogue?')) return;
+  for (const [name, nameTa, barcode, hsn, unit, gst, buy, sell, mrp, stock] of SAMPLE) {
+    if (Catalog.byBarcode(barcode)) continue;
+    const p = {
+      id: uid(), createdAt: new Date().toISOString(), name, nameTa, barcode, hsn, unit,
+      gstRate: gst, purchasePaise: P.parse(buy), pricePaise: P.parse(sell), mrpPaise: P.parse(mrp),
+      lowStockMilli: Q.parse(5), category: 'Sample'
+    };
+    await DB.put('products', p);
+    await DB.put('stockLedger', { id: uid(), productId: p.id, qm: Q.parse(stock), type: 'opening', ref: 'sample', ts: new Date().toISOString() });
+  }
+  if (!S.name) { S.name = 'Sri Murugan Stores'; S.address = 'Big Bazaar Street, Madurai'; S.phone = '9876543210'; await saveSettings(); }
+  await Catalog.load();
+  renderAll();
+  toast('Sample shop loaded');
+}
+
+/* =====================================================================
+   Search box + keyboard
+===================================================================== */
+let resIndex = -1, resItems = [];
+function closeRes() { $('#resList').style.display = 'none'; resIndex = -1; resItems = []; }
+function showRes(items) {
+  resItems = items; resIndex = items.length ? 0 : -1;
+  const el = $('#resList');
+  if (!items.length) { closeRes(); return; }
+  el.innerHTML = items.map((p, i) => {
+    const on = Catalog.onHand(p.id);
+    return `<div class="resitem ${i === resIndex ? 'on' : ''}" data-i="${i}">
+      <div class="rn"><b>${esc(p.name)}</b>
+        <span class="xs muted">${p.nameTa ? esc(p.nameTa) + ' · ' : ''}${Q.fmt(on)} ${esc(p.unit)} in stock · GST ${p.gstRate}%</span></div>
+      <div class="rp">${P.fmt(p.pricePaise)}</div></div>`;
+  }).join('');
+  el.style.display = '';
+}
+function paintRes() {
+  $$('#resList .resitem').forEach((el, i) => el.classList.toggle('on', i === resIndex));
+}
+function commitScan() {
+  const raw = $('#scanInput').value.trim();
+  if (!raw) return;
+  /* A quantity prefix is the fastest way to sell 3 of something: "3*rice" */
+  let qm = 1000, term = raw;
+  const m = raw.match(/^(\d+(?:\.\d+)?)\s*[*x]\s*(.+)$/i);
+  if (m) { qm = Q.parse(m[1]); term = m[2].trim(); }
+
+  const exact = Catalog.byBarcode(term);
+  if (exact) { Bill.add(exact, qm); $('#scanInput').value = ''; closeRes(); return; }
+  const pick = resIndex >= 0 && resItems[resIndex] ? resItems[resIndex] : Catalog.search(term, 1)[0];
+  if (pick) { Bill.add(pick, qm); $('#scanInput').value = ''; closeRes(); }
+  else toast('No product matches "' + term + '"');
+}
+
+/* =====================================================================
+   Payment
+===================================================================== */
+function openPay() {
+  if (!Bill.lines.length) return;
+  const t = Bill.totals();
+  Bill.payments = [];
+  $('#payDue').textContent = P.rs(t.total);
+  $('#payMode').value = 'Cash';
+  $('#payAmt').value = P.plain(t.total);
+  $('#paySplitList').innerHTML = '';
+  updateChange();
+  $('#payModal').classList.add('show');
+  setTimeout(() => { $('#payAmt').select(); }, 40);
+}
+function paidSoFar() {
+  return Bill.payments.reduce((s, p) => s + p.amountPaise, 0);
+}
+function updateChange() {
+  const t = Bill.totals();
+  const entered = P.parse($('#payAmt').value);
+  const cashish = $('#payMode').value !== 'Credit';
+  const total = paidSoFar() + entered;
+  const change = total - t.total;
+  const box = $('#payChange');
+  if (cashish && change > 0) { box.style.display = ''; $('#payChangeVal').textContent = P.rs(change); }
+  else box.style.display = 'none';
+  $('#paySplitList').innerHTML = Bill.payments.length
+    ? Bill.payments.map((p, i) => `<div class="tr" style="display:flex;justify-content:space-between">
+        <span>${esc(p.mode)}</span><span>${P.fmt(p.amountPaise)} <button class="btn small danger" data-unsplit="${i}">✕</button></span></div>`).join('')
+      + `<div class="sm muted">Remaining ${P.fmt(Math.max(0, t.total - paidSoFar()))}</div>`
+    : '';
+}
+async function finishPay() {
+  const t = Bill.totals();
+  const entered = P.parse($('#payAmt').value);
+  const mode = $('#payMode').value;
+  if (entered > 0) Bill.payments.push({ mode, amountPaise: entered });
+  const paid = paidSoFar();
+  if (paid <= 0) { toast('Enter the amount received'); return; }
+  if (paid < t.total && !Bill.payments.some(p => p.mode === 'Credit')) {
+    const short = t.total - paid;
+    if (!confirm(`Short by ${P.rs(short)}. Put the balance on credit?`)) { Bill.payments.pop(); updateChange(); return; }
+    Bill.payments.push({ mode: 'Credit', amountPaise: short });
+  }
+  $('#payModal').classList.remove('show');
+  try { await saveCurrentBill(); await renderSales(); renderProducts(); }
+  catch (e) { console.error(e); toast('Could not save the bill — ' + (e && e.message ? e.message : 'storage error')); }
+}
+
+/* =====================================================================
+   Wiring
+===================================================================== */
+function bindTabs() {
+  $$('.tab-btn').forEach(b => b.addEventListener('click', () => {
+    $$('.tab-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $('#view-' + b.dataset.tab).classList.add('active');
+    if (b.dataset.tab === 'sales') renderSales();
+    if (b.dataset.tab === 'products') renderProducts();
+    if (b.dataset.tab === 'settings') renderSettings();
+    if (b.dataset.tab === 'bill') setTimeout(() => $('#scanInput').focus(), 30);
+  }));
+}
+function bindModals() {
+  $$('.backdrop').forEach(bd => {
+    bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
+    $$('[data-close]', bd).forEach(b => b.addEventListener('click', () => bd.classList.remove('show')));
+  });
+}
+function fillStates() {
+  const opts = STATES.map(s => `<option value="${s[0]}">${s[1]}</option>`).join('');
+  $('#sState').innerHTML = opts;
+  $('#cState').innerHTML = opts;
+}
+
+function bindBilling() {
+  const si = $('#scanInput');
+  si.addEventListener('input', () => {
+    const v = si.value.trim();
+    const m = v.match(/^(\d+(?:\.\d+)?)\s*[*x]\s*(.+)$/i);
+    const term = m ? m[2].trim() : v;
+    if (term.length < 1) { closeRes(); return; }
+    if (Catalog.byBarcode(term)) { closeRes(); return; }   // scanner will send Enter
+    showRes(Catalog.search(term, 8));
+  });
+  si.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (resItems.length) { resIndex = (resIndex + 1) % resItems.length; paintRes(); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (resItems.length) { resIndex = (resIndex - 1 + resItems.length) % resItems.length; paintRes(); } }
+    else if (e.key === 'Enter') { e.preventDefault(); commitScan(); }
+    else if (e.key === 'Escape') closeRes();
+  });
+  $('#resList').addEventListener('click', e => {
+    const it = e.target.closest('.resitem');
+    if (!it) return;
+    resIndex = Number(it.dataset.i); commitScan();
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.results')) closeRes();
+  });
+
+  $('#lineBody').addEventListener('input', e => {
+    const tr = e.target.closest('tr'); if (!tr) return;
+    const line = Bill.lines.find(l => l.id === tr.dataset.id); if (!line) return;
+    const k = e.target.dataset.k;
+    if (k === 'qm') line.qm = Q.parse(e.target.value);
+    if (k === 'discPct') line.discPct = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+    const t = Bill.totals();
+    const i = Bill.lines.indexOf(line);
+    tr.children[4].textContent = P.fmt(t.lines[i].total);
+    const rows = $('#totalsBox');
+    if (rows) { const keep = document.activeElement; Bill.renderTotalsOnly(); if (keep) keep.focus(); }
+  });
+  $('#lineBody').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if (del) Bill.remove(del.dataset.del);
+  });
+  $('#lineBody').addEventListener('change', () => Bill.render());
+
+  ['#cName', '#cPhone', '#cGstin', '#cState'].forEach(sel => $(sel).addEventListener('input', () => {
+    Bill.customer.name = $('#cName').value.trim();
+    Bill.customer.phone = $('#cPhone').value.trim();
+    Bill.customer.gstin = $('#cGstin').value.trim().toUpperCase();
+    Bill.customer.stateCode = $('#cState').value;
+    const v = validateGstin(Bill.customer.gstin);
+    $('#gstinMsg').innerHTML = Bill.customer.gstin
+      ? (v.ok ? `<span style="color:var(--accent)">✓ ${esc(v.msg)}</span>` : `<span style="color:var(--danger)">${esc(v.msg)}</span>`) : '';
+    if (v.ok && v.state && v.state !== $('#cState').value) { $('#cState').value = v.state; Bill.customer.stateCode = v.state; }
+    Bill.render();
+  }));
+  $('#billDisc').addEventListener('input', () => { Bill.billDisc = $('#billDisc').value; Bill.render(); });
+  $('#billDiscMode').addEventListener('change', () => { Bill.billDiscMode = $('#billDiscMode').value; Bill.render(); });
+  $('#newBillBtn').addEventListener('click', () => { Bill.reset(); $('#scanInput').focus(); });
+  $('#payBtn').addEventListener('click', openPay);
+
+  $('#payAmt').addEventListener('input', updateChange);
+  $('#payMode').addEventListener('change', updateChange);
+  $('#payExact').addEventListener('click', () => {
+    $('#payAmt').value = P.plain(Math.max(0, Bill.totals().total - paidSoFar())); updateChange();
+  });
+  $('#paySplit').addEventListener('click', () => {
+    const amt = P.parse($('#payAmt').value);
+    if (amt <= 0) { toast('Enter an amount to split off'); return; }
+    Bill.payments.push({ mode: $('#payMode').value, amountPaise: amt });
+    $('#payAmt').value = P.plain(Math.max(0, Bill.totals().total - paidSoFar()));
+    updateChange(); $('#payAmt').select();
+  });
+  $('#paySplitList').addEventListener('click', e => {
+    const b = e.target.closest('[data-unsplit]');
+    if (b) { Bill.payments.splice(Number(b.dataset.unsplit), 1); updateChange(); }
+  });
+  $('#payDone').addEventListener('click', finishPay);
+  $('#payAmt').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); finishPay(); } });
+}
+/* Re-render just the totals so typing in a qty box does not lose focus. */
+Bill.renderTotalsOnly = function () {
+  const t = Bill.totals();
+  const rows = [];
+  rows.push(['Items', String(Bill.lines.length)]);
+  rows.push(['Gross', P.fmt(t.gross)]);
+  if (t.discount) rows.push(['Discount', '−' + P.fmt(t.discount)]);
+  rows.push(['Taxable', P.fmt(t.taxable)]);
+  if (S.scheme === 'composition') rows.push(['GST', 'not applicable']);
+  else if (t.interState) rows.push(['IGST', P.fmt(t.igst)]);
+  else { rows.push(['CGST', P.fmt(t.cgst)]); rows.push(['SGST', P.fmt(t.sgst)]); }
+  if (t.roundOff) rows.push(['Round off', (t.roundOff > 0 ? '+' : '−') + P.fmt(Math.abs(t.roundOff))]);
+  $('#totalsBox').innerHTML = rows.map(r => `<div class="tr"><span class="muted">${r[0]}</span><span>${r[1]}</span></div>`).join('')
+    + `<div class="tr grand"><span>Total</span><span>${P.rs(t.total)}</span></div>`;
+};
+
+function bindProducts() {
+  $('#prodSearch').addEventListener('input', renderProducts);
+  $('#prodFilter').addEventListener('change', renderProducts);
+  $('#addProdBtn').addEventListener('click', () => openProduct(null));
+  $('#prodBody').addEventListener('click', e => {
+    const b = e.target.closest('[data-edit]');
+    if (b) openProduct(Catalog.byId(b.dataset.edit));
+  });
+  $('#pSave').addEventListener('click', saveProduct);
+  $('#pDelete').addEventListener('click', async () => {
+    if (!editingProduct) return;
+    if (!confirm(`Remove ${editingProduct.name}? Past bills keep their record.`)) return;
+    await DB.put('products', Object.assign({}, editingProduct, { deleted: true }));
+    await Catalog.load();
+    $('#prodModal').classList.remove('show');
+    renderProducts(); toast('Product removed');
+  });
+  $('#importBtn').addEventListener('click', () => { $('#impText').value = ''; $('#impPreview').innerHTML = ''; $('#importModal').classList.add('show'); });
+  $('#impText').addEventListener('input', () => {
+    const t = $('#impText').value.trim();
+    if (!t) { $('#impPreview').innerHTML = ''; return; }
+    const r = parseImport(t);
+    $('#impPreview').innerHTML = r.error
+      ? `<span style="color:var(--danger)">${esc(r.error)}</span>`
+      : `<b>${r.items.length}</b> product${r.items.length === 1 ? '' : 's'} ready.`
+        + (r.skipped.length ? `<div class="xs" style="color:var(--warn)">${r.skipped.slice(0, 6).map(esc).join('<br>')}</div>` : '');
+  });
+  $('#impFile').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const fr = new FileReader();
+    fr.onload = () => { $('#impText').value = fr.result; $('#impText').dispatchEvent(new Event('input')); };
+    fr.readAsText(f);
+  });
+  $('#impRun').addEventListener('click', runImport);
+}
+function bindSales() {
+  ['#sFrom', '#sTo'].forEach(s => $(s).addEventListener('change', renderSales));
+  $('#sToday').addEventListener('click', () => {
+    const d = new Date().toISOString().slice(0, 10);
+    $('#sFrom').value = d; $('#sTo').value = d; renderSales();
+  });
+  $('#sMonth').addEventListener('click', () => {
+    const n = new Date();
+    $('#sFrom').value = new Date(n.getFullYear(), n.getMonth(), 1).toISOString().slice(0, 10);
+    $('#sTo').value = new Date().toISOString().slice(0, 10);
+    renderSales();
+  });
+  $('#sCsv').addEventListener('click', salesCsv);
+  $('#salesBody').addEventListener('click', e => {
+    const b = e.target.closest('[data-bill]');
+    if (b) openBill(b.dataset.bill);
+  });
+  $('#billReprint').addEventListener('click', () => {
+    if (viewingBill) Print.bill(viewingBill.bill, viewingBill.lines);
+  });
+  $('#billCancel').addEventListener('click', cancelViewedBill);
+}
+function bindSettings() {
+  ['#sName', '#sPhone', '#sAddr', '#sGstin', '#sState', '#sScheme', '#sIncl', '#sPrefix', '#sSlabs', '#sPaper']
+    .forEach(s => $(s).addEventListener('change', commitSettings));
+  $('#sGstin').addEventListener('input', () => {
+    const v = validateGstin($('#sGstin').value);
+    $('#sGstinMsg').innerHTML = $('#sGstin').value.trim()
+      ? (v.ok ? `<span style="color:var(--accent)">✓ ${esc(v.msg)}</span>` : `<span style="color:var(--danger)">${esc(v.msg)}</span>`) : '';
+    if (v.ok && v.state) $('#sState').value = v.state;
+  });
+  $('#expBtn').addEventListener('click', () => Backup.export());
+  $('#backupBtn').addEventListener('click', () => Backup.export());
+  $('#nagBackup').addEventListener('click', () => Backup.export());
+  $('#impBtn').addEventListener('click', () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json';
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return;
+      const fr = new FileReader();
+      fr.onload = () => Backup.import(fr.result);
+      fr.readAsText(f);
+    };
+    inp.click();
+  });
+  $('#seedBtn').addEventListener('click', seedSample);
+  $('#themeBtn').addEventListener('click', async () => {
+    S.theme = S.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = S.theme;
+    await saveSettings();
+  });
+}
+function bindKeys() {
+  document.addEventListener('keydown', e => {
+    if (e.key === 'F2') { e.preventDefault(); $$('.tab-btn')[0].click(); $('#scanInput').focus(); $('#scanInput').select(); }
+    if (e.key === 'F4') { e.preventDefault(); if (!$('#payModal').classList.contains('show')) openPay(); }
+    if (e.key === 'Escape') $$('.backdrop.show').forEach(b => b.classList.remove('show'));
+  });
+}
+
+/* =====================================================================
+   Self-test — the calculation layer is pure, so it can be checked
+   without a database or a browser session. Open with ?selftest=1
+===================================================================== */
+function runSelfTest() {
+  const out = [];
+  let pass = 0, fail = 0;
+  const eq = (label, got, want) => {
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    ok ? pass++ : fail++;
+    out.push(`${ok ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>'}  ${esc(label)}`
+      + (ok ? '' : `\n        got  ${esc(JSON.stringify(got))}\n        want ${esc(JSON.stringify(want))}`));
+  };
+
+  /* --- money and quantity --- */
+  eq('P.parse rupees to paise', P.parse('12.50'), 1250);
+  eq('P.parse strips ₹ and commas', P.parse('₹1,234.56'), 123456);
+  eq('P.parse handles junk', P.parse('abc'), 0);
+  eq('P.fmt groups Indian style', P.fmt(1234567890), '1,23,45,678.90');
+  eq('Q.parse 0.750 kg', Q.parse('0.750'), 750);
+  eq('Q.fmt trims zeros', Q.fmt(1500), '1.5');
+  eq('Q.fmt whole number', Q.fmt(3000), '3');
+
+  /* --- amount in words --- */
+  eq('words: 100', rupeesInWords(10000), 'Rupees one hundred only');
+  eq('words: lakh boundary', rupeesInWords(10000000), 'Rupees one lakh only');
+  eq('words: crore boundary', rupeesInWords(1000000000), 'Rupees one crore only');
+  eq('words: mixed with paise', rupeesInWords(123456), 'Rupees one thousand two hundred thirty four and fifty six paise only');
+  eq('words: zero', rupeesInWords(0), 'Rupees zero only');
+
+  /* --- GST: exclusive pricing, intra-state --- */
+  let t = GST.compute([{ qm: 1000, ratePaise: 10000, discPct: 0, gstRate: 18 }], { inclusive: false, interState: false });
+  eq('excl 100 @18% taxable', t.taxable, 10000);
+  eq('excl 100 @18% cgst', t.cgst, 900);
+  eq('excl 100 @18% sgst', t.sgst, 900);
+  eq('excl 100 @18% igst is zero', t.igst, 0);
+  eq('excl 100 @18% total', t.total, 11800);
+
+  /* --- GST: inclusive pricing must reverse exactly --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 11800, discPct: 0, gstRate: 18 }], { inclusive: true, interState: false });
+  eq('incl 118 @18% taxable', t.taxable, 10000);
+  eq('incl 118 @18% tax', t.tax, 1800);
+  eq('incl 118 @18% total unchanged', t.total, 11800);
+  eq('incl: taxable + tax equals gross', t.taxable + t.tax, 11800);
+
+  /* --- inter-state goes to IGST, never split --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 10000, discPct: 0, gstRate: 12 }], { inclusive: false, interState: true });
+  eq('inter-state igst', t.igst, 1200);
+  eq('inter-state cgst zero', t.cgst, 0);
+  eq('inter-state sgst zero', t.sgst, 0);
+
+  /* --- odd paise: CGST floor, SGST takes the extra --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 501, discPct: 0, gstRate: 5 }], { inclusive: false, interState: false });
+  eq('odd paise splits without losing one', t.cgst + t.sgst, t.tax);
+  eq('odd paise sgst >= cgst', t.sgst >= t.cgst, true);
+
+  /* --- many odd-tax lines must not let CGST and SGST drift apart --- */
+  t = GST.compute(Array.from({ length: 9 }, () => ({ qm: 1000, ratePaise: 501, discPct: 0, gstRate: 5 })),
+    { inclusive: false, interState: false });
+  eq('nine odd lines keep CGST and SGST within a paisa', Math.abs(t.cgst - t.sgst) <= 1, true);
+  eq('nine odd lines lose no paisa', t.cgst + t.sgst, t.tax);
+  eq('per-line splits still sum to the bill', t.lines.reduce((s, l) => s + l.cgst, 0), t.cgst);
+
+  /* --- zero-rated goods --- */
+  t = GST.compute([{ qm: 2000, ratePaise: 2000, discPct: 0, gstRate: 0 }], { inclusive: true, interState: false });
+  eq('0% taxable is the full amount', t.taxable, 4000);
+  eq('0% tax is zero', t.tax, 0);
+
+  /* --- composition scheme collects no tax --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 10000, discPct: 0, gstRate: 18 }], { inclusive: false, composition: true });
+  eq('composition charges no tax', t.tax, 0);
+  eq('composition total is the price', t.total, 10000);
+
+  /* --- line discount --- */
+  t = GST.compute([{ qm: 2000, ratePaise: 5000, discPct: 10, gstRate: 5 }], { inclusive: false, interState: false });
+  eq('line discount gross', t.gross, 10000);
+  eq('line discount amount', t.discount, 1000);
+  eq('line discount taxable', t.taxable, 9000);
+  eq('line discount tax', t.tax, 450);
+
+  /* --- bill discount spreads across lines and the parts sum back --- */
+  t = GST.compute([
+    { qm: 1000, ratePaise: 10000, discPct: 0, gstRate: 18 },
+    { qm: 1000, ratePaise: 5000, discPct: 0, gstRate: 5 }
+  ], { inclusive: false, interState: false, billDiscPaise: 1000 });
+  eq('bill discount total applied', t.discount, 1000);
+  eq('bill discount split 2:1', [t.lines[0].discount, t.lines[1].discount], [667, 333]);
+  eq('line discounts sum to the whole', t.lines[0].discount + t.lines[1].discount, 1000);
+  eq('taxable after spread', t.taxable, 15000 - 1000);
+
+  /* --- a remainder that does not divide evenly still sums exactly --- */
+  t = GST.compute([
+    { qm: 1000, ratePaise: 3333, discPct: 0, gstRate: 5 },
+    { qm: 1000, ratePaise: 3333, discPct: 0, gstRate: 5 },
+    { qm: 1000, ratePaise: 3334, discPct: 0, gstRate: 5 }
+  ], { inclusive: false, billDiscPaise: 1000 });
+  eq('three-way spread sums exactly', t.lines.reduce((s, l) => s + l.discount, 0), 1000);
+
+  /* --- bill discount cannot exceed the bill --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 5000, discPct: 0, gstRate: 5 }], { inclusive: false, billDiscPaise: 900000 });
+  eq('over-large discount is capped', t.taxable, 0);
+  eq('over-large discount total', t.total, 0);
+
+  /* --- rounding to the nearest rupee --- */
+  t = GST.compute([{ qm: 1000, ratePaise: 10049, discPct: 0, gstRate: 0 }], { inclusive: true });
+  eq('round down 100.49', t.total, 10000);
+  eq('round down roundOff', t.roundOff, -49);
+  t = GST.compute([{ qm: 1000, ratePaise: 10050, discPct: 0, gstRate: 0 }], { inclusive: true });
+  eq('round up 100.50', t.total, 10100);
+  eq('round up roundOff', t.roundOff, 50);
+  eq('roundOff always reconciles', t.beforeRound + t.roundOff, t.total);
+
+  /* --- fractional quantity (weighed goods) --- */
+  t = GST.compute([{ qm: 750, ratePaise: 5200, discPct: 0, gstRate: 5 }], { inclusive: true });
+  eq('0.750 kg at 52.00 gross', t.gross, 3900);
+
+  /* --- multi-line HSN summary, which is what GSTR-1 needs --- */
+  t = GST.compute([
+    { qm: 1000, ratePaise: 10000, discPct: 0, gstRate: 18, hsn: '3401' },
+    { qm: 1000, ratePaise: 20000, discPct: 0, gstRate: 18, hsn: '3401' },
+    { qm: 1000, ratePaise: 5000, discPct: 0, gstRate: 5, hsn: '1701' }
+  ], { inclusive: false });
+  eq('HSN summary groups by code and rate', t.hsn.length, 2);
+  eq('HSN summary taxable adds up', t.hsn.reduce((s, h) => s + h.taxable, 0), t.taxable);
+  eq('bill tax equals sum of line taxes', t.lines.reduce((s, l) => s + l.tax, 0), t.tax);
+
+  /* --- empty bill --- */
+  t = GST.compute([], { inclusive: true });
+  eq('empty bill total', t.total, 0);
+  eq('empty bill has no lines', t.lines.length, 0);
+
+  /* --- financial year: April starts a new one --- */
+  eq('FY on 31 March', fyOf(new Date(2027, 2, 31)).label, '2026-27');
+  eq('FY on 1 April', fyOf(new Date(2027, 3, 1)).label, '2027-28');
+  eq('FY short form', fyOf(new Date(2026, 5, 10)).short, '2627');
+
+  /* --- GSTIN validation --- */
+  const goodGstin = (() => { const b = '33AABCU9603R1Z'; return b + gstinCheckDigit(b); })();
+  eq('valid GSTIN accepted', validateGstin(goodGstin).ok, true);
+  eq('valid GSTIN reports state', validateGstin(goodGstin).msg, 'Tamil Nadu');
+  eq('empty GSTIN is allowed', validateGstin('').ok, true);
+  eq('short GSTIN rejected', validateGstin('33AABCU').ok, false);
+  eq('bad check digit rejected', validateGstin('33AABCU9603R1ZA').ok, false);
+  eq('state code 99 rejected', validateGstin('99AABCU9603R1Z0').ok, false);
+
+  /* --- CSV import mapping --- */
+  let imp = parseImport('name,barcode,price,gst,stock\nSugar 1kg,890123,52,5,40\nSalt,,20,0,10');
+  eq('import reads two rows', imp.items.length, 2);
+  eq('import price to paise', imp.items[0].pricePaise, 5200);
+  eq('import stock to milliunits', imp.items[0].stockMilli, 40000);
+  eq('import default unit', imp.items[0].unit, 'pcs');
+  imp = parseImport('Item Name;Sale Price;GST Rate\nRice;48.50;5');
+  eq('import handles semicolons and aliases', imp.items.length, 1);
+  eq('import alias maps price', imp.items[0].pricePaise, 4850);
+  /* A comma is a thousands separator, not a decimal point — Indian
+     formatting. "1,250.50" is twelve hundred rupees, not one rupee. */
+  imp = parseImport('name,price\n"Gas Stove","1,250.50"');
+  eq('import treats comma as thousands separator', imp.items[0].pricePaise, 125050);
+  imp = parseImport('name,price\nGhee,\nOil,120');
+  eq('import skips a priceless row', imp.items.length, 1);
+  eq('import records why it skipped', imp.skipped.length, 1);
+  eq('import without a name column errors', !!parseImport('a,b\n1,2').error, true);
+
+  /* --- CSV parser edge cases --- */
+  eq('CSV quoted comma', parseCSV('a,b\n"x,y",z')[1], ['x,y', 'z']);
+  eq('CSV escaped quote', parseCSV('a\n"say ""hi"""')[1], ['say "hi"']);
+  eq('CSV tab delimited', parseCSV('a\tb\n1\t2')[1], ['1', '2']);
+
+  document.body.innerHTML = `<div id="selftest"><h2>Self-test — ${pass} passed, ${fail} failed</h2>`
+    + `<div style="margin:10px 0; font-weight:bold" class="${fail ? 'fail' : 'pass'}">${fail ? 'FAILURES PRESENT' : 'ALL GREEN'}</div>`
+    + out.join('\n') + '</div>';
+  document.title = (fail ? 'FAIL' : 'PASS') + ` ${pass}/${pass + fail} — self-test`;
+  return { pass, fail };
+}
+
+/* =====================================================================
+   Boot
+===================================================================== */
+(async function boot() {
+  if (new URLSearchParams(location.search).has('selftest')) { runSelfTest(); return; }
+  try {
+    await DB.open();
+  } catch (e) {
+    document.body.innerHTML = `<div style="padding:24px; font-family:system-ui">
+      <h2>Storage unavailable</h2>
+      <p>This browser would not open its database, so billing cannot start safely.</p>
+      <p class="muted">This usually means the page was opened directly from a file, or private browsing is blocking storage.
+      Serve the folder over a web address instead.</p>
+      <pre style="background:#eee;padding:10px;border-radius:8px">python3 -m http.server</pre>
+      <p>${esc(e && e.message ? e.message : String(e))}</p></div>`;
+    return;
+  }
+  await loadSettings();
+  await Catalog.load();
+  fillStates();
+  bindTabs(); bindModals(); bindBilling(); bindProducts(); bindSales(); bindSettings(); bindKeys();
+  const today = new Date().toISOString().slice(0, 10);
+  $('#sFrom').value = today; $('#sTo').value = today;
+  Bill.reset();
+  renderAll();
+  $('#scanInput').focus();
+})();
+</script>
+</body>
+</html>
