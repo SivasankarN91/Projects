@@ -2,7 +2,7 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents all twelve apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents thirteen of the apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
@@ -19,6 +19,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
+| 🧾 Billing &amp; Stock (GST POS) | https://sivasankarn91.github.io/Projects/billing-pos.html |
 
 ## 🎨 Generative Art Studio — [`art-studio.html`](art-studio.html)
 
@@ -210,6 +211,36 @@ A drag-and-drop **multi-page** landing site builder for marketers — assemble p
 ## 🎪 Emoji Physics Simulator — [`emoji-simulator.html`](emoji-simulator.html)
 
 An interactive emoji physics playground. Click to spawn emojis and watch them bounce around.
+
+## 🧾 Billing &amp; Stock — [`billing-pos.html`](billing-pos.html)
+
+A counter-side GST billing and stock app for small Indian shops — scan, bill, print, and the stock takes care of itself. Built for a kirana, pharmacy, hardware shop or bakery that wants proper GST bills without a subscription, an account, or an internet connection.
+
+**Features**
+
+- **Billing built for a counter** — a barcode scanner works with no setup (they type like a keyboard); or search by name, Tamil name or barcode with ranked results. Type `3*sugar` to sell three at once. <kbd>F2</kbd> jumps to the scan box, <kbd>F4</kbd> opens payment, arrow keys pick from the list
+- **GST that adds up** — CGST + SGST within the state, IGST across it, decided automatically from the customer's place of supply; per-item HSN and rate; MRP-inclusive *or* exclusive pricing; totals rounded to the nearest rupee with the round-off shown; a per-HSN summary on the invoice for your accountant
+- **Bills that are compliant** — a consecutive serial per financial year (April–March), a **Tax Invoice** for regular dealers or a **Bill of Supply** with the required declaration for composition dealers, GSTIN validated including its check digit, and the amount in words in lakh/crore wording
+- **Three print formats** — 58 mm and 80 mm thermal receipts and a full A4 tax invoice, chosen in Settings. Tamil product names print alongside the English ones
+- **Stock as a ledger, not a counter** — every opening balance, sale, adjustment and cancellation is a movement, so the on-hand figure can always be explained. Low-stock and out-of-stock flags, and stock value at cost
+- **Products** — name, Tamil name, barcode, HSN, unit (pcs/kg/litre/box…), purchase price, selling price, MRP, GST rate and reorder level; **bulk import** by pasting straight from Excel or dropping a CSV, matching on barcode so re-importing updates instead of duplicating
+- **Payments** — cash with change calculation, UPI, card, credit (khata), and split payments across modes
+- **Sales** — filter by date, see totals by payment mode and GST collected, reprint any bill, and cancel one (stock goes back, the bill stays in the book marked cancelled). Export the period as CSV
+- **Backup you will actually do** — one-tap download of the whole shop, a nag on the billing screen once bills pile up since your last one, and a full restore
+- **Extras** — light/dark theme, works entirely offline, and a built-in calculation self-test at [`?selftest=1`](billing-pos.html?selftest=1)
+
+**Why it is built this way**
+
+- Money is held in **integer paise** and quantities in thousandths of a unit. A bill total that is off by a paisa loses a shopkeeper's trust for good, so no amount ever touches a floating-point number
+- Data lives in **IndexedDB**, not `localStorage`. A shop writing 100 bills a day would blow past the 5 MB `localStorage` cap in weeks, and being synchronous it would freeze the counter mid-sale
+- A bill, its lines and its stock movements are written in **one transaction** — they commit together or not at all
+
+**Limits, stated plainly**
+
+- **One device, one counter.** The data lives in this browser and cannot be shared between two machines
+- **e-Invoice and e-Way bills are not included.** Both apply above the turnover threshold and need a live connection to the government portal; this is built for shops below it
+- **GST rates are editable on purpose** and are not treated as fixed — slabs change, so check the current ones against CBIC guidance
+- Best served from a folder or a web address rather than opened as a downloaded file, since browsers treat `file://` pages inconsistently for storage
 
 ## Running
 
