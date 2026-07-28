@@ -359,6 +359,13 @@
 
 const STORE_KEY = 'storeBuilderData_v1';
 const DEMO_MAX_PRODUCTS = 6;
+
+/* Where this builder is being served from. Baked into exported shops as the
+   credit link so it follows the site if the address ever changes, instead of
+   a hardcoded URL that quietly goes stale. Falls back for file:// use. */
+const HOME_URL = /^https?:$/.test(location.protocol)
+  ? location.origin + location.pathname.replace(/[^/]*$/, '')
+  : 'https://sivasankarn91.github.io/';
 const $ = (s) => document.querySelector(s);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -752,7 +759,10 @@ footer.sf-foot a{color:#70707c}
 
 /* This function is serialized into the exported store; it must be self-contained
    and read its data from window.__STORE__. It is never called in the builder. */
-function storefrontRuntime() {
+/* `homeUrl` is passed in because this function is serialised with
+   toString() and re-executed inside the preview iframe and the exported
+   shop, where nothing from the builder's scope exists. */
+function storefrontRuntime(homeUrl) {
   const D = window.__STORE__;
   const SLOT = ['#2a78d6', '#008300', '#e87ba4', '#eda100', '#1baf7a', '#eb6834', '#4a3aa7', '#e34948'];
   const brand = SLOT[((D.store.brandSlot || 1) - 1) % 8];
@@ -816,7 +826,7 @@ function storefrontRuntime() {
       <div id="sfFeatured"></div>
       <div class="sf-grid" id="sfGrid"></div>
     </div>
-    <footer class="sf-foot">${esc(D.store.name || 'My Store')} · <a href="https://sivasankarn91.github.io/Projects/" target="_blank" rel="noopener">Made with Projects Store Builder</a></footer>
+    <footer class="sf-foot">${esc(D.store.name || 'My Store')} · <a href="${homeUrl}" target="_blank" rel="noopener">Made with Projects Store Builder</a></footer>
     <div class="sf-back" id="sfDetailBack"><div class="sf-sheet" id="sfDetail"></div></div>
     <div class="sf-back" id="sfCartBack"><div class="sf-sheet" id="sfCartSheet"></div></div>`;
 
@@ -1082,7 +1092,7 @@ ${st.store.tagline ? `<meta name="description" content="${esc(st.store.tagline)}
 <body>
 <div id="app"></div>
 <script>window.__STORE__=${JSON.stringify(data).replace(/</g, '\\u003c')};<\/script>
-<script>(${storefrontRuntime.toString()})();<\/script>
+<script>(${storefrontRuntime.toString()})(${JSON.stringify(HOME_URL)});<\/script>
 </body>
 </html>`;
 }

@@ -2,24 +2,24 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/Projects/ — the homepage presents thirteen of the apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/ — the homepage presents thirteen of the apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
-| 🎨 Generative Art Studio | https://sivasankarn91.github.io/Projects/art-studio.html |
-| 📅 Appointment Scheduler | https://sivasankarn91.github.io/Projects/appointment-scheduler.html |
-| 🌅 Daily Companion | https://sivasankarn91.github.io/Projects/daily-companion.html |
-| 🎉 Festival & Function Planner | https://sivasankarn91.github.io/Projects/festival-planner.html |
-| 🛍️ Online Store Builder | https://sivasankarn91.github.io/Projects/store-builder.html |
-| 🚦 TN Travel Assistant | https://sivasankarn91.github.io/Projects/travel-assistant.html |
-| 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/Projects/family-dates.html |
-| 🧾 Invoice Generator | https://sivasankarn91.github.io/Projects/invoice-generator.html |
-| 📊 Data Analyzer | https://sivasankarn91.github.io/Projects/data-analyzer.html |
-| 🏗️ Landing Page Builder | https://sivasankarn91.github.io/Projects/pagebuilder.html |
-| 🗺️ Whiteboard | https://sivasankarn91.github.io/Projects/whiteboard.html |
-| 💰 Finance Tracker | https://sivasankarn91.github.io/Projects/finance-tracker.html |
-| 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/Projects/emoji-simulator.html |
-| 🧾 Billing &amp; Stock (GST POS) | https://sivasankarn91.github.io/Projects/billing-pos.html |
+| 🎨 Generative Art Studio | https://sivasankarn91.github.io/art-studio.html |
+| 📅 Appointment Scheduler | https://sivasankarn91.github.io/appointment-scheduler.html |
+| 🌅 Daily Companion | https://sivasankarn91.github.io/daily-companion.html |
+| 🎉 Festival & Function Planner | https://sivasankarn91.github.io/festival-planner.html |
+| 🛍️ Online Store Builder | https://sivasankarn91.github.io/store-builder.html |
+| 🚦 TN Travel Assistant | https://sivasankarn91.github.io/travel-assistant.html |
+| 💝 Dates & Gifts Reminder | https://sivasankarn91.github.io/family-dates.html |
+| 🧾 Invoice Generator | https://sivasankarn91.github.io/invoice-generator.html |
+| 📊 Data Analyzer | https://sivasankarn91.github.io/data-analyzer.html |
+| 🏗️ Landing Page Builder | https://sivasankarn91.github.io/pagebuilder.html |
+| 🗺️ Whiteboard | https://sivasankarn91.github.io/whiteboard.html |
+| 💰 Finance Tracker | https://sivasankarn91.github.io/finance-tracker.html |
+| 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/emoji-simulator.html |
+| 🧾 Billing &amp; Stock (GST POS) | https://sivasankarn91.github.io/billing-pos.html |
 
 ## 🎨 Generative Art Studio — [`art-studio.html`](art-studio.html)
 
