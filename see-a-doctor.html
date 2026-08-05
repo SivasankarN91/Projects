@@ -288,8 +288,10 @@
     <input id="aiKeyIn" autocomplete="off" spellcheck="false"></div>
   <div style="margin-top:9px"><label class="f" data-t="aiModelL">Model</label>
     <select id="aiModelIn"></select></div>
-  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
+  <div id="aiTestOut" class="sm" style="margin-top:12px"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap">
     <button class="btn" id="aiClear" style="margin-right:auto" data-t="aiRemove">Remove key</button>
+    <button class="btn" id="aiTest" data-t="aiTestBtn">Test connection</button>
     <button class="btn" data-close data-t="close">Close</button>
     <button class="btn primary" id="aiSave" data-t="save">Save</button>
   </div>
@@ -799,9 +801,17 @@ const AI_PROVIDERS = {
 };
 const provider = () => AI_PROVIDERS[S.aiProvider] || AI_PROVIDERS.anthropic;
 
-/** Returns sanitised ids, or null if unavailable. Never throws. */
+/**
+ * Always resolves to { ok, reason, flags, area, detail }. Never throws and
+ * never blocks: on any failure the caller still has the offline result.
+ *
+ * The reason matters. Every failure used to surface as one vague message,
+ * which is useless when someone is trying to get a key working — a blocked
+ * request, a wrong key and a missing key looked identical.
+ */
 async function askAI(text, who) {
-  if (!S.aiKey) return null;
+  const none = { flags: [], area: null };
+  if (!S.aiKey) return { ok: false, reason: 'nokey', ...none };
   const pv = provider();
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 15000);
@@ -810,11 +820,37 @@ async function askAI(text, who) {
     const res = await fetch(r.url, {
       method: 'POST', signal: ctl.signal, headers: r.headers, body: JSON.stringify(r.body)
     });
-    if (!res.ok) return null;
-    return sanitizeAI(pv.extract(await res.json()), who);
-  } catch { return null; }
-  finally { clearTimeout(timer); }
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const b = await res.json();
+        detail = (b && (b.error?.message || b.detail || b.message)) || '';
+      } catch { detail = ''; }
+      const reason = res.status === 401 || res.status === 403 ? 'badkey'
+        : res.status === 404 ? 'badmodel'
+        : res.status === 429 ? 'ratelimit' : 'http';
+      return { ok: false, reason, status: res.status, detail, ...none };
+    }
+    const parsed = sanitizeAI(pv.extract(await res.json()), who);
+    return { ok: true, reason: 'ok', ...parsed };
+  } catch (e) {
+    /* fetch() rejects rather than resolving for a CORS refusal, a DNS
+       failure or no network, and the browser deliberately hides which.
+       They are reported together because the user's next step is the same. */
+    return { ok: false, reason: ctl.signal.aborted ? 'timeout' : 'blocked', detail: String(e && e.message || e), ...none };
+  } finally { clearTimeout(timer); }
 }
+
+const AI_REASON = {
+  nokey:     { en: 'No key saved yet — open AI setup to add one, or pick a section below.', ta: 'சாவி இல்லை — கீழே ஒரு பிரிவை தேர்வு செய்யுங்கள்.' },
+  blocked:   { en: 'This provider would not accept a request from a web page. Pick a section below.', ta: 'இந்த வழங்குநர் இணைய பக்கத்திலிருந்து ஏற்கவில்லை.' },
+  timeout:   { en: 'The provider did not answer in time. Pick a section below.', ta: 'பதில் வரவில்லை.' },
+  badkey:    { en: 'That key was rejected. Check it in AI setup.', ta: 'சாவி ஏற்கப்படவில்லை.' },
+  badmodel:  { en: 'That model was not found. Choose another in AI setup.', ta: 'மாடல் கிடைக்கவில்லை.' },
+  ratelimit: { en: 'Provider limit reached — out of credits, or too many requests.', ta: 'வரம்பை எட்டிவிட்டது.' },
+  http:      { en: 'The provider returned an error. Pick a section below.', ta: 'வழங்குநர் பிழை.' },
+  ok:        { en: 'Could not tell which section that is — please pick one below.', ta: 'எந்த பிரிவு என தெரியவில்லை — கீழே தேர்வு செய்யுங்கள்.' }
+};
 
 /* =====================================================================
    State
@@ -872,6 +908,8 @@ const STR = {
   aiSafeB: { en: 'The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.', ta: 'AI நீங்கள் சொன்ன அறிகுறிகளை மட்டுமே கண்டறிகிறது. அவசர நிலை பழைய விதிகளால் மட்டுமே தீர்மானிக்கப்படும்.' },
   aiKeyL: { en: 'API key', ta: 'API சாவி' },
   aiProviderL: { en: 'Provider', ta: 'வழங்குநர்' },
+  aiTestBtn: { en: 'Test connection', ta: 'சோதிக்கவும்' },
+  aiTesting: { en: 'Testing…', ta: 'சோதிக்கிறது…' },
   aiModelL: { en: 'Model', ta: 'மாடல்' },
   aiRemove: { en: 'Remove key', ta: 'சாவியை நீக்கு' },
   aiThinking: { en: 'Reading what you wrote…', ta: 'படிக்கிறது…' },
@@ -1040,8 +1078,8 @@ async function runAsk() {
   const local = localFlags(text, session.who);
   const btn = $('#askBtn');
   const label = btn.textContent;
-  let ai = null;
-  if (S.aiKey) { btn.disabled = true; btn.textContent = T(STR.aiThinking); ai = await askAI(text, session.who); }
+  btn.disabled = true; btn.textContent = T(STR.aiThinking);
+  const ai = await askAI(text, session.who);
   btn.disabled = false; btn.textContent = label;
 
   const flags = mergeFlags(local, ai && ai.flags);
@@ -1051,8 +1089,8 @@ async function runAsk() {
     return;
   }
   const area = (ai && ai.area) || null;
-  if (area) { session.flags = []; startArea(area); }
-  else { toast(T(STR.aiNoMatch)); }
+  if (area) { session.flags = []; startArea(area); return; }
+  toast(T(AI_REASON[(ai && ai.reason)] || AI_REASON.ok));
 }
 
 function renderHistory() {
@@ -1132,11 +1170,16 @@ function bind() {
     $('#aiModal').classList.add('show');
   };
   $('#aiProviderIn').onchange = () => {
+    const saved = { k: S.aiKey };
     /* Keys are not interchangeable between providers, so switching clears
        it rather than leaving one that will only ever return 401. */
     S.aiProvider = $('#aiProviderIn').value;
     S.aiKey = ''; S.aiModel = AI_PROVIDERS[S.aiProvider].models[0][0];
-    save(); $('#aiKeyIn').value = ''; paintProvider(); paintAiState();
+    save(); $('#aiKeyIn').value = ''; $('#aiTestOut').innerHTML = '';
+    paintProvider(); paintAiState();
+    /* Switching wipes the key, and losing a pasted key silently is a nasty
+       surprise — say so. */
+    if (saved.k) toast(S.lang === 'ta' ? 'சாவி நீக்கப்பட்டது — புதிய சாவி ஒட்டவும்' : 'Key cleared — paste the key for this provider');
   };
   $('#aiSave').onclick = () => {
     S.aiProvider = $('#aiProviderIn').value;
@@ -1144,6 +1187,28 @@ function bind() {
     save(); $('#aiModal').classList.remove('show'); paintAiState();
     toast(S.aiKey ? (S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved') : 'Key removed');
   };
+  /* Makes a real call with whatever is typed in the box and reports exactly
+     what came back — the app's fallback is deliberately vague, which is no
+     help at all while setting a key up. */
+  $('#aiTest').onclick = async () => {
+    const out = $('#aiTestOut');
+    const saved = { p: S.aiProvider, k: S.aiKey, m: S.aiModel };
+    S.aiProvider = $('#aiProviderIn').value;
+    S.aiKey = $('#aiKeyIn').value.trim();
+    S.aiModel = $('#aiModelIn').value;
+    if (!S.aiKey) { out.innerHTML = '<b style="color:var(--now)">Paste a key first.</b>'; Object.assign(S, { aiProvider: saved.p, aiKey: saved.k, aiModel: saved.m }); return; }
+    out.textContent = T(STR.aiTesting);
+    const r = await askAI('mild cold since yesterday', 'adult');
+    const msg = r.ok
+      ? '<b style="color:var(--home)">Working.</b> The provider answered and the reply was understood.'
+      : `<b style="color:var(--now)">${esc(T(AI_REASON[r.reason] || AI_REASON.http))}</b>`
+        + (r.status ? `<div class="muted">HTTP ${r.status}</div>` : '')
+        + (r.detail ? `<div class="muted" style="word-break:break-word">${esc(String(r.detail).slice(0, 220))}</div>` : '')
+        + (r.reason === 'blocked' ? '<div class="muted" style="margin-top:5px">A blocked request usually means this provider does not allow calls directly from a web page. Check the browser console for a CORS message.</div>' : '');
+    out.innerHTML = msg;
+    Object.assign(S, { aiProvider: saved.p, aiKey: saved.k, aiModel: saved.m });
+  };
+
   $('#aiClear').onclick = () => {
     S.aiKey = ''; save(); $('#aiKeyIn').value = ''; $('#aiModal').classList.remove('show');
     paintAiState(); toast('Key removed');

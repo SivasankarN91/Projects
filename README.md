@@ -236,6 +236,8 @@ Add your own API key and you can describe the problem in your own words, in Engl
 | Anthropic (Claude) | `sk-ant-…` from console.anthropic.com | paid per use, a fraction of a rupee per check |
 | NVIDIA | `nvapi-…` from build.nvidia.com | **free credits on signup — limited, not unlimited** |
 
+**AI setup has a Test connection button.** It makes one real call and reports exactly what came back — working, key rejected, model not found, out of credits, or blocked by the browser — including the provider's own error text and the HTTP status. Without it every failure looked the same, which is useless while setting a key up.
+
 > **Check NVIDIA works from a browser before relying on it.** The app has no server, so the call is made from the page, and that needs the provider to allow cross-origin browser requests. This could not be verified from the build environment. If it is refused, the request fails and the app falls back to the offline flow — safe, but the typed-symptom feature simply will not work on that provider. The design constraint is that **the model understands but never decides**:
 
 - Offline keyword matching for warning signs runs first and always, with no key and no network
