@@ -281,13 +281,13 @@
     <span class="sm" data-t="aiSafeB">The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.</span>
   </div>
 
-  <div style="margin-top:12px"><label class="f" data-t="aiKeyL">Anthropic API key</label>
-    <input id="aiKeyIn" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"></div>
+  <div style="margin-top:12px"><label class="f" data-t="aiProviderL">Provider</label>
+    <select id="aiProviderIn"></select>
+    <div class="sm muted" id="aiProviderNote" style="margin-top:5px"></div></div>
+  <div style="margin-top:9px"><label class="f" data-t="aiKeyL">API key</label>
+    <input id="aiKeyIn" autocomplete="off" spellcheck="false"></div>
   <div style="margin-top:9px"><label class="f" data-t="aiModelL">Model</label>
-    <select id="aiModelIn">
-      <option value="claude-haiku-4-5-20251001">Haiku 4.5 — cheapest, fast</option>
-      <option value="claude-sonnet-5">Sonnet 5 — more accurate, costs more</option>
-    </select></div>
+    <select id="aiModelIn"></select></div>
   <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
     <button class="btn" id="aiClear" style="margin-right:auto" data-t="aiRemove">Remove key</button>
     <button class="btn" data-close data-t="close">Close</button>
@@ -738,31 +738,80 @@ function aiPrompt(text, who) {
   return `Warning sign ids:\n${flags}\n\nArea ids:\n${areas}\n\nPerson: ${who}\nDescription (may be Tamil or English):\n${text}`;
 }
 
+/* Two providers, one contract. Everything safety-related sits outside this
+   table and is identical whichever is chosen — which is what makes it fine
+   to offer a small open model here. A weaker model simply finds less; the
+   union means it can never subtract, so model quality is a question of how
+   useful the feature is, not of how safe it is. */
+const AI_PROVIDERS = {
+  anthropic: {
+    label: 'Anthropic (Claude)', keyHint: 'sk-ant-…', signup: 'console.anthropic.com',
+    note: { en: 'Paid per use, typically a fraction of a rupee per check.', ta: 'ஒவ்வொரு முறையும் சிறிது கட்டணம்.' },
+    models: [
+      ['claude-haiku-4-5-20251001', 'Haiku 4.5 — cheapest, fast'],
+      ['claude-sonnet-5', 'Sonnet 5 — more accurate, costs more']
+    ],
+    request(text, who, st) {
+      return {
+        url: 'https://api.anthropic.com/v1/messages',
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': st.aiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: {
+          model: st.aiModel, max_tokens: 300, temperature: 0,
+          system: AI_SYSTEM,
+          messages: [{ role: 'user', content: aiPrompt(text, who) }]
+        }
+      };
+    },
+    extract(j) { return ((j && j.content) || []).map(c => c.text || '').join(''); }
+  },
+
+  nvidia: {
+    label: 'NVIDIA (free credits)', keyHint: 'nvapi-…', signup: 'build.nvidia.com',
+    note: { en: 'Free credits on signup — limited, not unlimited.', ta: 'இலவச கிரெடிட் — வரம்புக்குட்பட்டது.' },
+    models: [
+      ['meta/llama-3.1-8b-instruct', 'Llama 3.1 8B — fast, uses fewest credits'],
+      ['meta/llama-3.3-70b-instruct', 'Llama 3.3 70B — follows instructions better'],
+      ['mistralai/mistral-7b-instruct-v0.3', 'Mistral 7B — alternative small model']
+    ],
+    request(text, who, st) {
+      return {
+        url: 'https://integrate.api.nvidia.com/v1/chat/completions',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + st.aiKey },
+        body: {
+          model: st.aiModel, max_tokens: 300, temperature: 0,
+          messages: [
+            { role: 'system', content: AI_SYSTEM },
+            { role: 'user', content: aiPrompt(text, who) }
+          ]
+        }
+      };
+    },
+    extract(j) {
+      const c = j && j.choices && j.choices[0];
+      return (c && c.message && c.message.content) || '';
+    }
+  }
+};
+const provider = () => AI_PROVIDERS[S.aiProvider] || AI_PROVIDERS.anthropic;
+
 /** Returns sanitised ids, or null if unavailable. Never throws. */
 async function askAI(text, who) {
   if (!S.aiKey) return null;
+  const pv = provider();
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), 12000);
+  const timer = setTimeout(() => ctl.abort(), 15000);
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', signal: ctl.signal,
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': S.aiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: S.aiModel || 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        system: AI_SYSTEM,
-        messages: [{ role: 'user', content: aiPrompt(text, who) }]
-      })
+    const r = pv.request(text, who, S);
+    const res = await fetch(r.url, {
+      method: 'POST', signal: ctl.signal, headers: r.headers, body: JSON.stringify(r.body)
     });
     if (!res.ok) return null;
-    const j = await res.json();
-    const txt = (j.content || []).map(c => c.text || '').join('');
-    return sanitizeAI(txt, who);
+    return sanitizeAI(pv.extract(await res.json()), who);
   } catch { return null; }
   finally { clearTimeout(timer); }
 }
@@ -771,7 +820,7 @@ async function askAI(text, who) {
    State
 ===================================================================== */
 const KEY = 'seeADoctor';
-let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false, aiKey: '', aiModel: 'claude-haiku-4-5-20251001' };
+let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false, aiProvider: 'anthropic', aiKey: '', aiModel: 'claude-haiku-4-5-20251001' };
 function load() {
   try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
   document.documentElement.dataset.theme = S.theme === 'dark' ? 'dark' : 'light';
@@ -821,7 +870,8 @@ const STR = {
   aiPrivacy3: { en: 'Each check costs a small amount on your own account.', ta: 'ஒவ்வொரு சோதனைக்கும் உங்கள் கணக்கில் சிறிது கட்டணம்.' },
   aiSafeT: { en: 'It still does not diagnose.', ta: 'இது நோயை கண்டறியாது.' },
   aiSafeB: { en: 'The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.', ta: 'AI நீங்கள் சொன்ன அறிகுறிகளை மட்டுமே கண்டறிகிறது. அவசர நிலை பழைய விதிகளால் மட்டுமே தீர்மானிக்கப்படும்.' },
-  aiKeyL: { en: 'Anthropic API key', ta: 'Anthropic API சாவி' },
+  aiKeyL: { en: 'API key', ta: 'API சாவி' },
+  aiProviderL: { en: 'Provider', ta: 'வழங்குநர்' },
   aiModelL: { en: 'Model', ta: 'மாடல்' },
   aiRemove: { en: 'Remove key', ta: 'சாவியை நீக்கு' },
   aiThinking: { en: 'Reading what you wrote…', ta: 'படிக்கிறது…' },
@@ -967,6 +1017,13 @@ function wireResult(res) {
     save(); toast(S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved');
   };
 }
+function paintProvider() {
+  const pv = AI_PROVIDERS[$('#aiProviderIn').value] || AI_PROVIDERS.anthropic;
+  $('#aiKeyIn').placeholder = pv.keyHint;
+  $('#aiProviderNote').textContent = T(pv.note) + '  ·  ' + pv.signup;
+  $('#aiModelIn').innerHTML = pv.models.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
+}
+
 function paintAiState() {
   $('#aiState').textContent = S.aiKey ? '' : T(STR.aiOffline);
 }
@@ -1066,11 +1123,23 @@ function bind() {
   });
 
   $('#aiKeyBtn').onclick = () => {
+    $('#aiProviderIn').innerHTML = Object.entries(AI_PROVIDERS)
+      .map(([id, p]) => `<option value="${id}">${esc(p.label)}</option>`).join('');
+    $('#aiProviderIn').value = S.aiProvider || 'anthropic';
+    paintProvider();
     $('#aiKeyIn').value = S.aiKey || '';
-    $('#aiModelIn').value = S.aiModel || 'claude-haiku-4-5-20251001';
+    if (provider().models.some(m => m[0] === S.aiModel)) $('#aiModelIn').value = S.aiModel;
     $('#aiModal').classList.add('show');
   };
+  $('#aiProviderIn').onchange = () => {
+    /* Keys are not interchangeable between providers, so switching clears
+       it rather than leaving one that will only ever return 401. */
+    S.aiProvider = $('#aiProviderIn').value;
+    S.aiKey = ''; S.aiModel = AI_PROVIDERS[S.aiProvider].models[0][0];
+    save(); $('#aiKeyIn').value = ''; paintProvider(); paintAiState();
+  };
   $('#aiSave').onclick = () => {
+    S.aiProvider = $('#aiProviderIn').value;
     S.aiKey = $('#aiKeyIn').value.trim(); S.aiModel = $('#aiModelIn').value;
     save(); $('#aiModal').classList.remove('show'); paintAiState();
     toast(S.aiKey ? (S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved') : 'Key removed');
@@ -1258,6 +1327,75 @@ function runSelfTest() {
   eq('sanitising returns ids only, never text',
     Object.values(sanitizeAI('{"flags":["chest"],"area":"fever"}', 'adult')).flat()
       .every(v => v === null || RED_FLAGS.some(f => f.id === v) || AREAS.some(a => a.id === v)), true);
+
+  /* --- both providers, one contract --- */
+  eq('two providers are offered', Object.keys(AI_PROVIDERS).sort(), ['anthropic', 'nvidia']);
+  eq('every provider is fully described',
+    Object.values(AI_PROVIDERS).every(p => p.label && p.keyHint && p.signup && p.note && p.models.length
+      && typeof p.request === 'function' && typeof p.extract === 'function'), true);
+
+  (function requests() {
+    const st = { aiKey: 'test-key', aiModel: 'm' };
+    const a = AI_PROVIDERS.anthropic.request('chest pain', 'adult', st);
+    eq('Anthropic posts to the messages endpoint', /api\.anthropic\.com\/v1\/messages$/.test(a.url), true);
+    eq('Anthropic sends the key in x-api-key', a.headers['x-api-key'], 'test-key');
+    eq('Anthropic opts in to browser access', a.headers['anthropic-dangerous-direct-browser-access'], 'true');
+    eq('Anthropic sends the rules as a system prompt', a.body.system, AI_SYSTEM);
+
+    const n = AI_PROVIDERS.nvidia.request('chest pain', 'adult', st);
+    eq('NVIDIA posts to the OpenAI-compatible endpoint', /integrate\.api\.nvidia\.com\/v1\/chat\/completions$/.test(n.url), true);
+    eq('NVIDIA sends a bearer token', n.headers.authorization, 'Bearer test-key');
+    eq('NVIDIA sends the rules as a system message', n.body.messages[0], { role: 'system', content: AI_SYSTEM });
+    eq('NVIDIA sends the description as the user message', n.body.messages[1].role, 'user');
+
+    [['anthropic', a], ['nvidia', n]].forEach(([id, r]) => {
+      eq(id + ' asks for a deterministic reply', r.body.temperature, 0);
+      eq(id + ' caps the reply length', r.body.max_tokens > 0, true);
+      eq(id + ' never puts the key in the URL', r.url.includes('test-key'), false);
+      eq(id + ' never sends the urgency scale', /hospital now|see a doctor today/i.test(JSON.stringify(r.body)), false);
+    });
+  })();
+
+  (function extracts() {
+    eq('Anthropic reply is read from content[]',
+      AI_PROVIDERS.anthropic.extract({ content: [{ type: 'text', text: '{"flags":[]}' }] }), '{"flags":[]}');
+    eq('NVIDIA reply is read from choices[]',
+      AI_PROVIDERS.nvidia.extract({ choices: [{ message: { content: '{"flags":[]}' } }] }), '{"flags":[]}');
+    /* A body in the wrong shape must yield an empty string, which
+       sanitizeAI then turns into no findings — not a crash. */
+    [{}, null, { choices: [] }, { content: null }, { choices: [{}] }, { error: 'nope' }].forEach((bad, i) => {
+      eq(`Anthropic survives a malformed body #${i}`, AI_PROVIDERS.anthropic.extract(bad), '');
+      eq(`NVIDIA survives a malformed body #${i}`, AI_PROVIDERS.nvidia.extract(bad), '');
+    });
+  })();
+
+  /* The safety properties must hold identically whichever provider is
+     chosen — a small open model is likelier to reply with rubbish, and
+     that must remain a quality problem rather than a safety one. */
+  (function providerAgnostic() {
+    const junk = ['I think it is dengue', '{"flags":["invented"]}', '', '{"flags":[]}', 'null', '{"area":"nope"}'];
+    let bad = null;
+    for (const pid of Object.keys(AI_PROVIDERS)) {
+      const pv = AI_PROVIDERS[pid];
+      for (const who of WHO.map(w => w.id)) {
+        for (const text of ['chest pain', 'snake bite', 'mild cold']) {
+          const off = localFlags(text, who);
+          for (const j of junk) {
+            const shaped = pid === 'anthropic'
+              ? { content: [{ text: j }] } : { choices: [{ message: { content: j } }] };
+            const ai = sanitizeAI(pv.extract(shaped), who);
+            const merged = mergeFlags(off, ai.flags);
+            if (assess(merged, [], who).level < assess(off, [], who).level) bad = { pid, who, text, j, why: 'lowered' };
+            if (!off.every(f => merged.includes(f))) bad = { pid, who, text, j, why: 'lost a finding' };
+          }
+        }
+      }
+    }
+    eq('both providers keep every safety property, for any reply', bad, null);
+  })();
+
+  eq('the provider helper falls back to a real provider',
+    (() => { const k = S.aiProvider; S.aiProvider = 'nonsense'; const p = provider(); S.aiProvider = k; return p === AI_PROVIDERS.anthropic; })(), true);
 
   /* --- it still works with no key at all --- */
   eq('offline is the default', !S.aiKey, true);
