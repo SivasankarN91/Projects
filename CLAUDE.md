@@ -47,6 +47,10 @@ into an ordinary web page.
 - **store-builder's runtime is serialised with `toString()`** and re-run
   inside an iframe and the exported file. Nothing from the builder's scope
   is visible to it — pass values in as arguments.
+- **An OpenAI-compatible API is not a browser-callable one.** NVIDIA's
+  free-credit endpoint was built into `see-a-doctor.html` and removed: it
+  refuses cross-origin browser requests, and with no server there is no fix.
+  Test CORS from a real browser before adding any provider.
 - **Money is integer paise, quantities are thousandths.** No float ever
   touches a bill total.
 

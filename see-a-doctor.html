@@ -281,9 +281,9 @@
     <span class="sm" data-t="aiSafeB">The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.</span>
   </div>
 
-  <div style="margin-top:12px"><label class="f" data-t="aiProviderL">Provider</label>
-    <select id="aiProviderIn"></select>
-    <div class="sm muted" id="aiProviderNote" style="margin-top:5px"></div></div>
+  <div style="margin-top:12px" id="aiProviderRow"><label class="f" data-t="aiProviderL">Provider</label>
+    <select id="aiProviderIn"></select></div>
+  <div class="sm muted" id="aiProviderNote" style="margin-top:5px"></div>
   <div style="margin-top:9px"><label class="f" data-t="aiKeyL">API key</label>
     <input id="aiKeyIn" autocomplete="off" spellcheck="false"></div>
   <div style="margin-top:9px"><label class="f" data-t="aiModelL">Model</label>
@@ -740,11 +740,15 @@ function aiPrompt(text, who) {
   return `Warning sign ids:\n${flags}\n\nArea ids:\n${areas}\n\nPerson: ${who}\nDescription (may be Tamil or English):\n${text}`;
 }
 
-/* Two providers, one contract. Everything safety-related sits outside this
-   table and is identical whichever is chosen — which is what makes it fine
-   to offer a small open model here. A weaker model simply finds less; the
-   union means it can never subtract, so model quality is a question of how
-   useful the feature is, not of how safe it is. */
+/* One entry today, but kept as a table because the shape is what a second
+   provider would slot into.
+
+   NVIDIA's free-credit endpoint (integrate.api.nvidia.com) was implemented
+   here and removed after testing: it refuses cross-origin browser requests,
+   so the call never leaves the page. There is no fix that fits a single
+   HTML file — a proxy server or a key shipped in the page are the only
+   options and neither is acceptable. Test CORS before adding any provider;
+   an OpenAI-compatible API is not the same as a browser-callable one. */
 const AI_PROVIDERS = {
   anthropic: {
     label: 'Anthropic (Claude)', keyHint: 'sk-ant-…', signup: 'console.anthropic.com',
@@ -772,32 +776,6 @@ const AI_PROVIDERS = {
     extract(j) { return ((j && j.content) || []).map(c => c.text || '').join(''); }
   },
 
-  nvidia: {
-    label: 'NVIDIA (free credits)', keyHint: 'nvapi-…', signup: 'build.nvidia.com',
-    note: { en: 'Free credits on signup — limited, not unlimited.', ta: 'இலவச கிரெடிட் — வரம்புக்குட்பட்டது.' },
-    models: [
-      ['meta/llama-3.1-8b-instruct', 'Llama 3.1 8B — fast, uses fewest credits'],
-      ['meta/llama-3.3-70b-instruct', 'Llama 3.3 70B — follows instructions better'],
-      ['mistralai/mistral-7b-instruct-v0.3', 'Mistral 7B — alternative small model']
-    ],
-    request(text, who, st) {
-      return {
-        url: 'https://integrate.api.nvidia.com/v1/chat/completions',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + st.aiKey },
-        body: {
-          model: st.aiModel, max_tokens: 300, temperature: 0,
-          messages: [
-            { role: 'system', content: AI_SYSTEM },
-            { role: 'user', content: aiPrompt(text, who) }
-          ]
-        }
-      };
-    },
-    extract(j) {
-      const c = j && j.choices && j.choices[0];
-      return (c && c.message && c.message.content) || '';
-    }
-  }
 };
 const provider = () => AI_PROVIDERS[S.aiProvider] || AI_PROVIDERS.anthropic;
 
@@ -859,6 +837,11 @@ const KEY = 'seeADoctor';
 let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false, aiProvider: 'anthropic', aiKey: '', aiModel: 'claude-haiku-4-5-20251001' };
 function load() {
   try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  /* A provider that no longer exists leaves a key that can only ever fail.
+     Reset rather than let someone puzzle over it. */
+  if (!AI_PROVIDERS[S.aiProvider]) {
+    S.aiProvider = 'anthropic'; S.aiKey = ''; S.aiModel = AI_PROVIDERS.anthropic.models[0][0];
+  }
   document.documentElement.dataset.theme = S.theme === 'dark' ? 'dark' : 'light';
   document.body.classList.toggle('big', !!S.big);
 }
@@ -1164,6 +1147,7 @@ function bind() {
     $('#aiProviderIn').innerHTML = Object.entries(AI_PROVIDERS)
       .map(([id, p]) => `<option value="${id}">${esc(p.label)}</option>`).join('');
     $('#aiProviderIn').value = S.aiProvider || 'anthropic';
+    $('#aiProviderRow').style.display = Object.keys(AI_PROVIDERS).length > 1 ? '' : 'none';
     paintProvider();
     $('#aiKeyIn').value = S.aiKey || '';
     if (provider().models.some(m => m[0] === S.aiModel)) $('#aiModelIn').value = S.aiModel;
@@ -1394,7 +1378,9 @@ function runSelfTest() {
       .every(v => v === null || RED_FLAGS.some(f => f.id === v) || AREAS.some(a => a.id === v)), true);
 
   /* --- both providers, one contract --- */
-  eq('two providers are offered', Object.keys(AI_PROVIDERS).sort(), ['anthropic', 'nvidia']);
+  eq('the provider table is not empty', Object.keys(AI_PROVIDERS).length >= 1, true);
+  eq('every provider listed is browser-callable — NVIDIA was removed for refusing CORS',
+    Object.keys(AI_PROVIDERS), ['anthropic']);
   eq('every provider is fully described',
     Object.values(AI_PROVIDERS).every(p => p.label && p.keyHint && p.signup && p.note && p.models.length
       && typeof p.request === 'function' && typeof p.extract === 'function'), true);
@@ -1407,13 +1393,7 @@ function runSelfTest() {
     eq('Anthropic opts in to browser access', a.headers['anthropic-dangerous-direct-browser-access'], 'true');
     eq('Anthropic sends the rules as a system prompt', a.body.system, AI_SYSTEM);
 
-    const n = AI_PROVIDERS.nvidia.request('chest pain', 'adult', st);
-    eq('NVIDIA posts to the OpenAI-compatible endpoint', /integrate\.api\.nvidia\.com\/v1\/chat\/completions$/.test(n.url), true);
-    eq('NVIDIA sends a bearer token', n.headers.authorization, 'Bearer test-key');
-    eq('NVIDIA sends the rules as a system message', n.body.messages[0], { role: 'system', content: AI_SYSTEM });
-    eq('NVIDIA sends the description as the user message', n.body.messages[1].role, 'user');
-
-    [['anthropic', a], ['nvidia', n]].forEach(([id, r]) => {
+    [['anthropic', a]].forEach(([id, r]) => {
       eq(id + ' asks for a deterministic reply', r.body.temperature, 0);
       eq(id + ' caps the reply length', r.body.max_tokens > 0, true);
       eq(id + ' never puts the key in the URL', r.url.includes('test-key'), false);
@@ -1424,13 +1404,12 @@ function runSelfTest() {
   (function extracts() {
     eq('Anthropic reply is read from content[]',
       AI_PROVIDERS.anthropic.extract({ content: [{ type: 'text', text: '{"flags":[]}' }] }), '{"flags":[]}');
-    eq('NVIDIA reply is read from choices[]',
-      AI_PROVIDERS.nvidia.extract({ choices: [{ message: { content: '{"flags":[]}' } }] }), '{"flags":[]}');
+
     /* A body in the wrong shape must yield an empty string, which
        sanitizeAI then turns into no findings — not a crash. */
     [{}, null, { choices: [] }, { content: null }, { choices: [{}] }, { error: 'nope' }].forEach((bad, i) => {
       eq(`Anthropic survives a malformed body #${i}`, AI_PROVIDERS.anthropic.extract(bad), '');
-      eq(`NVIDIA survives a malformed body #${i}`, AI_PROVIDERS.nvidia.extract(bad), '');
+
     });
   })();
 
@@ -1446,8 +1425,7 @@ function runSelfTest() {
         for (const text of ['chest pain', 'snake bite', 'mild cold']) {
           const off = localFlags(text, who);
           for (const j of junk) {
-            const shaped = pid === 'anthropic'
-              ? { content: [{ text: j }] } : { choices: [{ message: { content: j } }] };
+            const shaped = { content: [{ text: j }] };
             const ai = sanitizeAI(pv.extract(shaped), who);
             const merged = mergeFlags(off, ai.flags);
             if (assess(merged, [], who).level < assess(off, [], who).level) bad = { pid, who, text, j, why: 'lowered' };
