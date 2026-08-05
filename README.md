@@ -227,6 +227,18 @@ Answers one question and one only: **how soon** to get help — now, today, or i
 - **A summary to hand the doctor** — what was answered and when, shareable on WhatsApp or saved on the device
 - **English and Tamil**, big-text mode, one-tap emergency contacts, entirely offline
 
+**Optional: type instead of tapping**
+
+Add your own Anthropic API key and you can describe the problem in your own words, in English or Tamil, instead of tapping through categories. The design constraint is that **the model understands but never decides**:
+
+- Offline keyword matching for warning signs runs first and always, with no key and no network
+- The model's findings are **unioned** with that, so it can only ever *add* a warning sign — never remove one, and never lower the urgency
+- Urgency itself is decided by the same offline rules, which the model never sees and is never asked about
+- Only ids are taken from the reply; nothing the model writes is ever shown. A reply saying "this is clearly dengue, give paracetamol" contributes nothing to the screen
+- Unknown ids, broken JSON, a bad key, a timeout or no network all fall back to the offline result rather than blocking
+
+Without a key nothing ever leaves the device. With one, what you type is sent to Anthropic — the app says so plainly before you enable it.
+
 **How the answer is decided**
 
 - A warning sign forces "go now" and **nothing can lower it**
@@ -237,7 +249,7 @@ Answers one question and one only: **how soon** to get help — now, today, or i
 
 - **It is not a doctor and does not diagnose.** If you are worried, see a doctor whatever it says
 - **The demo cap never touches safety.** It limits saved checks only; the assessment, the warning signs and the first aid are never gated
-- Built-in self-test at [`?selftest=1`](see-a-doctor.html?selftest=1) covering the triage rules — including an assertion that no medicine and no illness is ever named in any text a user can read
+- Built-in self-test at [`?selftest=1`](see-a-doctor.html?selftest=1) — 62 assertions covering the triage rules, an assertion that no medicine and no illness is ever named in any text a user can read, and a property test proving that no model reply, however hostile or broken, can lower the urgency or discard what offline matching found
 
 ## 🧾 Billing &amp; Stock — [`billing-pos.html`](billing-pos.html)
 

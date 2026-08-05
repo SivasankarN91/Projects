@@ -168,6 +168,19 @@
         <div class="grid" id="whoGrid"></div>
       </div>
 
+      <div class="card" id="askCard">
+        <h3>💬 <span data-t="askTitle">Or just describe it</span></h3>
+        <p class="sub" data-t="askSub">Type what is wrong in your own words, in English or Tamil.</p>
+        <textarea id="askText" rows="3" style="width:100%; margin-top:9px; font:inherit; padding:11px 12px;
+          border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); resize:vertical"
+          placeholder="e.g. appa has chest pain and is sweating"></textarea>
+        <div style="display:flex; gap:8px; margin-top:9px; flex-wrap:wrap; align-items:center">
+          <button class="btn primary" id="askBtn" data-t="askGo">Check this</button>
+          <button class="btn small" id="aiKeyBtn">🔑 <span data-t="aiSetup">AI setup</span></button>
+          <span class="sm muted" id="aiState"></span>
+        </div>
+      </div>
+
       <div class="grid" id="areaGrid"></div>
 
       <div class="card" style="margin-top:4px">
@@ -250,6 +263,38 @@
   </div>
 </div></div>
 
+<div class="backdrop" id="aiModal"><div class="modal">
+  <h2 data-t="aiTitle">Understand typed symptoms</h2>
+  <p class="sub" data-t="aiIntro">Without a key the app works fully — you tap through the questions. With one, you can type freely and it finds the right section for you.</p>
+
+  <div class="never" style="margin-top:12px">
+    <h4 data-t="aiPrivacyT">What leaves your device</h4>
+    <ul class="list">
+      <li data-t="aiPrivacy1">Without a key, nothing ever leaves this device.</li>
+      <li data-t="aiPrivacy2">With a key, what you type is sent to Anthropic to be read. Do not type names or anything you would not share.</li>
+      <li data-t="aiPrivacy3">Each check costs a small amount on your own account.</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-top:12px; background:var(--accent-soft); border-color:var(--accent)">
+    <b data-t="aiSafeT">It still does not diagnose.</b>
+    <span class="sm" data-t="aiSafeB">The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.</span>
+  </div>
+
+  <div style="margin-top:12px"><label class="f" data-t="aiKeyL">Anthropic API key</label>
+    <input id="aiKeyIn" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"></div>
+  <div style="margin-top:9px"><label class="f" data-t="aiModelL">Model</label>
+    <select id="aiModelIn">
+      <option value="claude-haiku-4-5-20251001">Haiku 4.5 — cheapest, fast</option>
+      <option value="claude-sonnet-5">Sonnet 5 — more accurate, costs more</option>
+    </select></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
+    <button class="btn" id="aiClear" style="margin-right:auto" data-t="aiRemove">Remove key</button>
+    <button class="btn" data-close data-t="close">Close</button>
+    <button class="btn primary" id="aiSave" data-t="save">Save</button>
+  </div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -298,24 +343,24 @@ const WHO = [
    `who` limits a flag to certain people; absent means everyone.
 ===================================================================== */
 const RED_FLAGS = [
-  { id: 'chest', selfReport: true,    en: 'Chest pain, tightness or heavy pressure — especially with sweating, or pain spreading to the arm, neck or jaw', ta: 'மார்பு வலி அல்லது அழுத்தம்', aid: null },
-  { id: 'stroke',   en: 'Face drooping on one side, weakness in one arm, or slurred / confused speech', ta: 'முகம் ஒரு பக்கம் சரிதல், கை பலவீனம், பேச்சு தடுமாற்றம்', aid: null },
-  { id: 'breath',   en: 'Struggling to breathe, or cannot finish a sentence without stopping for breath', ta: 'மூச்சு விடுவதில் சிரமம்', aid: null },
-  { id: 'blue',     en: 'Lips, tongue or fingertips turning blue or grey', ta: 'உதடு அல்லது நாக்கு நீலமாதல்', aid: null },
-  { id: 'unresp',   en: 'Unconscious, cannot be woken, or very confused', ta: 'மயக்கம், எழுப்ப முடியவில்லை', aid: 'faint' },
-  { id: 'fit',      en: 'A fit / seizure happening now, or one lasting more than 5 minutes', ta: 'வலிப்பு', aid: 'seizure' },
-  { id: 'bleed',    en: 'Heavy bleeding that does not stop with firm pressure', ta: 'நிற்காத அதிக இரத்தப்போக்கு', aid: 'bleeding' },
-  { id: 'allergy',  en: 'Swelling of the lips, tongue or throat, or a sudden widespread rash with breathing trouble', ta: 'உதடு/நாக்கு வீக்கம், மூச்சுத் திணறல்', aid: null },
-  { id: 'poison',   en: 'Swallowed poison, pesticide, or too much of any medicine', ta: 'விஷம் அல்லது மருந்து அதிகமாக உட்கொண்டது', aid: 'poison' },
-  { id: 'snake',    en: 'Snake bite, or a scorpion sting with spreading symptoms', ta: 'பாம்பு கடி', aid: 'snake' },
-  { id: 'headache', selfReport: true, en: 'A sudden, very severe headache — the worst ever felt', ta: 'திடீர் கடுமையான தலைவலி', aid: null },
-  { id: 'stiffneck',en: 'Fever with a stiff neck, or a rash that does not fade when pressed', ta: 'காய்ச்சலுடன் கழுத்து விறைப்பு', aid: null },
-  { id: 'abdomen',  en: 'Severe stomach pain with a hard, rigid belly', ta: 'கடுமையான வயிற்று வலி, வயிறு இறுகியது', aid: null },
-  { id: 'vomitblood', en: 'Vomiting blood, or black tar-like stools', ta: 'இரத்த வாந்தி அல்லது கருப்பு மலம்', aid: null },
-  { id: 'burnbig',  en: 'A burn larger than the palm of the hand, or on the face, hands or genitals', ta: 'பெரிய தீக்காயம்', aid: 'burn' },
-  { id: 'preg',     en: 'Bleeding, severe headache with swelling or blurred vision, or the baby has stopped moving', ta: 'கர்ப்ப கால இரத்தப்போக்கு அல்லது குழந்தை அசைவு நின்றது', who: ['pregnant'], aid: null },
-  { id: 'inf_fever',en: 'A baby under 3 months with any fever', ta: '3 மாதத்திற்குட்பட்ட குழந்தைக்கு காய்ச்சல்', who: ['infant'], aid: null },
-  { id: 'inf_feed', en: 'A baby who will not feed, is floppy, or is very hard to wake', ta: 'பால் குடிக்காத, சோர்வான குழந்தை', who: ['infant'], aid: null }
+  { id: 'chest', selfReport: true,    en: 'Chest pain, tightness or heavy pressure — especially with sweating, or pain spreading to the arm, neck or jaw', ta: 'மார்பு வலி அல்லது அழுத்தம்', kw: ['chest pain','chest tight','chest pressure','மார்பு வலி','நெஞ்சு வலி','நெஞ்சு அழுத்தம்'], aid: null },
+  { id: 'stroke',   en: 'Face drooping on one side, weakness in one arm, or slurred / confused speech', ta: 'முகம் ஒரு பக்கம் சரிதல், கை பலவீனம், பேச்சு தடுமாற்றம்', kw: ['face droop','slurred','one side weak','cannot speak','முகம் சரி','பேச்சு தடும','ஒரு பக்கம் பலவீன'], aid: null },
+  { id: 'breath',   en: 'Struggling to breathe, or cannot finish a sentence without stopping for breath', ta: 'மூச்சு விடுவதில் சிரமம்', kw: ['cannot breathe','breathless','gasping','short of breath','trouble breathing','மூச்சு','மூச்சுத் திணற'], aid: null },
+  { id: 'blue',     en: 'Lips, tongue or fingertips turning blue or grey', ta: 'உதடு அல்லது நாக்கு நீலமாதல்', kw: ['lips blue','turning blue','நீலம்','நீலமா'], aid: null },
+  { id: 'unresp',   en: 'Unconscious, cannot be woken, or very confused', ta: 'மயக்கம், எழுப்ப முடியவில்லை', kw: ['unconscious','not waking','fainted and not','cannot wake','மயக்கம்','எழுப்ப முடிய'], aid: 'faint' },
+  { id: 'fit',      en: 'A fit / seizure happening now, or one lasting more than 5 minutes', ta: 'வலிப்பு', kw: ['seizure','fits','convulsion','வலிப்பு'], aid: 'seizure' },
+  { id: 'bleed',    en: 'Heavy bleeding that does not stop with firm pressure', ta: 'நிற்காத அதிக இரத்தப்போக்கு', kw: ['heavy bleeding','bleeding a lot','will not stop bleeding','அதிக இரத்த','இரத்தம் நிற்க'], aid: 'bleeding' },
+  { id: 'allergy',  en: 'Swelling of the lips, tongue or throat, or a sudden widespread rash with breathing trouble', ta: 'உதடு/நாக்கு வீக்கம், மூச்சுத் திணறல்', kw: ['throat swelling','tongue swollen','lips swollen','தொண்டை வீக்க','நாக்கு வீக்க'], aid: null },
+  { id: 'poison',   en: 'Swallowed poison, pesticide, or too much of any medicine', ta: 'விஷம் அல்லது மருந்து அதிகமாக உட்கொண்டது', kw: ['poison','pesticide','swallowed tablets','overdose','விஷம்','பூச்சிக்கொல்லி'], aid: 'poison' },
+  { id: 'snake',    en: 'Snake bite, or a scorpion sting with spreading symptoms', ta: 'பாம்பு கடி', kw: ['snake bite','snakebite','scorpion','பாம்பு கடி','தேள்'], aid: 'snake' },
+  { id: 'headache', selfReport: true, en: 'A sudden, very severe headache — the worst ever felt', ta: 'திடீர் கடுமையான தலைவலி', kw: ['worst headache','sudden severe headache','thunderclap','திடீர் தலைவலி','கடுமையான தலைவலி'], aid: null },
+  { id: 'stiffneck',en: 'Fever with a stiff neck, or a rash that does not fade when pressed', ta: 'காய்ச்சலுடன் கழுத்து விறைப்பு', kw: ['stiff neck','neck stiff','கழுத்து விறைப்'], aid: null },
+  { id: 'abdomen',  en: 'Severe stomach pain with a hard, rigid belly', ta: 'கடுமையான வயிற்று வலி, வயிறு இறுகியது', kw: ['rigid belly','hard stomach','severe stomach pain','கடுமையான வயிற்று'], aid: null },
+  { id: 'vomitblood', en: 'Vomiting blood, or black tar-like stools', ta: 'இரத்த வாந்தி அல்லது கருப்பு மலம்', kw: ['vomiting blood','blood in vomit','black stool','இரத்த வாந்தி','கருப்பு மலம்'], aid: null },
+  { id: 'burnbig',  en: 'A burn larger than the palm of the hand, or on the face, hands or genitals', ta: 'பெரிய தீக்காயம்', kw: ['large burn','big burn','burnt face','பெரிய தீக்காயம்'], aid: 'burn' },
+  { id: 'preg',     en: 'Bleeding, severe headache with swelling or blurred vision, or the baby has stopped moving', ta: 'கர்ப்ப கால இரத்தப்போக்கு அல்லது குழந்தை அசைவு நின்றது', who: ['pregnant'], kw: ['bleeding pregnan','baby not moving','குழந்தை அசைவு'], aid: null },
+  { id: 'inf_fever',en: 'A baby under 3 months with any fever', ta: '3 மாதத்திற்குட்பட்ட குழந்தைக்கு காய்ச்சல்', who: ['infant'], kw: ['baby fever','newborn fever','குழந்தை காய்ச்சல்'], aid: null },
+  { id: 'inf_feed', en: 'A baby who will not feed, is floppy, or is very hard to wake', ta: 'பால் குடிக்காத, சோர்வான குழந்தை', who: ['infant'], kw: ['not feeding','floppy baby','will not drink milk','பால் குடிக்க'], aid: null }
 ];
 
 /* =====================================================================
@@ -641,10 +686,92 @@ function assess(flags, answers, who) {
 }
 
 /* =====================================================================
+   Understanding free text.
+
+   Two independent paths find warning signs, and they are UNIONED:
+
+     1. localFlags() — plain keyword matching, offline, always runs.
+     2. the model — only ever ADDS to that set.
+
+   That union is the whole safety argument. A model that is wrong, slow,
+   unreachable or switched off can never produce a LESS urgent answer than
+   the offline rules would have given on their own. The model never sees
+   the urgency scale, never chooses it, and nothing it writes is ever shown
+   to the user — only ids are taken from it, and those are rendered back
+   using this app's own vetted wording.
+===================================================================== */
+function localFlags(text, who) {
+  const t = String(text || '').toLowerCase();
+  if (!t.trim()) return [];
+  return flagsFor(who).filter(f => (f.kw || []).some(k => t.includes(k.toLowerCase()))).map(f => f.id);
+}
+
+/** Keep only ids this app actually knows. Anything else is discarded. */
+function sanitizeAI(raw, who) {
+  let o = raw;
+  if (typeof o === 'string') {
+    const m = o.match(/\{[\s\S]*\}/);
+    if (!m) return { flags: [], area: null };
+    try { o = JSON.parse(m[0]); } catch { return { flags: [], area: null }; }
+  }
+  if (!o || typeof o !== 'object') return { flags: [], area: null };
+  const valid = new Set(flagsFor(who).map(f => f.id));
+  const flags = Array.isArray(o.flags) ? o.flags.filter(x => valid.has(x)) : [];
+  const area = AREAS.some(a => a.id === o.area) ? o.area : null;
+  return { flags: [...new Set(flags)], area };
+}
+
+/** The union. Ordered so the offline result is always the floor. */
+function mergeFlags(local, ai) { return [...new Set([...(local || []), ...(ai || [])])]; }
+
+const AI_SYSTEM = [
+  'You map a description of symptoms onto a fixed list of ids. You are not a doctor and must not act as one.',
+  'Reply with ONLY a JSON object: {"flags":[ids],"area":id|null}. No prose, no explanation, no markdown.',
+  'flags = ids of emergency warning signs the text describes. area = the single best matching symptom area, or null.',
+  'Never invent an id. Never name an illness. Never suggest a medicine. Never state how urgent anything is.',
+  'If the text is unclear, return fewer ids rather than guessing.'
+].join(' ');
+
+function aiPrompt(text, who) {
+  const flags = flagsFor(who).map(f => `${f.id}: ${f.en}`).join('\n');
+  const areas = AREAS.map(a => `${a.id}: ${a.en}`).join('\n');
+  return `Warning sign ids:\n${flags}\n\nArea ids:\n${areas}\n\nPerson: ${who}\nDescription (may be Tamil or English):\n${text}`;
+}
+
+/** Returns sanitised ids, or null if unavailable. Never throws. */
+async function askAI(text, who) {
+  if (!S.aiKey) return null;
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal: ctl.signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': S.aiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: S.aiModel || 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        system: AI_SYSTEM,
+        messages: [{ role: 'user', content: aiPrompt(text, who) }]
+      })
+    });
+    if (!res.ok) return null;
+    const j = await res.json();
+    const txt = (j.content || []).map(c => c.text || '').join('');
+    return sanitizeAI(txt, who);
+  } catch { return null; }
+  finally { clearTimeout(timer); }
+}
+
+/* =====================================================================
    State
 ===================================================================== */
 const KEY = 'seeADoctor';
-let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false };
+let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false, aiKey: '', aiModel: 'claude-haiku-4-5-20251001' };
 function load() {
   try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
   document.documentElement.dataset.theme = S.theme === 'dark' ? 'dark' : 'light';
@@ -681,7 +808,25 @@ const STR = {
   docPhone: { en: 'Phone number', ta: 'தொலைபேசி எண்' },
   kinName: { en: 'Family member to call', ta: 'அழைக்க வேண்டிய குடும்ப உறுப்பினர்' },
   kinPhone: { en: 'Their phone number', ta: 'அவர்களின் எண்' },
-  close: { en: 'Close', ta: 'மூடு' }, save: { en: 'Save', ta: 'சேமி' }
+  close: { en: 'Close', ta: 'மூடு' }, save: { en: 'Save', ta: 'சேமி' },
+  askTitle: { en: 'Or just describe it', ta: 'அல்லது சொல்லுங்கள்' },
+  askSub: { en: 'Type what is wrong in your own words, in English or Tamil.', ta: 'உங்கள் சொந்த வார்த்தைகளில் தட்டச்சு செய்யுங்கள்.' },
+  askGo: { en: 'Check this', ta: 'பாருங்கள்' },
+  aiSetup: { en: 'AI setup', ta: 'AI அமைப்பு' },
+  aiTitle: { en: 'Understand typed symptoms', ta: 'தட்டச்சு செய்ததை புரிந்துகொள்ள' },
+  aiIntro: { en: 'Without a key the app works fully — you tap through the questions. With one, you can type freely and it finds the right section for you.', ta: 'சாவி இல்லாமலும் செயலி முழுமையாக வேலை செய்யும். சாவியுடன் நீங்கள் தட்டச்சு செய்யலாம்.' },
+  aiPrivacyT: { en: 'What leaves your device', ta: 'சாதனத்தை விட்டு என்ன செல்கிறது' },
+  aiPrivacy1: { en: 'Without a key, nothing ever leaves this device.', ta: 'சாவி இல்லையெனில் எதுவும் வெளியே செல்லாது.' },
+  aiPrivacy2: { en: 'With a key, what you type is sent to Anthropic to be read. Do not type names or anything you would not share.', ta: 'சாவியுடன், நீங்கள் தட்டச்சு செய்வது Anthropic-க்கு அனுப்பப்படும். பெயர்களை தட்டச்சு செய்ய வேண்டாம்.' },
+  aiPrivacy3: { en: 'Each check costs a small amount on your own account.', ta: 'ஒவ்வொரு சோதனைக்கும் உங்கள் கணக்கில் சிறிது கட்டணம்.' },
+  aiSafeT: { en: 'It still does not diagnose.', ta: 'இது நோயை கண்டறியாது.' },
+  aiSafeB: { en: 'The AI only works out which symptoms you described. How urgent it is stays with the same offline rules, and the AI can only ever make the answer more urgent, never less.', ta: 'AI நீங்கள் சொன்ன அறிகுறிகளை மட்டுமே கண்டறிகிறது. அவசர நிலை பழைய விதிகளால் மட்டுமே தீர்மானிக்கப்படும்.' },
+  aiKeyL: { en: 'Anthropic API key', ta: 'Anthropic API சாவி' },
+  aiModelL: { en: 'Model', ta: 'மாடல்' },
+  aiRemove: { en: 'Remove key', ta: 'சாவியை நீக்கு' },
+  aiThinking: { en: 'Reading what you wrote…', ta: 'படிக்கிறது…' },
+  aiOffline: { en: 'Checked offline — add a key to type freely', ta: 'ஆஃப்லைனில் சரிபார்க்கப்பட்டது' },
+  aiNoMatch: { en: 'Could not tell which section that is — please pick one below.', ta: 'எந்த பிரிவு என தெரியவில்லை — கீழே தேர்வு செய்யுங்கள்.' }
 };
 
 /* =====================================================================
@@ -822,6 +967,37 @@ function wireResult(res) {
     save(); toast(S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved');
   };
 }
+function paintAiState() {
+  $('#aiState').textContent = S.aiKey ? '' : T(STR.aiOffline);
+}
+
+/**
+ * The free-text path. Offline keyword matching runs first and always; the
+ * model can only add to what it found. If anything about the model fails,
+ * the offline result still stands.
+ */
+async function runAsk() {
+  const text = $('#askText').value.trim();
+  if (!text) { toast(S.lang === 'ta' ? 'எழுதுங்கள்' : 'Type something first'); return; }
+
+  const local = localFlags(text, session.who);
+  const btn = $('#askBtn');
+  const label = btn.textContent;
+  let ai = null;
+  if (S.aiKey) { btn.disabled = true; btn.textContent = T(STR.aiThinking); ai = await askAI(text, session.who); }
+  btn.disabled = false; btn.textContent = label;
+
+  const flags = mergeFlags(local, ai && ai.flags);
+  if (flags.length) {                     /* a warning sign short-circuits, as always */
+    session.flags = flags; session.area = null; session.answers = [];
+    finish();
+    return;
+  }
+  const area = (ai && ai.area) || null;
+  if (area) { session.flags = []; startArea(area); }
+  else { toast(T(STR.aiNoMatch)); }
+}
+
 function renderHistory() {
   $('#historyList').innerHTML = S.history.length
     ? S.history.map(h => `<div class="card"><div class="sm muted">${new Date(h.ts).toLocaleString('en-IN')}</div>
@@ -888,6 +1064,22 @@ function bind() {
     bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
     $$('[data-close]', bd).forEach(b => b.onclick = () => bd.classList.remove('show'));
   });
+
+  $('#aiKeyBtn').onclick = () => {
+    $('#aiKeyIn').value = S.aiKey || '';
+    $('#aiModelIn').value = S.aiModel || 'claude-haiku-4-5-20251001';
+    $('#aiModal').classList.add('show');
+  };
+  $('#aiSave').onclick = () => {
+    S.aiKey = $('#aiKeyIn').value.trim(); S.aiModel = $('#aiModelIn').value;
+    save(); $('#aiModal').classList.remove('show'); paintAiState();
+    toast(S.aiKey ? (S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved') : 'Key removed');
+  };
+  $('#aiClear').onclick = () => {
+    S.aiKey = ''; save(); $('#aiKeyIn').value = ''; $('#aiModal').classList.remove('show');
+    paintAiState(); toast('Key removed');
+  };
+  $('#askBtn').onclick = runAsk;
 
   $('#langBtn').onclick = () => { S.lang = S.lang === 'ta' ? 'en' : 'ta'; save(); paintStrings(); renderHome(); };
   $('#sizeBtn').onclick = () => { S.big = !S.big; document.body.classList.toggle('big', S.big); save(); };
@@ -989,6 +1181,87 @@ function runSelfTest() {
     RED_FLAGS.filter(f => f.aid).every(f => !!AID[f.aid]), true);
   eq('everything is translated', AREAS.every(a => a.ta) && RED_FLAGS.every(f => f.ta), true);
 
+  /* --- the offline keyword net --- */
+  eq('offline matching finds a warning sign in English',
+    localFlags('appa has chest pain and is sweating', 'adult').includes('chest'), true);
+  eq('offline matching finds a warning sign in Tamil',
+    localFlags('அவருக்கு மார்பு வலி இருக்கிறது', 'adult').includes('chest'), true);
+  eq('offline matching is case-insensitive', localFlags('SNAKE BITE on the leg', 'adult').includes('snake'), true);
+  eq('ordinary text matches nothing', localFlags('slight cold since yesterday', 'adult'), []);
+  eq('empty text matches nothing', localFlags('', 'adult'), []);
+  eq('offline matching respects who it applies to',
+    localFlags('bleeding pregnant', 'adult').includes('preg'), false);
+  eq('every warning sign has offline keywords', RED_FLAGS.every(f => f.kw && f.kw.length > 0), true);
+
+  /* --- the model can only ever add --- */
+  eq('the union keeps what offline found', mergeFlags(['chest'], []), ['chest']);
+  eq('the model can add a sign', mergeFlags([], ['breath']), ['breath']);
+  eq('the union does not duplicate', mergeFlags(['chest'], ['chest']), ['chest']);
+  eq('the model cannot remove what offline found',
+    mergeFlags(['chest'], []).includes('chest'), true);
+
+  /* The property that the whole design rests on: for any model reply at
+     all, including a hostile or broken one, the urgency with the model is
+     never lower than the urgency without it. */
+  (function escalateOnly() {
+    const samples = [
+      'appa has chest pain', 'கடுமையான தலைவலி', 'snake bite', 'mild cold', 'stomach upset',
+      'baby not feeding', 'bleeding a lot', 'nothing much', 'vomiting blood', 'slight fever'
+    ];
+    const hostile = [
+      null, undefined, '', 'not json at all', '{}', '{"flags":[]}', '{"flags":["made_up_id"]}',
+      '{"flags":null,"area":"nonsense"}', '{"area":"fever"}', 'I think this is dengue, take rest',
+      '{"flags":["chest"],"level":0,"urgency":"none"}', '[]', '{"flags":"chest"}'
+    ];
+    let worst = null, lost = null;
+    for (const who of WHO.map(w => w.id)) {
+      for (const text of samples) {
+        const off = localFlags(text, who);
+        const offline = assess(off, [], who).level;
+        for (const h of hostile) {
+          const ai = sanitizeAI(h, who);
+          const merged = mergeFlags(off, ai.flags);
+          if (assess(merged, [], who).level < offline) worst = { who, text, h, offline };
+          /* Level alone is too weak a property: any non-empty flag list is
+             already level 3, so a model that REPLACED the offline findings
+             would still score 3 while silently discarding what was found
+             offline and reporting the wrong sign back to the user. */
+          if (!off.every(f => merged.includes(f))) lost = { who, text, h, off, merged };
+        }
+      }
+    }
+    eq('a model reply can never lower the urgency, for any input', worst, null);
+    eq('every offline finding survives the model, for any input', lost, null);
+  })();
+
+  /* --- nothing the model says is trusted --- */
+  eq('unknown ids are discarded', sanitizeAI('{"flags":["made_up","chest"]}', 'adult').flags, ['chest']);
+  eq('an unknown area is discarded', sanitizeAI('{"area":"not_an_area"}', 'adult').area, null);
+  eq('a known area is kept', sanitizeAI('{"area":"fever"}', 'adult').area, 'fever');
+  eq('prose around the JSON is tolerated',
+    sanitizeAI('Here you go: {"flags":["breath"],"area":"breath"} hope that helps', 'adult').flags, ['breath']);
+  eq('broken JSON yields nothing rather than throwing', sanitizeAI('{oh no', 'adult'), { flags: [], area: null });
+  eq('null yields nothing', sanitizeAI(null, 'adult'), { flags: [], area: null });
+  eq('an array yields nothing', sanitizeAI('[]', 'adult'), { flags: [], area: null });
+  eq('a flags value of the wrong type yields nothing', sanitizeAI('{"flags":"chest"}', 'adult').flags, []);
+  eq('extra fields the model invents are ignored',
+    Object.keys(sanitizeAI('{"flags":[],"area":null,"level":3,"diagnosis":"flu"}', 'adult')).sort(), ['area', 'flags']);
+  eq('infant self-report signs are refused even if the model returns them',
+    sanitizeAI('{"flags":["chest"]}', 'infant').flags, []);
+
+  /* --- the model is never asked to judge, and never quoted --- */
+  eq('the instructions forbid diagnosing', /not a doctor/i.test(AI_SYSTEM), true);
+  eq('the instructions forbid naming a medicine', /never suggest a medicine/i.test(AI_SYSTEM), true);
+  eq('the instructions forbid stating urgency', /never state how urgent/i.test(AI_SYSTEM), true);
+  eq('the prompt never mentions the urgency scale',
+    /\b(level|urgent|emergency now|hospital now)\b/i.test(aiPrompt('test', 'adult')), false);
+  eq('sanitising returns ids only, never text',
+    Object.values(sanitizeAI('{"flags":["chest"],"area":"fever"}', 'adult')).flat()
+      .every(v => v === null || RED_FLAGS.some(f => f.id === v) || AREAS.some(a => a.id === v)), true);
+
+  /* --- it still works with no key at all --- */
+  eq('offline is the default', !S.aiKey, true);
+
   /* --- the demo cap must never touch safety --- */
   eq('the cap gates saved checks only', DEMO_MAX_SAVED > 0 && typeof DEMO_MAX_SAVED === 'number', true);
   eq('assessing does not consult the cap', assess([], [{ lvl: 0 }], 'adult').level, 0);
@@ -1009,6 +1282,7 @@ function runSelfTest() {
   paintStrings();
   renderHome();
   bind();
+  paintAiState();
 })();
 </script>
 </body>
