@@ -2,7 +2,7 @@
 
 Small, self-contained web apps — each one is a single HTML file with zero dependencies and no build step. Use them live on GitHub Pages, or clone the repo and open any file in a modern browser.
 
-**🌐 Showcase:** https://sivasankarn91.github.io/ — the homepage presents thirteen of the apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
+**🌐 Showcase:** https://sivasankarn91.github.io/ — the homepage presents fourteen of the apps with live demos and an enquiry form. The hosted versions are free demos with light limits (noted on each product card); full unrestricted versions are available on enquiry.
 
 | App | Link |
 |---|---|
@@ -19,6 +19,7 @@ Small, self-contained web apps — each one is a single HTML file with zero depe
 | 🗺️ Whiteboard | https://sivasankarn91.github.io/whiteboard.html |
 | 💰 Finance Tracker | https://sivasankarn91.github.io/finance-tracker.html |
 | 🎪 Emoji Physics Simulator | https://sivasankarn91.github.io/emoji-simulator.html |
+| 🩺 Should I See a Doctor? | https://sivasankarn91.github.io/see-a-doctor.html |
 | 🧾 Billing &amp; Stock (GST POS) | https://sivasankarn91.github.io/billing-pos.html |
 
 ## 🎨 Generative Art Studio — [`art-studio.html`](art-studio.html)
@@ -211,6 +212,32 @@ A drag-and-drop **multi-page** landing site builder for marketers — assemble p
 ## 🎪 Emoji Physics Simulator — [`emoji-simulator.html`](emoji-simulator.html)
 
 An interactive emoji physics playground. Click to spawn emojis and watch them bounce around.
+
+## 🩺 Should I See a Doctor? — [`see-a-doctor.html`](see-a-doctor.html)
+
+Answers one question and one only: **how soon** to get help — now, today, or in a day or two. It never tells you what the illness is, and never suggests a medicine. Built for a family unsure whether something can wait until morning.
+
+**Features**
+
+- **Emergency signs come first** — a large red door on the home screen leads straight to the warning signs. Ticking even one shows the result immediately, with 108 and 112 as one-tap calls; nobody should hunt for a submit button while someone is collapsing
+- **Answers by person** — adult, child, baby under one, pregnant, or elderly; the same symptom is treated more urgently in a baby or in pregnancy
+- **Six symptom areas** — fever, cough and breathing, stomach and loose motion, injury, headache and dizziness, urine problems
+- **Every result carries worsening signs** — what to watch for and when to stop waiting, which is the part that actually keeps people safe
+- **First aid with a "never do this" list on every entry** — choking, bleeding, burns, fits, snake bite, poisoning, heat illness, fainting. The harmful folk remedies are named directly: no oil or toothpaste on burns, nothing in the mouth during a fit, no tourniquet or cutting for snake bite, no induced vomiting for poisoning
+- **A summary to hand the doctor** — what was answered and when, shareable on WhatsApp or saved on the device
+- **English and Tamil**, big-text mode, one-tap emergency contacts, entirely offline
+
+**How the answer is decided**
+
+- A warning sign forces "go now" and **nothing can lower it**
+- Otherwise the urgency is the **highest** of the answers, never a sum — three mild answers must not outweigh one serious one
+- Babies and pregnancy raise the floor, because the same symptom carries more risk
+
+**Limits, stated plainly**
+
+- **It is not a doctor and does not diagnose.** If you are worried, see a doctor whatever it says
+- **The demo cap never touches safety.** It limits saved checks only; the assessment, the warning signs and the first aid are never gated
+- Built-in self-test at [`?selftest=1`](see-a-doctor.html?selftest=1) covering the triage rules — including an assertion that no medicine and no illness is ever named in any text a user can read
 
 ## 🧾 Billing &amp; Stock — [`billing-pos.html`](billing-pos.html)
 

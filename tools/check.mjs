@@ -69,7 +69,15 @@ check('every catalogue entry points at a file that exists', () => {
 /* ---- the "twelve vs 13" bug ---- */
 check('no stale app count in the homepage copy', () => {
   const words = { eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15 };
-  const head = index.slice(0, index.indexOf('</head>')) + index.slice(index.indexOf('<h1'), index.indexOf('</h1>') + 5);
+  /* Only the strings a visitor actually reads. Scanning everything before
+     </head> also swept in the stylesheet, so a number in a CSS comment
+     failed the build. */
+  const copy = [
+    (index.match(/<title>([^<]*)<\/title>/) || [])[1],
+    ...[...index.matchAll(/<meta[^>]+(?:name|property)=["'](?:description|og:[a-z]+)["'][^>]+content=["']([^"']*)["']/g)].map(m => m[1]),
+    (index.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1]
+  ].filter(Boolean).join(' ');
+  const head = copy;
   const wrong = [];
   for (const [word, n] of Object.entries(words)) {
     if (new RegExp(word, 'i').test(head) && n !== products.length) wrong.push(`"${word}" but there are ${products.length}`);

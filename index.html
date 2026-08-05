@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Projects — small software that just runs</title>
-<meta name="description" content="Thirteen polished, dependency-free web apps: GST billing & stock POS for shops, appointment scheduler, invoice generator, online store builder, data analyzer, landing site builder, festival planner, daily companion for elders, finance tracker and more. No signup, no server, no monthly fee — try any of them live.">
+<meta name="description" content="Fourteen polished, dependency-free web apps: GST billing & stock POS for shops, a &quot;should I see a doctor?&quot; guide, appointment scheduler, invoice generator, online store builder, data analyzer, landing site builder, festival planner, daily companion for elders, finance tracker and more. No signup, no server, no monthly fee — try any of them live.">
 <meta property="og:title" content="Projects — small software that just runs">
 <meta property="og:description" content="Apps for your shop, your home and your work. One file each, works offline, no subscription. Try them live in your browser.">
 <meta property="og:type" content="website">
@@ -319,7 +319,7 @@
   .more-btn { grid-column: 1 / -1; display: none; }
   .more-btn .btn { width: 100%; }
 
-  /* A phone showing all thirteen cards is an 12,000px scroll, so each
+  /* A phone showing every card is a 12,000px scroll, so each
      category collapses to three and the rest are one tap away. Hiding is
      class-based, never inline, so it cannot fight the filter rules above. */
   @media (max-width: 700px) {
@@ -592,6 +592,10 @@ const PRODUCTS = [
     pitch: 'Your Tamil Nadu & Pondicherry travel companion — ask about traffic in plain English and get live drive times, weather and nearby help.',
     points: ['Live traffic, arrival times & route map in chat', '“Leave by” planner — reach anywhere on time', 'Save frequent trips for one-tap checks', 'Weather en route + nearby petrol/food/hospitals'],
     demo: '<b>Demo:</b> weather is unlimited; live traffic needs your free TomTom key and is capped at 5 checks/day. <b>Full version:</b> unlimited, branded & set up for you.' },
+  { emoji: '🩺', name: 'Should I See a Doctor?', file: 'see-a-doctor.html', cat: 'family', g1: '#f87171', g2: '#b91c1c', pat: 'p-tilt',
+    pitch: 'Tells you how soon to get help — now, today, or in a day or two. It never says what the illness is and never suggests a medicine.',
+    points: ['Emergency warning signs checked first, always', 'First aid with what never to do — oil on burns, spoons in mouths, tourniquets', 'One-tap 108 and 112, plus your own doctor', 'English and Tamil, big-text mode, works offline'],
+    demo: '<b>Demo:</b> up to 10 saved checks. <b>Full version:</b> unlimited, branded for your clinic or trust.' },
   { emoji: '💝', name: 'Dates & Gifts Reminder', file: 'family-dates.html', cat: 'family', g1: '#e879f9', g2: '#7e22ce', pat: 'p-glow', c: '#be185d',
     pitch: 'Never forget a birthday or anniversary again — the family peace-keeper.',
     points: ['Countdowns & phone-calendar reminders', 'Gift ideas & budgets per occasion', 'Year-at-a-glance planner'],

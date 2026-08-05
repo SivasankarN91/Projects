@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Should I See a Doctor?</title>
+<meta name="description" content="Tells you how soon to see a doctor — now, today, or in a few days — with emergency warning signs and first aid. Never names a disease or a medicine. Works offline, in English and Tamil.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%F0%9F%A9%BA%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f5f7fa; --surface: #ffffff; --text: #16202e; --muted: #5c6675; --line: #e2e7ee;
+    --accent: #0f6fb8; --accent-soft: #e5f0fa;
+    --now: #c62828; --now-soft: #fdeaea;
+    --today: #c2620a; --today-soft: #fdf1e4;
+    --soon: #8a6d00; --soon-soft: #fbf5df;
+    --home: #17795e; --home-soft: #e4f4ef;
+    --shadow: 0 1px 3px rgba(22,32,46,0.07);
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0e131a; --surface: #171e28; --text: #eef2f7; --muted: #97a2b2; --line: #28313d;
+    --accent: #4da3e0; --accent-soft: #102troubleshoot;
+    --accent-soft: #12293c;
+    --now: #ff6b63; --now-soft: #3a1a1a;
+    --today: #e0a54a; --today-soft: #33260f;
+    --soon: #d8c65a; --soon-soft: #2e2a12;
+    --home: #35b494; --home-soft: #102d25;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--page); color: var(--text);
+         display: flex; flex-direction: column; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body.big { font-size: 1.12rem; }
+
+  header.topbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--surface);
+                  border-bottom: 1px solid var(--line); flex: none; flex-wrap: wrap; position: sticky; top: 0; z-index: 30; }
+  .brand { font-weight: 800; font-size: 1.02rem; display: flex; gap: 7px; align-items: center; }
+  .spacer { flex: 1; }
+  .btn { appearance: none; border: 1px solid var(--line); cursor: pointer; font: inherit; font-size: 0.9rem; font-weight: 650;
+         background: var(--surface); color: var(--text); padding: 10px 15px; border-radius: 10px; box-shadow: var(--shadow);
+         display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  /* 40px floor even on the small variant — this app gets used by elders and
+     by people who are frightened, which is the worst time for a fiddly tap. */
+  .btn.small { padding: 8px 12px; font-size: 0.83rem; min-height: 40px; }
+  .btn.danger { background: var(--now); color: #fff; border-color: transparent; }
+  .btn.wide { width: 100%; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  main { flex: 1; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 14px 90px; }
+  .view { display: none; } .view.active { display: block; }
+  h2 { font-size: 1.3rem; margin-bottom: 6px; }
+  h3 { font-size: 1.02rem; margin-bottom: 6px; }
+  p.sub { color: var(--muted); font-size: 0.94rem; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow);
+          padding: 15px; margin-bottom: 12px; }
+
+  /* the emergency door is always the biggest thing on the screen */
+  .sos { background: var(--now); color: #fff; border: none; border-radius: 16px; padding: 18px; width: 100%;
+         font: inherit; font-size: 1.1rem; font-weight: 800; cursor: pointer; text-align: left;
+         display: flex; gap: 14px; align-items: center; box-shadow: 0 6px 18px rgba(198,40,40,.32); }
+  .sos .ic { font-size: 1.9rem; }
+  .sos small { display: block; font-weight: 600; font-size: 0.86rem; opacity: .92; margin-top: 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 15px 12px;
+          cursor: pointer; font: inherit; text-align: center; box-shadow: var(--shadow); color: var(--text); min-height: 92px; }
+  .tile:hover { border-color: var(--accent); }
+  .tile .ic { font-size: 1.7rem; display: block; margin-bottom: 5px; }
+  .tile .nm { font-weight: 700; font-size: 0.94rem; }
+  .tile .ta { font-size: 0.78rem; color: var(--muted); }
+
+  .opt { display: block; width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--line);
+         border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; cursor: pointer; font: inherit; color: var(--text); min-height: 48px; }
+  .opt:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .opt .ta { display: block; font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+  .chk { display: flex; gap: 12px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line);
+         border-radius: 12px; padding: 13px 14px; margin-bottom: 8px; cursor: pointer; }
+  .chk input { width: 22px; height: 22px; flex: none; margin-top: 2px; accent-color: var(--now); }
+  .chk .ta { display: block; font-size: 0.82rem; color: var(--muted); }
+
+  /* result banner */
+  .verdict { border-radius: 16px; padding: 18px; margin-bottom: 14px; border: 2px solid; }
+  .verdict .lvl { font-size: 1.45rem; font-weight: 900; line-height: 1.15; }
+  .verdict .ta { font-size: 1rem; font-weight: 700; opacity: .9; margin-top: 2px; }
+  .verdict .why { margin-top: 10px; font-size: 0.95rem; }
+  .v3 { background: var(--now-soft); border-color: var(--now); color: var(--now); }
+  .v2 { background: var(--today-soft); border-color: var(--today); color: var(--today); }
+  .v1 { background: var(--soon-soft); border-color: var(--soon); color: var(--soon); }
+  .v0 { background: var(--home-soft); border-color: var(--home); color: var(--home); }
+  .verdict .why, .verdict .lvl { color: inherit; }
+
+  ul.list { list-style: none; display: grid; gap: 8px; }
+  ul.list li { display: flex; gap: 9px; font-size: 0.94rem; }
+  ul.list li::before { content: '•'; font-weight: 900; color: var(--accent); flex: none; }
+  ul.watch li::before { content: '⚠'; color: var(--now); }
+  ul.aid { counter-reset: step; }
+  ul.aid li { counter-increment: step; }
+  ul.aid li::before { content: counter(step); background: var(--accent); color: #fff; width: 22px; height: 22px;
+                      border-radius: 50%; display: grid; place-items: center; font-size: 0.78rem; font-weight: 800; }
+  .never { background: var(--now-soft); border: 1px solid var(--now); border-radius: 12px; padding: 12px; margin-top: 10px; }
+  .never h4 { color: var(--now); font-size: 0.92rem; margin-bottom: 6px; }
+  .never li::before { content: '✕'; color: var(--now); }
+
+  .disclaimer { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--now);
+                border-radius: 10px; padding: 12px 14px; font-size: 0.86rem; color: var(--muted); margin-top: 14px; }
+  .disclaimer b { color: var(--text); }
+
+  .call-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 12px 0; }
+  a.call { text-decoration: none; background: var(--now); color: #fff; border-radius: 14px; padding: 15px 12px;
+           text-align: center; font-weight: 800; font-size: 1.05rem; box-shadow: var(--shadow); }
+  a.call.alt { background: var(--accent); }
+  a.call small { display: block; font-weight: 600; font-size: 0.76rem; opacity: .92; }
+
+  .steps-bar { display: flex; gap: 5px; margin-bottom: 14px; }
+  .steps-bar i { height: 4px; flex: 1; background: var(--line); border-radius: 2px; }
+  .steps-bar i.on { background: var(--accent); }
+
+  .backdrop { position: fixed; inset: 0; background: rgba(8,12,18,.55); display: none; align-items: center;
+              justify-content: center; z-index: 60; padding: 14px; }
+  .backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: 16px; width: 100%; max-width: 540px; max-height: 92vh;
+           overflow-y: auto; padding: 18px; }
+  label.f { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+  input, select { font: inherit; width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--line);
+                  background: var(--surface); color: var(--text); min-height: 44px; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(70px); background: #16202e;
+           color: #fff; padding: 11px 17px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; opacity: 0;
+           transition: .24s; z-index: 90; max-width: 90vw; text-align: center; }
+  .toast.show { transform: translateX(-50%); opacity: 1; }
+  .muted { color: var(--muted); } .sm { font-size: 0.86rem; }
+  #selftest { font-family: ui-monospace, monospace; font-size: 0.8rem; white-space: pre-wrap; padding: 16px; }
+  .pass { color: #0a7d38; } .fail { color: #c62828; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">🩺 <span data-t="title">Should I See a Doctor?</span></div>
+  <div class="spacer"></div>
+  <button class="btn small" id="langBtn">தமிழ்</button>
+  <button class="btn small" id="sizeBtn" title="Bigger text">A+</button>
+  <button class="btn small" id="themeBtn">🌗</button>
+</header>
+
+<main>
+  <!-- ============ HOME ============ -->
+  <section class="view active" id="v-home">
+    <div class="wrap">
+      <button class="sos" id="sosBtn">
+        <span class="ic">🚨</span>
+        <span><span data-t="sosTitle">Something is seriously wrong</span>
+          <small data-t="sosSub">Check the emergency warning signs first</small></span>
+      </button>
+
+      <div class="card" style="margin-top:14px">
+        <h2 data-t="startTitle">What is the problem?</h2>
+        <p class="sub" data-t="startSub">Answer a few questions. You will be told how soon to see a doctor — not what the illness is.</p>
+      </div>
+
+      <div class="card">
+        <label class="f" data-t="whoLabel">Who is unwell?</label>
+        <div class="grid" id="whoGrid"></div>
+      </div>
+
+      <div class="grid" id="areaGrid"></div>
+
+      <div class="card" style="margin-top:4px">
+        <h3 data-t="aidTitle">First aid</h3>
+        <p class="sub" data-t="aidSub">What to do right now, and what never to do.</p>
+        <div class="grid" id="aidGrid" style="margin-top:10px"></div>
+      </div>
+
+      <div class="disclaimer">
+        <b data-t="discTitle">This is not a doctor.</b>
+        <span data-t="discBody">It never tells you what illness you have and never suggests any medicine. It only helps you decide how soon to get help. If you are worried, see a doctor — whatever this says.</span>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn small" id="contactsBtn">📞 <span data-t="contactsBtn">Emergency contacts</span></button>
+        <button class="btn small" id="historyBtn">🕘 <span data-t="historyBtn">Saved checks</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RED FLAGS ============ -->
+  <section class="view" id="v-flags">
+    <div class="wrap">
+      <div class="card" style="border-left:4px solid var(--now)">
+        <h2 data-t="flagTitle">Emergency warning signs</h2>
+        <p class="sub" data-t="flagSub">Tick anything that is happening now. If even one is true, go to hospital immediately.</p>
+      </div>
+      <div id="flagList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px">
+        <button class="btn" id="flagBack">← <span data-t="back">Back</span></button>
+        <button class="btn primary" style="flex:1" id="flagDone" data-t="flagNone">None of these are happening</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUESTIONS ============ -->
+  <section class="view" id="v-quiz">
+    <div class="wrap">
+      <div class="steps-bar" id="stepsBar"></div>
+      <div class="card">
+        <h2 id="qText">—</h2>
+        <p class="sub" id="qTextTa"></p>
+      </div>
+      <div id="qOpts"></div>
+      <button class="btn" id="quizBack" style="margin-top:6px">← <span data-t="back">Back</span></button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section class="view" id="v-result">
+    <div class="wrap" id="resultWrap"></div>
+  </section>
+
+  <!-- ============ FIRST AID DETAIL ============ -->
+  <section class="view" id="v-aid">
+    <div class="wrap" id="aidWrap"></div>
+  </section>
+
+  <!-- ============ HISTORY ============ -->
+  <section class="view" id="v-history">
+    <div class="wrap">
+      <h2 data-t="historyTitle">Saved checks</h2>
+      <p class="sub" data-t="historySub">Kept on this device only, so you can show a doctor what happened and when.</p>
+      <div id="historyList" style="margin-top:12px"></div>
+      <button class="btn" id="histBack" style="margin-top:10px">← <span data-t="back">Back</span></button>
+    </div>
+  </section>
+</main>
+
+<div class="backdrop" id="contactsModal"><div class="modal">
+  <h2 data-t="contactsTitle">Emergency contacts</h2>
+  <p class="sub" data-t="contactsSub">108 and 112 are free government emergency numbers and always work. Add your own doctor below.</p>
+  <div style="margin-top:12px"><label class="f" data-t="docName">Doctor / clinic name</label><input id="cDocName"></div>
+  <div style="margin-top:9px"><label class="f" data-t="docPhone">Phone number</label><input id="cDocPhone" inputmode="tel"></div>
+  <div style="margin-top:9px"><label class="f" data-t="kinName">Family member to call</label><input id="cKinName"></div>
+  <div style="margin-top:9px"><label class="f" data-t="kinPhone">Their phone number</label><input id="cKinPhone" inputmode="tel"></div>
+  <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px">
+    <button class="btn" data-close data-t="close">Close</button>
+    <button class="btn primary" id="cSave" data-t="save">Save</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =====================================================================
+   Should I See a Doctor?
+
+   Design rules, in order of importance:
+
+   1. It never names an illness and never names a medicine. It answers one
+      question only — how soon to get help.
+   2. Red flags short-circuit everything. If an emergency sign is present,
+      nothing else is asked and nothing can lower the answer.
+   3. Urgency is the MAXIMUM across answers, never a sum. Summing lets three
+      mild answers outweigh one serious one, which is exactly backwards.
+   4. When two rules disagree, the more urgent one wins.
+   5. The demo cap never touches the assessment, the red flags or the first
+      aid. Gating safety guidance to sell a licence is not acceptable.
+===================================================================== */
+
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastTimer;
+function toast(m) {
+  const t = $('#toast'); t.textContent = m; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* Only saved history is capped. Never the assessment itself. */
+const DEMO_MAX_SAVED = 10;
+
+/* =====================================================================
+   Who is unwell — thresholds differ, and for infants they differ a lot
+===================================================================== */
+const WHO = [
+  { id: 'adult',    ic: '🧑', en: 'Adult',            ta: 'பெரியவர்' },
+  { id: 'child',    ic: '🧒', en: 'Child (1–12 yrs)', ta: 'குழந்தை' },
+  { id: 'infant',   ic: '👶', en: 'Baby under 1 yr',  ta: 'கைக்குழந்தை' },
+  { id: 'pregnant', ic: '🤰', en: 'Pregnant',         ta: 'கர்ப்பிணி' },
+  { id: 'elder',    ic: '🧓', en: 'Elderly (65+)',    ta: 'முதியவர்' }
+];
+
+/* =====================================================================
+   Red flags. Any one of these means hospital now, for anyone.
+   `who` limits a flag to certain people; absent means everyone.
+===================================================================== */
+const RED_FLAGS = [
+  { id: 'chest', selfReport: true,    en: 'Chest pain, tightness or heavy pressure — especially with sweating, or pain spreading to the arm, neck or jaw', ta: 'மார்பு வலி அல்லது அழுத்தம்', aid: null },
+  { id: 'stroke',   en: 'Face drooping on one side, weakness in one arm, or slurred / confused speech', ta: 'முகம் ஒரு பக்கம் சரிதல், கை பலவீனம், பேச்சு தடுமாற்றம்', aid: null },
+  { id: 'breath',   en: 'Struggling to breathe, or cannot finish a sentence without stopping for breath', ta: 'மூச்சு விடுவதில் சிரமம்', aid: null },
+  { id: 'blue',     en: 'Lips, tongue or fingertips turning blue or grey', ta: 'உதடு அல்லது நாக்கு நீலமாதல்', aid: null },
+  { id: 'unresp',   en: 'Unconscious, cannot be woken, or very confused', ta: 'மயக்கம், எழுப்ப முடியவில்லை', aid: 'faint' },
+  { id: 'fit',      en: 'A fit / seizure happening now, or one lasting more than 5 minutes', ta: 'வலிப்பு', aid: 'seizure' },
+  { id: 'bleed',    en: 'Heavy bleeding that does not stop with firm pressure', ta: 'நிற்காத அதிக இரத்தப்போக்கு', aid: 'bleeding' },
+  { id: 'allergy',  en: 'Swelling of the lips, tongue or throat, or a sudden widespread rash with breathing trouble', ta: 'உதடு/நாக்கு வீக்கம், மூச்சுத் திணறல்', aid: null },
+  { id: 'poison',   en: 'Swallowed poison, pesticide, or too much of any medicine', ta: 'விஷம் அல்லது மருந்து அதிகமாக உட்கொண்டது', aid: 'poison' },
+  { id: 'snake',    en: 'Snake bite, or a scorpion sting with spreading symptoms', ta: 'பாம்பு கடி', aid: 'snake' },
+  { id: 'headache', selfReport: true, en: 'A sudden, very severe headache — the worst ever felt', ta: 'திடீர் கடுமையான தலைவலி', aid: null },
+  { id: 'stiffneck',en: 'Fever with a stiff neck, or a rash that does not fade when pressed', ta: 'காய்ச்சலுடன் கழுத்து விறைப்பு', aid: null },
+  { id: 'abdomen',  en: 'Severe stomach pain with a hard, rigid belly', ta: 'கடுமையான வயிற்று வலி, வயிறு இறுகியது', aid: null },
+  { id: 'vomitblood', en: 'Vomiting blood, or black tar-like stools', ta: 'இரத்த வாந்தி அல்லது கருப்பு மலம்', aid: null },
+  { id: 'burnbig',  en: 'A burn larger than the palm of the hand, or on the face, hands or genitals', ta: 'பெரிய தீக்காயம்', aid: 'burn' },
+  { id: 'preg',     en: 'Bleeding, severe headache with swelling or blurred vision, or the baby has stopped moving', ta: 'கர்ப்ப கால இரத்தப்போக்கு அல்லது குழந்தை அசைவு நின்றது', who: ['pregnant'], aid: null },
+  { id: 'inf_fever',en: 'A baby under 3 months with any fever', ta: '3 மாதத்திற்குட்பட்ட குழந்தைக்கு காய்ச்சல்', who: ['infant'], aid: null },
+  { id: 'inf_feed', en: 'A baby who will not feed, is floppy, or is very hard to wake', ta: 'பால் குடிக்காத, சோர்வான குழந்தை', who: ['infant'], aid: null }
+];
+
+/* =====================================================================
+   Symptom areas. Every option carries a level:
+     3 = emergency now   2 = doctor today   1 = doctor in 2-3 days   0 = home care
+   `bump` raises the floor for certain people, because the same symptom is
+   more dangerous in a baby, a pregnant woman or an elderly person.
+===================================================================== */
+const AREAS = [
+  {
+    id: 'fever', ic: '🌡️', en: 'Fever', ta: 'காய்ச்சல்',
+    qs: [
+      { en: 'How long has the fever lasted?', ta: 'எவ்வளவு நாட்களாக?', opts: [
+        { en: 'Less than 3 days', ta: '3 நாட்களுக்கும் குறைவு', lvl: 0 },
+        { en: '3 to 7 days', ta: '3 முதல் 7 நாட்கள்', lvl: 2 },
+        { en: 'More than 7 days', ta: '7 நாட்களுக்கு மேல்', lvl: 2 }
+      ]},
+      { en: 'Is the person drinking fluids and passing urine normally?', ta: 'தண்ணீர் குடிக்கிறாரா, சிறுநீர் இயல்பா?', opts: [
+        { en: 'Yes, normally', ta: 'ஆம், இயல்பாக', lvl: 0 },
+        { en: 'Drinking less than usual', ta: 'வழக்கத்தை விட குறைவாக', lvl: 1 },
+        { en: 'Barely drinking, or very little urine', ta: 'மிகக் குறைவு', lvl: 2 }
+      ]},
+      { en: 'Any rash, severe body pain, or bleeding from the gums or nose?', ta: 'தடிப்பு, கடும் உடல்வலி, ஈறு/மூக்கு இரத்தம்?', opts: [
+        { en: 'No', ta: 'இல்லை', lvl: 0 },
+        { en: 'Body pain only', ta: 'உடல்வலி மட்டும்', lvl: 1 },
+        { en: 'Rash or any bleeding', ta: 'தடிப்பு அல்லது இரத்தப்போக்கு', lvl: 2 }
+      ]}
+    ],
+    watch: [
+      { en: 'Fever stays above 3 days, or comes back after settling', ta: '3 நாட்களுக்கு மேல் நீடித்தால்' },
+      { en: 'Drowsy, confused, or hard to wake', ta: 'மயக்கம் அல்லது குழப்பம்' },
+      { en: 'Passing very little urine', ta: 'சிறுநீர் மிகக் குறைவு' }
+    ],
+    home: [
+      { en: 'Rest, and sip fluids often through the day', ta: 'ஓய்வு, அடிக்கடி தண்ணீர்' },
+      { en: 'Cool the body by sponging with normal water — not cold or iced water', ta: 'சாதாரண நீரில் ஒத்தடம்' },
+      { en: 'Keep the room airy and clothing light', ta: 'காற்றோட்டமான அறை' }
+    ]
+  },
+  {
+    id: 'breath', ic: '🫁', en: 'Cough or breathing', ta: 'இருமல் / மூச்சு',
+    qs: [
+      { en: 'How is the breathing right now?', ta: 'இப்போது மூச்சு எப்படி?', opts: [
+        { en: 'Normal', ta: 'இயல்பாக', lvl: 0 },
+        { en: 'Faster than usual, but able to talk normally', ta: 'சற்று வேகமாக', lvl: 2 },
+        { en: 'Fast, noisy, or using the chest and neck to breathe', ta: 'மிக வேகமாக, சிரமமாக', lvl: 3 }
+      ]},
+      { en: 'How long has the cough lasted?', ta: 'இருமல் எவ்வளவு காலம்?', opts: [
+        { en: 'Under 2 weeks', ta: '2 வாரங்களுக்குள்', lvl: 0 },
+        { en: '2 to 3 weeks', ta: '2–3 வாரங்கள்', lvl: 1 },
+        { en: 'More than 3 weeks, or coughing blood', ta: '3 வாரங்களுக்கு மேல் அல்லது இரத்தம்', lvl: 2 }
+      ]},
+      { en: 'Any chest pain or fever with it?', ta: 'மார்பு வலி அல்லது காய்ச்சல்?', opts: [
+        { en: 'Neither', ta: 'இரண்டும் இல்லை', lvl: 0 },
+        { en: 'Fever as well', ta: 'காய்ச்சலும் உண்டு', lvl: 1 },
+        { en: 'Chest pain as well', ta: 'மார்பு வலியும் உண்டு', lvl: 3 }
+      ]}
+    ],
+    watch: [
+      { en: 'Breathing gets faster or harder', ta: 'மூச்சு சிரமம் அதிகரித்தால்' },
+      { en: 'Lips or fingertips look blue', ta: 'உதடு நீலமானால்' },
+      { en: 'A cough lasting more than 3 weeks always needs a doctor and a test, even if you otherwise feel well', ta: '3 வாரங்களுக்கு மேல் இருமல் — கண்டிப்பாக மருத்துவர் மற்றும் பரிசோதனை' }
+    ],
+    home: [
+      { en: 'Warm fluids and rest help a simple cough', ta: 'சூடான பானங்கள், ஓய்வு' },
+      { en: 'Stay away from smoke and dust', ta: 'புகை, தூசி தவிர்க்கவும்' },
+      { en: 'Steam inhalation can ease a blocked nose', ta: 'ஆவி பிடிக்கலாம்' }
+    ]
+  },
+  {
+    id: 'stomach', ic: '🤢', en: 'Stomach, vomiting or loose motion', ta: 'வயிறு / வாந்தி / பேதி',
+    qs: [
+      { en: 'Is the person able to keep fluids down?', ta: 'தண்ணீர் உள்ளே தங்குகிறதா?', opts: [
+        { en: 'Yes', ta: 'ஆம்', lvl: 0 },
+        { en: 'Some stays down', ta: 'சிறிது தங்குகிறது', lvl: 1 },
+        { en: 'Vomiting everything', ta: 'எல்லாம் வாந்தி', lvl: 2 }
+      ]},
+      { en: 'Any signs of drying out — sunken eyes, no tears, very little urine?', ta: 'நீரிழப்பு அறிகுறிகள்?', opts: [
+        { en: 'None', ta: 'இல்லை', lvl: 0 },
+        { en: 'Thirsty and tired', ta: 'தாகம், சோர்வு', lvl: 1 },
+        { en: 'Sunken eyes, no urine for 8 hours', ta: 'கண் குழிவு, சிறுநீர் இல்லை', lvl: 3 }
+      ]},
+      { en: 'Any blood in the vomit or the stool?', ta: 'வாந்தி/மலத்தில் இரத்தம்?', opts: [
+        { en: 'No', ta: 'இல்லை', lvl: 0 },
+        { en: 'Yes', ta: 'ஆம்', lvl: 3 }
+      ]}
+    ],
+    watch: [
+      { en: 'Cannot drink anything at all', ta: 'எதுவும் குடிக்க முடியவில்லை' },
+      { en: 'No urine for 8 hours or more', ta: '8 மணி நேரம் சிறுநீர் இல்லை' },
+      { en: 'Becoming drowsy or floppy', ta: 'சோர்வு அதிகரித்தால்' }
+    ],
+    home: [
+      { en: 'ORS after every loose motion is the single most useful thing you can do', ta: 'ஒவ்வொரு பேதிக்கும் ORS' },
+      { en: 'Small sips often, rather than a lot at once', ta: 'சிறிது சிறிதாக அடிக்கடி' },
+      { en: 'Keep eating light food; do not starve the person', ta: 'இலகுவான உணவு தொடரவும்' }
+    ]
+  },
+  {
+    id: 'injury', ic: '🩹', en: 'Injury or wound', ta: 'காயம்',
+    qs: [
+      { en: 'Is the bleeding controlled with firm pressure?', ta: 'அழுத்தினால் இரத்தம் நிற்கிறதா?', opts: [
+        { en: 'Yes, it stopped', ta: 'ஆம், நின்றது', lvl: 0 },
+        { en: 'Slowed but still oozing', ta: 'குறைந்தது, இன்னும் வருகிறது', lvl: 2 },
+        { en: 'No, still bleeding heavily', ta: 'இல்லை, அதிகமாக', lvl: 3 }
+      ]},
+      { en: 'Can the injured part be moved and used normally?', ta: 'அந்த பகுதியை அசைக்க முடிகிறதா?', opts: [
+        { en: 'Yes', ta: 'ஆம்', lvl: 0 },
+        { en: 'Painful but possible', ta: 'வலியுடன் முடிகிறது', lvl: 1 },
+        { en: 'No, or it looks bent or out of shape', ta: 'இல்லை, வடிவம் மாறியுள்ளது', lvl: 2 }
+      ]},
+      { en: 'Was it a dirty wound, an animal bite, or a rusty object?', ta: 'அழுக்கு காயம், விலங்கு கடி, துருப்பிடித்த பொருள்?', opts: [
+        { en: 'No, a clean everyday cut', ta: 'இல்லை', lvl: 0 },
+        { en: 'Dirty or deep wound', ta: 'ஆழமான/அழுக்கு காயம்', lvl: 2 },
+        { en: 'Animal or human bite', ta: 'விலங்கு அல்லது மனித கடி', lvl: 2 }
+      ]}
+    ],
+    watch: [
+      { en: 'Spreading redness, swelling, or pus', ta: 'சிவப்பு பரவுதல், சீழ்' },
+      { en: 'Fever starting a day or two after the injury', ta: 'காயத்திற்குப் பின் காய்ச்சல்' },
+      { en: 'Any animal bite needs a doctor the same day for injections', ta: 'விலங்கு கடி — அன்றே மருத்துவர்' }
+    ],
+    home: [
+      { en: 'Wash gently under clean running water', ta: 'சுத்தமான நீரில் கழுவவும்' },
+      { en: 'Cover with a clean dry cloth or dressing', ta: 'சுத்தமான துணியால் மூடவும்' },
+      { en: 'Keep it raised to reduce swelling', ta: 'உயர்த்தி வைக்கவும்' }
+    ]
+  },
+  {
+    id: 'head', ic: '🤕', en: 'Headache or dizziness', ta: 'தலைவலி / மயக்கம்',
+    qs: [
+      { en: 'How did it start?', ta: 'எப்படி ஆரம்பித்தது?', opts: [
+        { en: 'Gradually, like before', ta: 'படிப்படியாக, வழக்கம் போல', lvl: 0 },
+        { en: 'Worse than usual', ta: 'வழக்கத்தை விட மோசம்', lvl: 1 },
+        { en: 'Suddenly and very severely', ta: 'திடீரென மிகக் கடுமையாக', lvl: 3 }
+      ]},
+      { en: 'Any weakness, numbness, or trouble speaking or seeing?', ta: 'பலவீனம், உணர்வின்மை, பேச்சு/பார்வை சிக்கல்?', opts: [
+        { en: 'None', ta: 'இல்லை', lvl: 0 },
+        { en: 'Yes, any of these', ta: 'ஆம்', lvl: 3 }
+      ]},
+      { en: 'Was there a recent blow to the head?', ta: 'சமீபத்தில் தலையில் அடி?', opts: [
+        { en: 'No', ta: 'இல்லை', lvl: 0 },
+        { en: 'Yes, but no vomiting or drowsiness', ta: 'ஆம், ஆனால் பிரச்சனை இல்லை', lvl: 2 },
+        { en: 'Yes, with vomiting or drowsiness', ta: 'ஆம், வாந்தி/மயக்கத்துடன்', lvl: 3 }
+      ]}
+    ],
+    watch: [
+      { en: 'Headache waking the person from sleep', ta: 'தூக்கத்தில் இருந்து எழுப்பும் தலைவலி' },
+      { en: 'Repeated vomiting', ta: 'திரும்பத் திரும்ப வாந்தி' },
+      { en: 'Any new weakness or confusion', ta: 'புதிய பலவீனம் அல்லது குழப்பம்' }
+    ],
+    home: [
+      { en: 'Rest in a quiet, dim room', ta: 'அமைதியான இருண்ட அறையில் ஓய்வு' },
+      { en: 'Drink water — dehydration is a common cause', ta: 'தண்ணீர் குடிக்கவும்' },
+      { en: 'Note when they happen, to show the doctor', ta: 'குறித்து வைக்கவும்' }
+    ]
+  },
+  {
+    id: 'urine', ic: '🚻', en: 'Urine problems', ta: 'சிறுநீர் பிரச்சனை',
+    qs: [
+      { en: 'Any burning or pain when passing urine?', ta: 'எரிச்சல் அல்லது வலி?', opts: [
+        { en: 'No', ta: 'இல்லை', lvl: 0 },
+        { en: 'Yes, mild', ta: 'ஆம், லேசாக', lvl: 1 },
+        { en: 'Yes, with fever or back pain', ta: 'ஆம், காய்ச்சல்/முதுகுவலியுடன்', lvl: 2 }
+      ]},
+      { en: 'Any blood in the urine, or unable to pass urine at all?', ta: 'இரத்தம், அல்லது சிறுநீர் வரவில்லையா?', opts: [
+        { en: 'Neither', ta: 'இல்லை', lvl: 0 },
+        { en: 'Blood in the urine', ta: 'இரத்தம்', lvl: 2 },
+        { en: 'Cannot pass urine at all', ta: 'சிறுநீர் கழிக்க முடியவில்லை', lvl: 3 }
+      ]}
+    ],
+    watch: [
+      { en: 'Fever with back or side pain', ta: 'காய்ச்சலுடன் முதுகுவலி' },
+      { en: 'Unable to pass urine', ta: 'சிறுநீர் கழிக்க இயலாமை' }
+    ],
+    home: [
+      { en: 'Drink plenty of water through the day', ta: 'நிறைய தண்ணீர்' },
+      { en: 'Do not hold urine for long periods', ta: 'சிறுநீரை அடக்க வேண்டாம்' }
+    ]
+  }
+];
+
+/* First aid. Every entry has a "never" list, because the harmful folk
+   remedies are the reason this section is worth having at all. */
+const AID = {
+  choking:  { ic: '😰', en: 'Choking', ta: 'மூச்சுத் திணறல் (தொண்டையில் அடைப்பு)',
+    steps: [
+      { en: 'If they can cough, let them cough — do not interfere', ta: 'இருமட்டும், தடுக்க வேண்டாம்' },
+      { en: 'If they cannot cough or speak, bend them forward and give 5 firm blows between the shoulder blades with the heel of your hand', ta: 'முன்னால் குனிய வைத்து முதுகில் 5 முறை தட்டவும்' },
+      { en: 'If that fails, stand behind, make a fist above the navel and pull sharply inwards and upwards, 5 times', ta: 'பின்னால் நின்று தொப்புளுக்கு மேல் 5 முறை அழுத்தவும்' },
+      { en: 'Alternate 5 back blows and 5 thrusts. Call 108 if it does not clear', ta: 'மாற்றி மாற்றி செய்யவும். 108 அழைக்கவும்' },
+      { en: 'For a baby: face down along your forearm, 5 back blows, then 5 chest thrusts with two fingers', ta: 'குழந்தைக்கு: முகம் கீழாக 5 தட்டு, பின் 5 மார்பு அழுத்தம்' }
+    ],
+    never: [
+      { en: 'Do not put your fingers blindly into the mouth to fish it out', ta: 'விரலை உள்ளே விட வேண்டாம்' },
+      { en: 'Do not give water to "push it down"', ta: 'தண்ணீர் கொடுக்க வேண்டாம்' }
+    ]},
+  bleeding: { ic: '🩸', en: 'Heavy bleeding', ta: 'அதிக இரத்தப்போக்கு',
+    steps: [
+      { en: 'Press hard directly on the wound with a clean cloth and keep pressing', ta: 'சுத்தமான துணியால் நேரடியாக அழுத்தவும்' },
+      { en: 'Raise the injured part above the level of the heart if you can', ta: 'காயத்தை உயர்த்தி வைக்கவும்' },
+      { en: 'If blood soaks through, add another cloth on top — do not remove the first', ta: 'மேலே இன்னொரு துணி வைக்கவும்' },
+      { en: 'Keep the person lying down and warm, and get to hospital', ta: 'படுக்க வைத்து மருத்துவமனைக்கு' }
+    ],
+    never: [
+      { en: 'Do not pull out anything stuck in the wound — press around it instead', ta: 'குத்தியிருக்கும் பொருளை எடுக்க வேண்டாம்' },
+      { en: 'Do not tie a tight tourniquet unless a limb is severed and nothing else works', ta: 'இறுக்கமாக கட்ட வேண்டாம்' }
+    ]},
+  burn:     { ic: '🔥', en: 'Burns', ta: 'தீக்காயம்',
+    steps: [
+      { en: 'Hold the burn under cool running water for a full 20 minutes', ta: '20 நிமிடம் குளிர்ந்த ஓடும் நீரில்' },
+      { en: 'Remove rings, bangles and watches before swelling starts', ta: 'மோதிரம், வளையல் கழற்றவும்' },
+      { en: 'Cover loosely with a clean cloth or cling film', ta: 'சுத்தமான துணியால் மூடவும்' },
+      { en: 'Go to hospital if it is larger than the palm, or on the face, hands or genitals', ta: 'பெரிய காயமெனில் மருத்துவமனைக்கு' }
+    ],
+    never: [
+      { en: 'Never put oil, ghee, toothpaste, turmeric or ash on a burn', ta: 'எண்ணெய், பற்பசை, மஞ்சள் தடவ வேண்டாம்' },
+      { en: 'Do not use ice — it damages the skin further', ta: 'ஐஸ் வைக்க வேண்டாம்' },
+      { en: 'Do not break the blisters', ta: 'கொப்புளங்களை உடைக்க வேண்டாம்' }
+    ]},
+  seizure:  { ic: '⚡', en: 'Fits / seizure', ta: 'வலிப்பு',
+    steps: [
+      { en: 'Clear hard objects away and cushion the head', ta: 'தலையை மென்மையாக வைக்கவும்' },
+      { en: 'Time it. Let the fit run its course', ta: 'நேரத்தை கவனிக்கவும்' },
+      { en: 'When it stops, roll them onto their side', ta: 'நின்றபின் பக்கவாட்டில் திருப்பவும்' },
+      { en: 'Call 108 if it lasts over 5 minutes, repeats, or it is their first ever fit', ta: '5 நிமிடத்திற்கு மேல் என்றால் 108' }
+    ],
+    never: [
+      { en: 'Never put a spoon, key, cloth or your fingers in the mouth', ta: 'வாயில் எதையும் வைக்க வேண்டாம்' },
+      { en: 'Do not hold them down or restrain the movements', ta: 'அழுத்திப் பிடிக்க வேண்டாம்' },
+      { en: 'Do not make them smell onion, slipper or anything else', ta: 'வெங்காயம் முகர வைக்க வேண்டாம்' }
+    ]},
+  snake:    { ic: '🐍', en: 'Snake bite', ta: 'பாம்பு கடி',
+    steps: [
+      { en: 'Keep the person still and calm — movement spreads venom faster', ta: 'அசையாமல் அமைதியாக வைக்கவும்' },
+      { en: 'Keep the bitten limb still and lower than the heart', ta: 'கடித்த பகுதியை அசைக்காமல் வைக்கவும்' },
+      { en: 'Remove rings, bangles and anything tight near the bite', ta: 'இறுக்கமான பொருட்களை கழற்றவும்' },
+      { en: 'Get to a hospital that has anti-venom immediately — call 108', ta: 'உடனே மருத்துவமனைக்கு — 108' }
+    ],
+    never: [
+      { en: 'Never cut the wound or try to suck out the venom', ta: 'கீறவோ உறிஞ்சவோ வேண்டாம்' },
+      { en: 'Never tie a tight tourniquet', ta: 'இறுக்கிக் கட்ட வேண்டாம்' },
+      { en: 'Do not waste time with traditional healers — anti-venom is the only treatment', ta: 'நேரத்தை வீணாக்க வேண்டாம்' }
+    ]},
+  poison:   { ic: '☠️', en: 'Poisoning', ta: 'விஷம் உட்கொள்ளுதல்',
+    steps: [
+      { en: 'Call 108 straight away', ta: 'உடனே 108 அழைக்கவும்' },
+      { en: 'Take the bottle, packet or plant with you to the hospital', ta: 'பாட்டில்/பொருளை எடுத்துச் செல்லவும்' },
+      { en: 'If they are unconscious but breathing, roll them onto their side', ta: 'மயக்கமெனில் பக்கவாட்டில் திருப்பவும்' }
+    ],
+    never: [
+      { en: 'Do not make them vomit — it can burn the throat a second time', ta: 'வாந்தி எடுக்க வைக்க வேண்டாம்' },
+      { en: 'Do not give milk, salt water or any home remedy', ta: 'பால், உப்பு நீர் கொடுக்க வேண்டாம்' }
+    ]},
+  heat:     { ic: '🥵', en: 'Heat stroke', ta: 'வெயில் தாக்கம்',
+    steps: [
+      { en: 'Move into shade or a cool room immediately', ta: 'நிழலுக்கு நகர்த்தவும்' },
+      { en: 'Loosen clothing and fan them', ta: 'ஆடையை தளர்த்தி விசிறவும்' },
+      { en: 'Wet the skin with cool water, especially neck and armpits', ta: 'குளிர்ந்த நீரால் உடலை நனைக்கவும்' },
+      { en: 'If awake and able to swallow, give ORS or water in sips', ta: 'ORS அல்லது தண்ணீர் சிறிது சிறிதாக' },
+      { en: 'Call 108 if confused, unconscious or not improving', ta: 'குழப்பம் இருந்தால் 108' }
+    ],
+    never: [
+      { en: 'Do not give anything by mouth to someone who is not fully awake', ta: 'மயக்கத்தில் எதுவும் கொடுக்க வேண்டாம்' }
+    ]},
+  faint:    { ic: '😵', en: 'Fainting', ta: 'மயக்கம்',
+    steps: [
+      { en: 'Lie them flat and raise the legs about a foot', ta: 'படுக்க வைத்து கால்களை உயர்த்தவும்' },
+      { en: 'Loosen tight clothing and let fresh air in', ta: 'ஆடையை தளர்த்தவும்' },
+      { en: 'If they do not wake within a minute, roll them onto their side and call 108', ta: 'ஒரு நிமிடத்தில் எழவில்லையெனில் 108' },
+      { en: 'Once awake, let them sit up slowly', ta: 'மெதுவாக எழுந்திருக்கட்டும்' }
+    ],
+    never: [
+      { en: 'Do not sit them up quickly or crowd around them', ta: 'சட்டென எழுப்ப வேண்டாம்' },
+      { en: 'Do not throw water on the face or make them smell anything', ta: 'முகத்தில் தண்ணீர் தெளிக்க வேண்டாம்' }
+    ]}
+};
+
+const VERDICT = {
+  3: { cls: 'v3', en: 'Go to hospital now',        ta: 'உடனே மருத்துவமனைக்கு செல்லுங்கள்', why: { en: 'One or more of the answers is a warning sign that needs to be seen straight away. Do not wait to see if it improves.', ta: 'உடனடி கவனிப்பு தேவை. காத்திருக்க வேண்டாம்.' } },
+  2: { cls: 'v2', en: 'See a doctor today',         ta: 'இன்றே மருத்துவரை பாருங்கள்', why: { en: 'This should be looked at today rather than left overnight.', ta: 'இன்றைக்குள் பார்ப்பது நல்லது.' } },
+  1: { cls: 'v1', en: 'See a doctor in a day or two', ta: 'ஓரிரு நாட்களில் மருத்துவரை பாருங்கள்', why: { en: 'Not an emergency, but it should be checked soon rather than ignored.', ta: 'அவசரம் இல்லை, ஆனால் விரைவில் பார்க்கவும்.' } },
+  0: { cls: 'v0', en: 'Can usually be cared for at home', ta: 'வீட்டிலேயே கவனிக்கலாம்', why: { en: 'Nothing in the answers suggests urgency. Watch for the signs below and see a doctor if any appear.', ta: 'கீழே உள்ள அறிகுறிகள் தோன்றினால் மருத்துவரை பாருங்கள்.' } }
+};
+
+/* =====================================================================
+   The triage rules. Pure functions, so they can be tested without a UI.
+===================================================================== */
+
+/** Red flags that apply to this person. */
+function flagsFor(who) {
+  return RED_FLAGS.filter(f => {
+    if (f.who && !f.who.includes(who)) return false;
+    /* A baby cannot tell you its chest hurts. Showing signs that can only
+       be self-reported adds items to scan in an emergency without adding
+       any information — every observable sign is still listed. */
+    if (f.selfReport && who === 'infant') return false;
+    return true;
+  });
+}
+
+/**
+ * Decide urgency.
+ *   flags    — ids of red flags ticked
+ *   answers  — chosen option objects
+ *   who      — who is unwell
+ * A red flag forces 3 and nothing can lower it. Otherwise the result is the
+ * highest level among the answers, raised by a floor for vulnerable people.
+ */
+function assess(flags, answers, who) {
+  if (flags && flags.length) return { level: 3, reason: 'redflag', flags };
+
+  let level = 0;
+  for (const a of (answers || [])) level = Math.max(level, a.lvl || 0);
+
+  /* The same answer means more in a baby, in pregnancy, or at 65+. Anything
+     that is not plainly "nothing wrong" gets nudged up one step. */
+  let floored = false;
+  if (level >= 1 && (who === 'infant' || who === 'pregnant')) { level = Math.max(level, 2); floored = true; }
+  else if (level >= 2 && who === 'elder') { level = Math.max(level, 2); }
+
+  return { level, reason: floored ? 'vulnerable' : 'answers', flags: [] };
+}
+
+/* =====================================================================
+   State
+===================================================================== */
+const KEY = 'seeADoctor';
+let S = { lang: 'en', big: false, theme: 'light', doc: {}, kin: {}, history: [], seenDisclaimer: false };
+function load() {
+  try { S = Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+  document.documentElement.dataset.theme = S.theme === 'dark' ? 'dark' : 'light';
+  document.body.classList.toggle('big', !!S.big);
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} }
+
+let session = { who: 'adult', area: null, qi: 0, answers: [], flags: [] };
+const T = (o) => S.lang === 'ta' && o.ta ? o.ta : o.en;
+const other = (o) => S.lang === 'ta' ? o.en : (o.ta || '');
+
+const STR = {
+  title: { en: 'Should I See a Doctor?', ta: 'மருத்துவரை பார்க்க வேண்டுமா?' },
+  sosTitle: { en: 'Something is seriously wrong', ta: 'மிகவும் மோசமாக உள்ளது' },
+  sosSub: { en: 'Check the emergency warning signs first', ta: 'அவசர அறிகுறிகளை முதலில் பாருங்கள்' },
+  startTitle: { en: 'What is the problem?', ta: 'என்ன பிரச்சனை?' },
+  startSub: { en: 'Answer a few questions. You will be told how soon to see a doctor — not what the illness is.', ta: 'சில கேள்விகள். எவ்வளவு விரைவில் மருத்துவரை பார்க்க வேண்டும் என்பது மட்டுமே சொல்லப்படும்.' },
+  whoLabel: { en: 'Who is unwell?', ta: 'யாருக்கு உடல்நிலை சரியில்லை?' },
+  aidTitle: { en: 'First aid', ta: 'முதலுதவி' },
+  aidSub: { en: 'What to do right now, and what never to do.', ta: 'இப்போது என்ன செய்ய வேண்டும், என்ன செய்யக்கூடாது.' },
+  discTitle: { en: 'This is not a doctor.', ta: 'இது மருத்துவர் அல்ல.' },
+  discBody: { en: 'It never tells you what illness you have and never suggests any medicine. It only helps you decide how soon to get help. If you are worried, see a doctor — whatever this says.', ta: 'எந்த நோய் என்றோ எந்த மருந்து என்றோ இது சொல்லாது. எவ்வளவு விரைவில் உதவி தேவை என்பதை மட்டுமே சொல்கிறது. கவலையாக இருந்தால் மருத்துவரை பாருங்கள்.' },
+  flagTitle: { en: 'Emergency warning signs', ta: 'அவசர எச்சரிக்கை அறிகுறிகள்' },
+  flagSub: { en: 'Tick anything that is happening now. If even one is true, go to hospital immediately.', ta: 'இப்போது நடப்பதை தேர்வு செய்யுங்கள். ஒன்று இருந்தாலும் உடனே மருத்துவமனைக்கு.' },
+  flagNone: { en: 'None of these are happening', ta: 'இவை எதுவும் இல்லை' },
+  back: { en: 'Back', ta: 'பின்' },
+  contactsBtn: { en: 'Emergency contacts', ta: 'அவசர தொடர்புகள்' },
+  historyBtn: { en: 'Saved checks', ta: 'சேமித்தவை' },
+  historyTitle: { en: 'Saved checks', ta: 'சேமித்த பரிசோதனைகள்' },
+  historySub: { en: 'Kept on this device only, so you can show a doctor what happened and when.', ta: 'இந்த சாதனத்தில் மட்டும். மருத்துவரிடம் காட்டலாம்.' },
+  contactsTitle: { en: 'Emergency contacts', ta: 'அவசர தொடர்புகள்' },
+  contactsSub: { en: '108 and 112 are free government emergency numbers and always work. Add your own doctor below.', ta: '108, 112 இலவச அரசு அவசர எண்கள். உங்கள் மருத்துவரை சேர்க்கவும்.' },
+  docName: { en: 'Doctor / clinic name', ta: 'மருத்துவர் / கிளினிக் பெயர்' },
+  docPhone: { en: 'Phone number', ta: 'தொலைபேசி எண்' },
+  kinName: { en: 'Family member to call', ta: 'அழைக்க வேண்டிய குடும்ப உறுப்பினர்' },
+  kinPhone: { en: 'Their phone number', ta: 'அவர்களின் எண்' },
+  close: { en: 'Close', ta: 'மூடு' }, save: { en: 'Save', ta: 'சேமி' }
+};
+
+/* =====================================================================
+   Rendering
+===================================================================== */
+function show(v) {
+  $$('.view').forEach(x => x.classList.remove('active'));
+  $('#v-' + v).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+function paintStrings() {
+  $$('[data-t]').forEach(el => { const k = el.dataset.t; if (STR[k]) el.textContent = T(STR[k]); });
+  $('#langBtn').textContent = S.lang === 'ta' ? 'English' : 'தமிழ்';
+  document.title = T(STR.title);
+}
+function renderHome() {
+  $('#whoGrid').innerHTML = WHO.map(w => `
+    <button class="tile" data-who="${w.id}" style="${session.who === w.id ? 'border-color:var(--accent); background:var(--accent-soft)' : ''}">
+      <span class="ic">${w.ic}</span><span class="nm">${esc(T(w))}</span><span class="ta">${esc(other(w))}</span></button>`).join('');
+  $('#areaGrid').innerHTML = AREAS.map(a => `
+    <button class="tile" data-area="${a.id}"><span class="ic">${a.ic}</span>
+      <span class="nm">${esc(T(a))}</span><span class="ta">${esc(other(a))}</span></button>`).join('');
+  $('#aidGrid').innerHTML = Object.entries(AID).map(([k, a]) => `
+    <button class="tile" data-aid="${k}"><span class="ic">${a.ic}</span>
+      <span class="nm">${esc(T(a))}</span></button>`).join('');
+}
+function renderFlags() {
+  $('#flagList').innerHTML = flagsFor(session.who).map(f => `
+    <label class="chk"><input type="checkbox" value="${f.id}">
+      <span>${esc(T(f))}<span class="ta">${esc(other(f))}</span></span></label>`).join('');
+}
+function renderQuestion() {
+  const area = AREAS.find(a => a.id === session.area);
+  const q = area.qs[session.qi];
+  $('#stepsBar').innerHTML = area.qs.map((_, i) => `<i class="${i <= session.qi ? 'on' : ''}"></i>`).join('');
+  $('#qText').textContent = T(q);
+  $('#qTextTa').textContent = other(q);
+  $('#qOpts').innerHTML = q.opts.map((o, i) => `
+    <button class="opt" data-opt="${i}">${esc(T(o))}<span class="ta">${esc(other(o))}</span></button>`).join('');
+}
+function callRow() {
+  const doc = S.doc && S.doc.phone ? `<a class="call alt" href="tel:${esc(S.doc.phone)}">${esc(S.doc.name || 'Doctor')}<small>${esc(S.doc.phone)}</small></a>` : '';
+  const kin = S.kin && S.kin.phone ? `<a class="call alt" href="tel:${esc(S.kin.phone)}">${esc(S.kin.name || 'Family')}<small>${esc(S.kin.phone)}</small></a>` : '';
+  return `<div class="call-row">
+      <a class="call" href="tel:108">108<small>${S.lang === 'ta' ? 'ஆம்புலன்ஸ்' : 'Ambulance'}</small></a>
+      <a class="call" href="tel:112">112<small>${S.lang === 'ta' ? 'அவசர உதவி' : 'Emergency'}</small></a>
+    </div>${doc || kin ? `<div class="call-row">${doc}${kin}</div>` : ''}`;
+}
+function renderResult(res) {
+  const v = VERDICT[res.level];
+  const area = AREAS.find(a => a.id === session.area);
+  const flagText = res.flags.map(id => {
+    const f = RED_FLAGS.find(x => x.id === id); return f ? T(f) : '';
+  }).filter(Boolean);
+  const aidFor = res.flags.map(id => (RED_FLAGS.find(x => x.id === id) || {}).aid).filter(Boolean);
+
+  $('#resultWrap').innerHTML = `
+    <div class="verdict ${v.cls}">
+      <div class="lvl">${esc(T(v))}</div>
+      <div class="ta">${esc(other(v))}</div>
+      <div class="why">${esc(T(v.why))}</div>
+    </div>
+    ${res.level === 3 ? callRow() : ''}
+    ${flagText.length ? `<div class="card"><h3>${S.lang === 'ta' ? 'காரணம்' : 'Because you said'}</h3>
+      <ul class="list watch">${flagText.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
+    ${aidFor.length ? aidFor.map(k => aidCard(AID[k])).join('') : ''}
+    ${area && res.level < 3 ? `
+      <div class="card"><h3>${S.lang === 'ta' ? 'உடனே மருத்துவரை பாருங்கள் — இவை தோன்றினால்' : 'Go sooner if any of these appear'}</h3>
+        <ul class="list watch">${area.watch.map(w => `<li>${esc(T(w))}</li>`).join('')}</ul></div>` : ''}
+    ${area && res.level === 0 ? `
+      <div class="card"><h3>${S.lang === 'ta' ? 'வீட்டில் கவனிப்பு' : 'Meanwhile, at home'}</h3>
+        <ul class="list">${area.home.map(w => `<li>${esc(T(w))}</li>`).join('')}</ul></div>` : ''}
+
+    <div class="card"><h3>${S.lang === 'ta' ? 'மருத்துவரிடம் சொல்ல' : 'To tell the doctor'}</h3>
+      <p class="sm muted" id="summaryText">${esc(summaryText(res))}</p>
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap">
+        <button class="btn small" id="shareBtn">📱 ${S.lang === 'ta' ? 'வாட்ஸ்அப்பில் பகிர்' : 'Share on WhatsApp'}</button>
+        <button class="btn small" id="saveBtn">💾 ${S.lang === 'ta' ? 'சேமி' : 'Save this check'}</button>
+      </div>
+    </div>
+
+    <div class="disclaimer"><b>${esc(T(STR.discTitle))}</b> ${esc(T(STR.discBody))}</div>
+    <button class="btn wide" id="resHome" style="margin-top:12px">← ${esc(T(STR.back))}</button>`;
+}
+function aidCard(a) {
+  if (!a) return '';
+  return `<div class="card">
+    <h3>${a.ic} ${esc(T(a))}</h3>
+    <ul class="list aid" style="margin-top:8px">${a.steps.map(s => `<li>${esc(T(s))}</li>`).join('')}</ul>
+    <div class="never"><h4>${S.lang === 'ta' ? 'இதை செய்யவே கூடாது' : 'Never do this'}</h4>
+      <ul class="list">${a.never.map(s => `<li>${esc(T(s))}</li>`).join('')}</ul></div>
+  </div>`;
+}
+function summaryText(res) {
+  const who = WHO.find(w => w.id === session.who);
+  const area = AREAS.find(a => a.id === session.area);
+  const bits = [`${T(who)}${area ? ' · ' + T(area) : ''}`];
+  if (res.flags.length) bits.push(res.flags.map(id => T(RED_FLAGS.find(f => f.id === id))).join('; '));
+  session.answers.forEach((a, i) => {
+    const q = area && area.qs[i];
+    if (q) bits.push(`${T(q)} — ${T(a)}`);
+  });
+  bits.push(T(VERDICT[res.level]));
+  return bits.join('. ');
+}
+
+/* =====================================================================
+   Flow
+===================================================================== */
+function startArea(id) {
+  session.area = id; session.qi = 0; session.answers = [];
+  renderQuestion(); show('quiz');
+}
+function answer(i) {
+  const area = AREAS.find(a => a.id === session.area);
+  session.answers.push(area.qs[session.qi].opts[i]);
+  if (session.qi < area.qs.length - 1) { session.qi++; renderQuestion(); }
+  else finish();
+}
+function finish() {
+  const res = assess(session.flags, session.answers, session.who);
+  renderResult(res);
+  show('result');
+  wireResult(res);
+}
+function wireResult(res) {
+  $('#resHome').onclick = () => { session.flags = []; show('home'); };
+  $('#shareBtn').onclick = () => {
+    window.open('https://wa.me/?text=' + encodeURIComponent(summaryText(res)), '_blank');
+  };
+  $('#saveBtn').onclick = () => {
+    /* The cap applies here and nowhere else — never to the assessment. */
+    if (S.history.length >= DEMO_MAX_SAVED) {
+      toast(`Demo limit: ${DEMO_MAX_SAVED} saved checks. The full version is unlimited — enquire on the homepage.`);
+      return;
+    }
+    S.history.unshift({ ts: new Date().toISOString(), level: res.level, text: summaryText(res) });
+    save(); toast(S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved');
+  };
+}
+function renderHistory() {
+  $('#historyList').innerHTML = S.history.length
+    ? S.history.map(h => `<div class="card"><div class="sm muted">${new Date(h.ts).toLocaleString('en-IN')}</div>
+        <div style="font-weight:700; color:var(--${['home','soon','today','now'][h.level]})">${esc(T(VERDICT[h.level]))}</div>
+        <div class="sm" style="margin-top:4px">${esc(h.text)}</div></div>`).join('')
+    : `<p class="sub">${S.lang === 'ta' ? 'இதுவரை எதுவும் இல்லை.' : 'Nothing saved yet.'}</p>`;
+}
+
+/* =====================================================================
+   Wiring
+===================================================================== */
+function bind() {
+  $('#sosBtn').onclick = () => { renderFlags(); show('flags'); };
+  $('#flagBack').onclick = () => show('home');
+  $('#flagDone').onclick = () => {
+    session.flags = $$('#flagList input:checked').map(i => i.value);
+    if (session.flags.length) { session.area = null; session.answers = []; finish(); }
+    else { toast(S.lang === 'ta' ? 'சரி — கீழே பிரச்சனையை தேர்வு செய்யுங்கள்' : 'Good — now pick the problem below'); show('home'); }
+  };
+  /* Ticking a box is itself the emergency answer; do not make anyone hunt
+     for a submit button while someone is collapsing. */
+  $('#flagList').addEventListener('change', e => {
+    if (e.target.checked) {
+      session.flags = $$('#flagList input:checked').map(i => i.value);
+      session.area = null; session.answers = []; finish();
+    }
+  });
+
+  $('#whoGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-who]'); if (!b) return;
+    session.who = b.dataset.who; renderHome();
+  });
+  $('#areaGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-area]'); if (b) startArea(b.dataset.area);
+  });
+  $('#aidGrid').addEventListener('click', e => {
+    const b = e.target.closest('[data-aid]'); if (!b) return;
+    $('#aidWrap').innerHTML = callRow() + aidCard(AID[b.dataset.aid])
+      + `<button class="btn wide" id="aidBack">← ${esc(T(STR.back))}</button>`;
+    $('#aidBack').onclick = () => show('home');
+    show('aid');
+  });
+  $('#qOpts').addEventListener('click', e => {
+    const b = e.target.closest('[data-opt]'); if (b) answer(Number(b.dataset.opt));
+  });
+  $('#quizBack').onclick = () => {
+    if (session.qi > 0) { session.qi--; session.answers.pop(); renderQuestion(); } else show('home');
+  };
+  $('#historyBtn').onclick = () => { renderHistory(); show('history'); };
+  $('#histBack').onclick = () => show('home');
+
+  $('#contactsBtn').onclick = () => {
+    $('#cDocName').value = (S.doc || {}).name || ''; $('#cDocPhone').value = (S.doc || {}).phone || '';
+    $('#cKinName').value = (S.kin || {}).name || ''; $('#cKinPhone').value = (S.kin || {}).phone || '';
+    $('#contactsModal').classList.add('show');
+  };
+  $('#cSave').onclick = () => {
+    S.doc = { name: $('#cDocName').value.trim(), phone: $('#cDocPhone').value.trim() };
+    S.kin = { name: $('#cKinName').value.trim(), phone: $('#cKinPhone').value.trim() };
+    save(); $('#contactsModal').classList.remove('show');
+    toast(S.lang === 'ta' ? 'சேமிக்கப்பட்டது' : 'Saved');
+  };
+  $$('.backdrop').forEach(bd => {
+    bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('show'); });
+    $$('[data-close]', bd).forEach(b => b.onclick = () => bd.classList.remove('show'));
+  });
+
+  $('#langBtn').onclick = () => { S.lang = S.lang === 'ta' ? 'en' : 'ta'; save(); paintStrings(); renderHome(); };
+  $('#sizeBtn').onclick = () => { S.big = !S.big; document.body.classList.toggle('big', S.big); save(); };
+  $('#themeBtn').onclick = () => {
+    S.theme = S.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = S.theme; save();
+  };
+}
+
+/* =====================================================================
+   Self-test — the triage rules are pure, so the safety-critical
+   behaviour can be proved without a browser session. ?selftest=1
+===================================================================== */
+function runSelfTest() {
+  const out = []; let pass = 0, fail = 0;
+  const eq = (label, got, want) => {
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    ok ? pass++ : fail++;
+    out.push(`${ok ? '<span class="pass">PASS</span>' : '<span class="fail">FAIL</span>'}  ${esc(label)}`
+      + (ok ? '' : `\n        got ${esc(JSON.stringify(got))} want ${esc(JSON.stringify(want))}`));
+  };
+
+  /* --- a red flag outranks everything --- */
+  eq('a red flag alone is an emergency', assess(['chest'], [], 'adult').level, 3);
+  eq('a red flag beats every mild answer', assess(['stroke'], [{ lvl: 0 }, { lvl: 0 }, { lvl: 0 }], 'adult').level, 3);
+  eq('a red flag with no answers still fires', assess(['bleed'], null, 'adult').level, 3);
+  eq('emergencies are reported as such', assess(['fit'], [], 'child').reason, 'redflag');
+
+  /* --- urgency is the maximum, never a sum --- */
+  eq('one serious answer is not diluted by mild ones',
+    assess([], [{ lvl: 0 }, { lvl: 0 }, { lvl: 3 }, { lvl: 0 }], 'adult').level, 3);
+  eq('three mild answers do not add up to urgent',
+    assess([], [{ lvl: 1 }, { lvl: 1 }, { lvl: 1 }], 'adult').level, 1);
+  eq('all-clear stays at home care', assess([], [{ lvl: 0 }, { lvl: 0 }], 'adult').level, 0);
+
+  /* --- vulnerable people get a higher floor --- */
+  eq('a mild answer in a baby is raised', assess([], [{ lvl: 1 }], 'infant').level, 2);
+  eq('a mild answer in pregnancy is raised', assess([], [{ lvl: 1 }], 'pregnant').level, 2);
+  eq('nothing wrong is not raised for a baby', assess([], [{ lvl: 0 }], 'infant').level, 0);
+  eq('the elderly floor does not fire on mild', assess([], [{ lvl: 1 }], 'elder').level, 1);
+  eq('a raise never lowers a higher level', assess([], [{ lvl: 3 }], 'infant').level, 3);
+
+  /* --- who-specific flags --- */
+  eq('a baby under 3 months with fever is listed for infants',
+    flagsFor('infant').some(f => f.id === 'inf_fever'), true);
+  eq('infant-only flags are hidden for adults',
+    flagsFor('adult').some(f => f.id === 'inf_fever'), false);
+  eq('pregnancy flags appear for pregnancy',
+    flagsFor('pregnant').some(f => f.id === 'preg'), true);
+  eq('observable flags apply to everyone',
+    WHO.every(w => flagsFor(w.id).some(f => f.id === 'breath')), true);
+  eq('self-reported signs are hidden for a baby',
+    flagsFor('infant').some(f => f.selfReport), false);
+  eq('self-reported signs still show for everyone else',
+    WHO.filter(w => w.id !== 'infant').every(w => flagsFor(w.id).some(f => f.id === 'chest')), true);
+  eq('a baby still sees every observable sign',
+    RED_FLAGS.filter(f => !f.selfReport && (!f.who || f.who.includes('infant')))
+      .every(f => flagsFor('infant').some(x => x.id === f.id)), true);
+
+  /* --- content safety: it must never name a drug or a disease --- */
+  /* Only what a user can actually read. Scanning the raw objects would
+     match internal ids like `stroke`, which would force the word list to
+     be watered down until it proved nothing. */
+  const visible = (function collect(node, acc) {
+    if (node && typeof node === 'object') {
+      for (const [k, v] of Object.entries(node)) {
+        if ((k === 'en' || k === 'ta') && typeof v === 'string') acc.push(v);
+        else if (typeof v === 'object') collect(v, acc);
+      }
+    }
+    return acc;
+  })([AREAS, RED_FLAGS, AID, VERDICT, STR], []).join(' ').toLowerCase()
+    /* "Heat stroke" is the name of a first-aid situation, not a diagnosis
+       handed to the user — you cannot offer the first aid without naming
+       what it is for. Neutralised here so a bare "stroke" used as a
+       diagnosis is still caught. */
+    .replace(/heat\s+stroke/g, 'heat illness');
+
+  const DRUGS = ['paracetamol', 'crocin', 'dolo', 'aspirin', 'ibuprofen', 'amoxicillin', 'azithromycin',
+    'antibiotic', 'antibiotics', 'metformin', 'insulin', 'steroid', 'tablet', 'tablets', 'syrup', 'capsule'];
+  const DISEASES = ['dengue', 'malaria', 'typhoid', 'covid', 'pneumonia', 'appendicitis', 'diabetes',
+    'heart attack', 'stroke', 'cancer', 'tuberculosis', 'tb', 'asthma', 'jaundice', 'ulcer'];
+  const hits = list => list.filter(d => new RegExp('\\b' + d.replace(/ /g, '\\s+') + '\\b').test(visible));
+  const drugHits = hits(DRUGS);
+  const diseaseHits = hits(DISEASES);
+  eq('no medicine is ever named', drugHits, []);
+  eq('no illness is ever named as a diagnosis', diseaseHits, []);
+
+  /* --- every piece of content is complete --- */
+  eq('every area has questions', AREAS.every(a => a.qs.length > 0), true);
+  eq('every option carries a level', AREAS.every(a => a.qs.every(q => q.opts.every(o => typeof o.lvl === 'number'))), true);
+  eq('every level is within range', AREAS.every(a => a.qs.every(q => q.opts.every(o => o.lvl >= 0 && o.lvl <= 3))), true);
+  eq('every area lists worsening signs', AREAS.every(a => a.watch && a.watch.length > 0), true);
+  eq('every area has home-care advice', AREAS.every(a => a.home && a.home.length > 0), true);
+  eq('every first-aid entry says what never to do', Object.values(AID).every(a => a.never && a.never.length > 0), true);
+  eq('every first-aid entry has steps', Object.values(AID).every(a => a.steps && a.steps.length > 0), true);
+  eq('every red flag has English text', RED_FLAGS.every(f => f.en && f.en.length > 10), true);
+  eq('first-aid references on red flags all resolve',
+    RED_FLAGS.filter(f => f.aid).every(f => !!AID[f.aid]), true);
+  eq('everything is translated', AREAS.every(a => a.ta) && RED_FLAGS.every(f => f.ta), true);
+
+  /* --- the demo cap must never touch safety --- */
+  eq('the cap gates saved checks only', DEMO_MAX_SAVED > 0 && typeof DEMO_MAX_SAVED === 'number', true);
+  eq('assessing does not consult the cap', assess([], [{ lvl: 0 }], 'adult').level, 0);
+
+  document.body.innerHTML = `<div id="selftest"><h2>Self-test — ${pass} passed, ${fail} failed</h2>`
+    + `<div style="margin:10px 0; font-weight:bold" class="${fail ? 'fail' : 'pass'}">${fail ? 'FAILURES PRESENT' : 'ALL GREEN'}</div>`
+    + out.join('\n') + '</div>';
+  document.title = (fail ? 'FAIL' : 'PASS') + ` ${pass}/${pass + fail} — self-test`;
+  return { pass, fail };
+}
+
+/* =====================================================================
+   Boot
+===================================================================== */
+(function boot() {
+  if (new URLSearchParams(location.search).has('selftest')) { runSelfTest(); return; }
+  load();
+  paintStrings();
+  renderHome();
+  bind();
+})();
+</script>
+</body>
+</html>
