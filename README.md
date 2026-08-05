@@ -256,3 +256,25 @@ xdg-open pagebuilder.html  # Linux
 ```
 
 Or serve the folder with any static server (`python3 -m http.server`).
+
+## Checks
+
+Two checks run on every push, free, with nothing to install:
+
+```bash
+node tools/check.mjs        # catalogue, docs and demo caps agree
+```
+
+`tools/check.mjs` is plain Node with zero dependencies — the apps promise
+nothing to install, and the tooling keeps that promise too. It verifies the
+homepage catalogue matches the files on disk, that the README documents
+every app, that no two apps share a cover, that every app enforces its demo
+cap and that the cap in the code matches the one advertised on the card.
+Every assertion exists because that mistake actually happened.
+
+The billing app carries its own 77 assertions over the GST arithmetic, which
+you can run in a browser at
+[`billing-pos.html?selftest=1`](billing-pos.html?selftest=1). CI runs the
+same file headless.
+
+Repo conventions and the traps worth knowing are in [`CLAUDE.md`](CLAUDE.md).

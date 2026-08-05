@@ -1,0 +1,47 @@
+name: checks
+
+# Free on public repos, and deliberately dependency-free: plain Node for the
+# consistency checks, and the runner's preinstalled Chrome for the billing
+# app's own self-test. Nothing to install, so nothing to go stale.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  consistency:
+    name: repo consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check the catalogue, the docs and the demo caps agree
+        run: node tools/check.mjs
+
+  calculations:
+    name: billing calculations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The POS ships its own assertions behind ?selftest=1, so the GST
+      # maths is verified by the same code a user can run in their browser.
+      - name: Run the billing self-test in headless Chrome
+        run: |
+          set -o pipefail
+          CHROME=$(command -v google-chrome || command -v chromium-browser || command -v chromium)
+          echo "using $CHROME"
+          OUT=$("$CHROME" --headless --no-sandbox --disable-gpu \
+                --virtual-time-budget=8000 --dump-dom \
+                "file://$PWD/billing-pos.html?selftest=1" 2>/dev/null \
+                | sed -e 's/<[^>]*>//g')
+          echo "$OUT" | grep -oE "Self-test — [0-9]+ passed, [0-9]+ failed"
+          if echo "$OUT" | grep -q "FAILURES PRESENT"; then
+            echo "::error::billing self-test failed"
+            echo "$OUT" | grep -A3 "^FAIL"
+            exit 1
+          fi
